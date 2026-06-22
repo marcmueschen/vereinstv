@@ -196,36 +196,50 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a3a2a;font-family:
 
 
 /* ── WEATHER FORECAST SLIDE */
-.sl.wt{flex-direction:column;overflow:hidden}
+.sl.wt{flex-direction:column;overflow:hidden;background:#0d1a2e}
 .wt-loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:10;background:inherit}
 .wt-loading p{font-size:1rem;opacity:.65;text-align:center;padding:0 20px}
 .wt-spin{width:36px;height:36px;border:3px solid rgba(255,255,255,.15);border-top-color:#f5c842;border-radius:50%;animation:wtspin .8s linear infinite}
 @keyframes wtspin{to{transform:rotate(360deg)}}
 .wt-inner{width:100%;height:100%;display:none;flex-direction:column}
 .wt-inner.show{display:flex}
-/* Header: Ort + aktuelles Wetter */
-.wt-head{display:flex;align-items:center;justify-content:space-between;padding:12px 28px 10px;flex-shrink:0;border-bottom:2px solid rgba(255,255,255,.1)}
-.wt-hl{display:flex;flex-direction:column;gap:2px}
-.wt-loc{font-size:clamp(1.4rem,3vw,2.2rem);font-weight:800;letter-spacing:.02em}
-.wt-time{font-size:.82rem;opacity:.45}
-.wt-now{display:flex;align-items:center;gap:20px}
-.wt-now-icon{font-size:clamp(3rem,7vw,5.5rem);line-height:1;filter:drop-shadow(0 2px 8px rgba(0,0,0,.3))}
+/* ── HEADER: Ort + aktuell ── */
+.wt-head{display:flex;align-items:center;justify-content:space-between;padding:10px 28px 8px;flex-shrink:0;border-bottom:2px solid rgba(255,255,255,.08);background:rgba(0,0,0,.25)}
+.wt-hl{display:flex;flex-direction:column;gap:1px}
+.wt-loc{font-size:clamp(1.3rem,2.8vw,2rem);font-weight:800;letter-spacing:.01em}
+.wt-time{font-size:.78rem;opacity:.42;margin-top:1px}
+.wt-now{display:flex;align-items:center;gap:16px}
+.wt-now-icon{font-size:clamp(2.5rem,5.5vw,4rem);line-height:1;filter:drop-shadow(0 2px 6px rgba(0,0,0,.4))}
 .wt-now-info{display:flex;flex-direction:column;gap:2px;align-items:flex-end}
-.wt-temp{font-size:clamp(2.8rem,7vw,5.5rem);font-weight:900;line-height:1}
-.wt-desc{font-size:clamp(.85rem,1.6vw,1.1rem);opacity:.7;text-align:right}
-.wt-wind{font-size:clamp(.75rem,1.3vw,.95rem);opacity:.45;text-align:right}
-/* 24h Kachel-Streifen */
-.wt-strip{flex:1;display:flex;flex-direction:column;justify-content:center;padding:10px 20px 8px;min-height:0}
-.wt-strip-title{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;opacity:.4;margin-bottom:8px}
-.wt-tiles{display:flex;gap:6px;overflow:hidden;align-items:stretch;flex:1}
-.wt-tile{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:8px 4px 6px;border-radius:10px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.08);gap:4px;transition:background .2s}
-.wt-tile.now{background:rgba(245,200,66,.15);border-color:rgba(245,200,66,.35)}
-.wt-tile.rain{background:rgba(52,152,219,.15);border-color:rgba(52,152,219,.25)}
-.wt-tile-time{font-size:clamp(.6rem,1.1vw,.8rem);opacity:.5;font-weight:600;flex-shrink:0}
-.wt-tile-icon{font-size:clamp(1.6rem,3.2vw,2.6rem);line-height:1;filter:drop-shadow(0 1px 4px rgba(0,0,0,.3));flex-shrink:0}
-.wt-tile-temp{font-size:clamp(.88rem,1.7vw,1.2rem);font-weight:800;flex-shrink:0}
-.wt-tile-rain{font-size:clamp(.6rem,1vw,.75rem);color:#7ec8e3;flex-shrink:0;min-height:14px}
-.wt-tile-wind{font-size:clamp(.55rem,.9vw,.7rem);opacity:.35;flex-shrink:0}
+.wt-temp{font-size:clamp(2.4rem,6vw,4.5rem);font-weight:900;line-height:1}
+.wt-desc{font-size:clamp(.8rem,1.5vw,1rem);opacity:.65;text-align:right}
+.wt-wind{font-size:clamp(.7rem,1.2vw,.88rem);opacity:.4;text-align:right}
+/* ── CHART AREA ── */
+.wt-chart-wrap{flex:1;display:flex;flex-direction:column;min-height:0;position:relative;padding:0}
+/* Icons row */
+.wt-icons-row{display:flex;padding:0 52px 0 52px;height:72px;flex-shrink:0;align-items:center;border-bottom:1px solid rgba(255,255,255,.07)}
+.wt-icon-cell{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-width:0}
+.wt-icon-cell .ico{font-size:clamp(1.2rem,2.4vw,1.9rem);line-height:1;filter:drop-shadow(0 1px 4px rgba(0,0,0,.5))}
+.wt-icon-cell .lbl{font-size:clamp(.55rem,.9vw,.7rem);opacity:.5;white-space:nowrap;overflow:hidden}
+/* Temp curve */
+.wt-curve-wrap{flex:1;position:relative;min-height:0;padding:0 52px}
+.wt-curve-wrap svg{width:100%;height:100%;overflow:visible}
+/* Rain bars */
+.wt-rain-wrap{height:52px;flex-shrink:0;position:relative;padding:0 52px;border-top:1px solid rgba(255,255,255,.07)}
+.wt-rain-wrap svg{width:100%;height:100%;overflow:visible}
+/* Time axis */
+.wt-time-row{height:28px;flex-shrink:0;display:flex;padding:0 52px;align-items:center;border-top:1px solid rgba(255,255,255,.1)}
+.wt-time-cell{flex:1;text-align:center;font-size:clamp(.55rem,.9vw,.72rem);opacity:.5;min-width:0;white-space:nowrap;overflow:hidden}
+.wt-time-cell.now-mark{color:#f5c842;opacity:1;font-weight:700}
+/* Y-axis labels */
+.wt-ylabel{position:absolute;left:0;font-size:clamp(.55rem,.85vw,.7rem);opacity:.4;display:flex;flex-direction:column;justify-content:space-between;height:100%;padding:4px 0;width:50px;text-align:right;padding-right:6px}
+/* Legend */
+.wt-legend{height:22px;flex-shrink:0;display:flex;gap:18px;align-items:center;padding:0 52px;background:rgba(0,0,0,.15)}
+.wt-leg{display:flex;align-items:center;gap:5px;font-size:.65rem;opacity:.5}
+.wt-leg-line{width:18px;height:3px;border-radius:2px}
+.wt-now-bar{position:absolute;top:0;bottom:0;width:1.5px;background:rgba(245,200,66,.6);pointer-events:none;z-index:5}
+
+/* ── RADAR SLIDE */
 /* ── RADAR SLIDE */
 .sl.rd{position:absolute;inset:0;overflow:hidden;isolation:isolate}
 .rd-map{position:absolute;inset:0;width:100%;height:100%;z-index:0}
@@ -603,7 +617,6 @@ function bs(s){
     div.dataset.wtLat=String(d.lat||0);
     div.dataset.wtLon=String(d.lon||0);
     div.dataset.wtLoc=d.location||'Wetter';
-    // Restore from cache if already loaded
     if(_slideCache[s.id]){div.innerHTML=_slideCache[s.id];return div;}
     div.innerHTML=''
       +'<div class="wt-loading"><div class="wt-spin"></div><p>Wetterdaten laden…</p></div>'
@@ -612,16 +625,22 @@ function bs(s){
           +'<div class="wt-hl"><span class="wt-loc"></span><span class="wt-time"></span></div>'
           +'<div class="wt-now">'
             +'<div class="wt-now-info"><span class="wt-desc"></span><span class="wt-wind"></span></div>'
-            +'<div class="wt-now-icon"></div>'
             +'<span class="wt-temp"></span>'
+            +'<div class="wt-now-icon"></div>'
           +'</div>'
         +'</div>'
-        +'<div class="wt-strip">'
-          +'<div class="wt-strip-title">24-Stunden-Vorschau</div>'
-          +'<div class="wt-tiles"></div>'
+        +'<div class="wt-chart-wrap">'
+          +'<div class="wt-icons-row"></div>'
+          +'<div class="wt-curve-wrap"><div class="wt-ylabel"></div><svg class="wt-svg-temp"></svg></div>'
+          +'<div class="wt-rain-wrap"><svg class="wt-svg-rain"></svg></div>'
+          +'<div class="wt-time-row"></div>'
+          +'<div class="wt-legend">'
+            +'<div class="wt-leg"><div class="wt-leg-line" style="background:#ffd166"></div>Temperatur</div>'
+            +'<div class="wt-leg"><div class="wt-leg-line" style="background:#7ec8e3"></div>Regenwahrscheinlichkeit</div>'
+          +'</div>'
         +'</div>'
       +'</div>';
-  } else if(s.type==='radar'){
+    } else if(s.type==='radar'){  } else if(s.type==='radar'){
     div.className='sl rd';
     div.style.background=d.bg||'#0d1a2e';
     // Radar: never cache (Leaflet map can't be cloned), but mark as needing re-init
@@ -760,8 +779,9 @@ function renderWeather(el,d,loc){
   var cw=d.current_weather;
   if(!cw){wtErr(el,'wt','Keine Daten');return;}
   var now=new Date();
+  var ac=el.dataset.bkAc||'#f5c842';
 
-  // ── Header: Ort, Uhrzeit, aktuelles Wetter
+  // ── Header
   el.querySelector('.wt-loc').textContent=loc;
   el.querySelector('.wt-time').textContent=
     now.toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long'})+
@@ -771,44 +791,200 @@ function renderWeather(el,d,loc){
   el.querySelector('.wt-desc').textContent=wtDesc(cw.weathercode);
   el.querySelector('.wt-wind').textContent='Wind '+Math.round(cw.windspeed)+' km/h';
 
-  // ── 24h Kacheln: stündlich ab jetzt
-  var h=d.hourly;
-  var today=now.toISOString().slice(0,10);
-  var hStr=String(now.getHours()).padStart(2,'0');
-  var si=0;
-  for(var x=0;x<h.time.length;x++){if(h.time[x]>=today+'T'+hStr){si=x;break;}}
-
-  var tilesEl=el.querySelector('.wt-tiles');
-  tilesEl.innerHTML='';
-  var shown=0;
-  for(var i=si;i<h.time.length&&shown<24;i++){
-    // OpenMeteo liefert 1h-Schritte bei hourly-Anforderung
-    var timePart=(h.time[i].split('T')[1]||'').slice(0,5);
-    var temp=h.temperature_2m[i]||0;
-    var rp=h.precipitation_probability[i]||0;
-    var wind=Math.round(h.windspeed_10m[i]||0);
-    var code=h.weathercode[i]||0;
-    var isNow=(shown===0);
-    var hasRain=(rp>=30);
-    var tc=temp>=28?'#ff8080':temp>=20?'#ffd166':temp>=10?'#fff':'#a8d8ea';
-
-    var tile=document.createElement('div');
-    tile.className='wt-tile'+(isNow?' now':hasRain?' rain':'');
-    tile.innerHTML=
-      '<span class="wt-tile-time">'+(isNow?'Jetzt':timePart.slice(0,2)+' Uhr')+'</span>'
-      +'<span class="wt-tile-icon">'+wtIcon(code)+'</span>'
-      +'<span class="wt-tile-temp" style="color:'+tc+'">'+Math.round(temp)+'°</span>'
-      +'<span class="wt-tile-rain">'+(rp>0?rp+'%':'')+'</span>'
-      +'<span class="wt-tile-wind">'+wind+' km/h</span>';
-    tilesEl.appendChild(tile);
-    shown++;
+  // ── Use minutely_15 if available, else hourly interpolated
+  var slots=[]; // {time, temp, rain, rainProb, code, wind}
+  var m15=d.minutely_15;
+  if(m15&&m15.time&&m15.time.length){
+    // Find start index (current 30-min slot)
+    var nowRound=new Date(Math.floor(now.getTime()/(30*60000))*(30*60000));
+    var nowStr=nowRound.toISOString().slice(0,16).replace('T',' ').replace(' ','T');
+    var si=0;
+    for(var x=0;x<m15.time.length;x++){
+      if(m15.time[x]>=nowStr.slice(0,16)){si=x;break;}
+    }
+    // 12h = 24 half-hour slots
+    for(var i=si;i<si+24&&i<m15.time.length;i++){
+      var t=m15.time[i];
+      slots.push({
+        time:(t.split('T')[1]||t.split(' ')[1]||'').slice(0,5),
+        temp:m15.temperature_2m[i]||0,
+        rain:m15.precipitation[i]||0,
+        rainProb:m15.precipitation_probability?m15.precipitation_probability[i]||0:0,
+        code:m15.weathercode[i]||0,
+        wind:Math.round(m15.windspeed_10m[i]||0)
+      });
+    }
+  } else {
+    // Fallback: hourly, interpolate to 30-min
+    var h=d.hourly;
+    var today=now.toISOString().slice(0,10);
+    var hStr=String(now.getHours()).padStart(2,'0');
+    var si2=0;
+    for(var x2=0;x2<h.time.length;x2++){if(h.time[x2]>=today+'T'+hStr){si2=x2;break;}}
+    for(var i2=si2;i2<si2+13&&i2<h.time.length-1;i2++){
+      var t0=h.time[i2],t1=h.time[i2+1]||t0;
+      // full hour
+      slots.push({time:(t0.split('T')[1]||'').slice(0,5),
+        temp:h.temperature_2m[i2]||0,rain:0,
+        rainProb:h.precipitation_probability[i2]||0,
+        code:h.weathercode[i2]||0,wind:Math.round(h.windspeed_10m[i2]||0)});
+      // half hour (interpolated)
+      var hh=Math.floor(parseInt((t0.split('T')[1]||'00:').split(':')[0])+0);
+      var mm=30;
+      var halfTime=String(hh).padStart(2,'0')+':30';
+      slots.push({time:halfTime,
+        temp:((h.temperature_2m[i2]||0)+(h.temperature_2m[i2+1]||0))/2,
+        rain:0,rainProb:((h.precipitation_probability[i2]||0)+(h.precipitation_probability[i2+1]||0))/2,
+        code:h.weathercode[i2]||0,wind:Math.round(((h.windspeed_10m[i2]||0)+(h.windspeed_10m[i2+1]||0))/2)});
+    }
+    slots=slots.slice(0,24);
   }
+  if(!slots.length){wtErr(el,'wt','Keine Zeitdaten');return;}
+
+  var N=slots.length;
+  var temps=slots.map(function(s){return s.temp;});
+  var rains=slots.map(function(s){return s.rainProb;});
+  var tMin=Math.min.apply(null,temps),tMax=Math.max.apply(null,temps);
+  var tRange=Math.max(2,tMax-tMin);
+  var rMax=Math.max(10,Math.max.apply(null,rains));
+
+  // ── Icons row: show every other slot (every full hour)
+  var iconsRow=el.querySelector('.wt-icons-row');
+  iconsRow.innerHTML='';
+  slots.forEach(function(s,i){
+    var cell=document.createElement('div');
+    cell.className='wt-icon-cell';
+    // Only show icon on full hours (every 2nd slot) or first
+    if(i%2===0){
+      cell.innerHTML='<span class="ico">'+wtIcon(s.code)+'</span>'
+        +'<span class="lbl">'+(s.rainProb>0?s.rainProb+'%':'')+'</span>';
+    }
+    iconsRow.appendChild(cell);
+  });
+
+  // ── Temperature curve SVG
+  var curveSvg=el.querySelector('.wt-svg-temp');
+  var W=100, H=100; // percent-based viewBox
+  var pad=8; // percent padding top/bottom
+  var pts=slots.map(function(s,i){
+    var x=(i/(N-1))*100;
+    var y=pad+(1-(s.temp-tMin)/tRange)*(100-pad*2);
+    return [x,y];
+  });
+
+  // Smooth curve with cubic bezier
+  function curvePoints(pts){
+    if(pts.length<2)return '';
+    var d='M '+pts[0][0]+' '+pts[0][1];
+    for(var i=1;i<pts.length;i++){
+      var p0=pts[i-1],p1=pts[i];
+      var cp1x=p0[0]+(p1[0]-p0[0])/3;
+      var cp1y=p0[1];
+      var cp2x=p0[0]+(p1[0]-p0[0])*2/3;
+      var cp2y=p1[1];
+      d+=' C '+cp1x+' '+cp1y+' '+cp2x+' '+cp2y+' '+p1[0]+' '+p1[1];
+    }
+    return d;
+  }
+
+  // Gradient fill path (closed)
+  var fillPath=curvePoints(pts)+' L 100 100 L 0 100 Z';
+  var linePath=curvePoints(pts);
+
+  // Temperature labels on curve
+  var tempLabels='';
+  slots.forEach(function(s,i){
+    if(i%2!==0)return; // only full hours
+    var x=(i/(N-1))*100;
+    var y=pad+(1-(s.temp-tMin)/tRange)*(100-pad*2);
+    var tc=s.temp>=25?'#ff8080':s.temp>=15?'#ffd166':'#fff';
+    tempLabels+='<text x="'+x+'" y="'+(y-3)+'" text-anchor="middle" '
+      +'font-size="5" font-weight="700" fill="'+tc+'" font-family="Inter,sans-serif">'
+      +Math.round(s.temp)+'°</text>';
+    // Dot on curve
+    tempLabels+='<circle cx="'+x+'" cy="'+y+'" r="1.5" fill="'+tc+'"/>';
+  });
+
+  // Now bar (vertical line at current time = x=0)
+  var nowBarX=0;
+  curveSvg.setAttribute('viewBox','0 0 100 100');
+  curveSvg.setAttribute('preserveAspectRatio','none');
+  curveSvg.innerHTML=
+    '<defs>'
+    +'<linearGradient id="tempGrad" x1="0" y1="0" x2="0" y2="1">'
+    +'<stop offset="0%" stop-color="#ffd166" stop-opacity="0.3"/>'
+    +'<stop offset="100%" stop-color="#ffd166" stop-opacity="0.02"/>'
+    +'</linearGradient>'
+    // Horizontal grid lines
+    +'</defs>'
+    // Grid lines
+    +'<line x1="0" y1="25" x2="100" y2="25" stroke="rgba(255,255,255,.06)" stroke-width="0.5"/>'
+    +'<line x1="0" y1="50" x2="100" y2="50" stroke="rgba(255,255,255,.06)" stroke-width="0.5"/>'
+    +'<line x1="0" y1="75" x2="100" y2="75" stroke="rgba(255,255,255,.06)" stroke-width="0.5"/>'
+    // Vertical slot separators (every 2 = hourly)
+    +slots.filter(function(_,i){return i%2===0&&i>0;}).map(function(_,j){
+      var x=((j*2+2)/(N-1))*100;
+      return '<line x1="'+x+'" y1="0" x2="'+x+'" y2="100" stroke="rgba(255,255,255,.05)" stroke-width="0.5"/>';
+    }).join('')
+    // Fill under curve
+    +'<path d="'+fillPath+'" fill="url(#tempGrad)"/>'
+    // Curve line
+    +'<path d="'+linePath+'" fill="none" stroke="#ffd166" stroke-width="1.5" stroke-linejoin="round"/>'
+    // Now vertical line
+    +'<line x1="0.5" y1="0" x2="0.5" y2="100" stroke="rgba(245,200,66,.7)" stroke-width="1" stroke-dasharray="2,2"/>'
+    // Temperature labels
+    +tempLabels;
+
+  // Y-axis temp labels
+  var yLbl=el.querySelector('.wt-ylabel');
+  yLbl.innerHTML='';
+  [tMax,Math.round((tMax+tMin)/2),tMin].forEach(function(t){
+    var span=document.createElement('span');
+    span.textContent=Math.round(t)+'°';
+    yLbl.appendChild(span);
+  });
+
+  // ── Rain bars SVG
+  var rainSvg=el.querySelector('.wt-svg-rain');
+  rainSvg.setAttribute('viewBox','0 0 100 100');
+  rainSvg.setAttribute('preserveAspectRatio','none');
+  var barW=100/N*0.7;
+  var rainBars=slots.map(function(s,i){
+    var x=(i/(N-1))*100-barW/2;
+    var barH=(s.rainProb/rMax)*85;
+    var col=s.rainProb>70?'#5bb8d4':s.rainProb>40?'#7ec8e3':'#9ed8ef';
+    if(s.rainProb<5)return '';
+    return '<rect x="'+x+'" y="'+(100-barH)+'" width="'+barW+'" height="'+barH+'" '
+      +'fill="'+col+'" rx="1" opacity="0.85"/>'
+      +'<text x="'+(x+barW/2)+'" y="'+(100-barH-2)+'" text-anchor="middle" '
+      +'font-size="4.5" fill="'+col+'" font-family="Inter,sans-serif" font-weight="600">'
+      +s.rainProb+'%</text>';
+  }).join('');
+  rainSvg.innerHTML=
+    '<line x1="0" y1="100" x2="100" y2="100" stroke="rgba(255,255,255,.15)" stroke-width="0.5"/>'
+    +rainBars
+    +'<text x="1" y="8" font-size="4.5" fill="rgba(255,255,255,.35)" font-family="Inter,sans-serif">%</text>';
+
+  // ── Time axis
+  var timeRow=el.querySelector('.wt-time-row');
+  timeRow.innerHTML='';
+  slots.forEach(function(s,i){
+    var cell=document.createElement('div');
+    cell.className='wt-time-cell'+(i===0?' now-mark':'');
+    // Show time every 2 slots (hourly), hide half-hours unless they end in :30
+    if(i%2===0||i===0){
+      cell.textContent=i===0?'Jetzt':s.time;
+    } else {
+      cell.textContent=s.time.endsWith(':30')?s.time.slice(0,2)+'':s.time;
+      cell.style.opacity='0.28';
+      cell.style.fontSize='.5rem';
+    }
+    timeRow.appendChild(cell);
+  });
 
   el.querySelector('.wt-loading').style.display='none';
   el.querySelector('.wt-inner').classList.add('show');
-  // Cache the rendered HTML so rebuildSlides() doesn't show loading again
-  var sid=el.dataset&&el.dataset.wtLat?el.dataset.wtLat+'_wt':null;
-  // Find slide id by matching lat/lon
+  // Cache
   if(slides){for(var _i=0;_i<slides.length;_i++){var _s=slides[_i];if(_s.type==='weather'&&String(_s.data.lat||0)===el.dataset.wtLat){_slideCache[_s.id]=el.innerHTML;break;}}}
 }
 
