@@ -617,6 +617,7 @@ function bs(s){
     div.dataset.wtLat=String(d.lat||0);
     div.dataset.wtLon=String(d.lon||0);
     div.dataset.wtLoc=d.location||'Wetter';
+    div.dataset.wtAc=d.accent||'#f5c842';
     if(_slideCache[s.id]){div.innerHTML=_slideCache[s.id];return div;}
     div.innerHTML=''
       +'<div class="wt-loading"><div class="wt-spin"></div><p>Wetterdaten laden…</p></div>'
@@ -779,7 +780,7 @@ function renderWeather(el,d,loc){
   var cw=d.current_weather;
   if(!cw){wtErr(el,'wt','Keine Daten');return;}
   var now=new Date();
-  var ac=el.dataset.bkAc||'#f5c842';
+  var ac=el.dataset.wtAc||'#f5c842';
 
   // ── Header
   el.querySelector('.wt-loc').textContent=loc;
@@ -1007,8 +1008,6 @@ function initRadar(el,key){
   var mapEl=el.querySelector('.rd-map');
   if(!mapEl||mapEl._leaflet_id){return;}
 
-  // RainViewer native zoom support: tiles available up to zoom 6
-  // use maxNativeZoom so Leaflet upscales beyond that without error
   var RADAR_NATIVE_MAX=6;
 
   try{
@@ -1025,6 +1024,7 @@ function initRadar(el,key){
       L.circle([lat,lon],{radius:radius*1000,color:'#f5c842',fillColor:'#f5c842',
         fillOpacity:0.05,weight:1.5,dashArray:'6,4'}).addTo(map);
     }
+    // Store map BEFORE setTimeout so it's available
     _wMaps[key]=map;
 
     // Show overlay
@@ -1033,9 +1033,14 @@ function initRadar(el,key){
     var locEl=el.querySelector('.rd-loc');
     if(locEl)locEl.textContent=loc;
 
-    // Load radar frames
-    loadRadarFrames(el,key,map,wurl,zoom,RADAR_NATIVE_MAX);
-    setInterval(function(){loadRadarFrames(el,key,map,getWurl(),zoom,RADAR_NATIVE_MAX);},600000);
+    // Wait 200ms for element to be fully visible, THEN invalidate and load
+    setTimeout(function(){
+      try{
+        map.invalidateSize(false);
+        loadRadarFrames(el,key,map,getWurl(),zoom,RADAR_NATIVE_MAX);
+        setInterval(function(){loadRadarFrames(el,key,map,getWurl(),zoom,RADAR_NATIVE_MAX);},600000);
+      }catch(ex){wtErr(el,'rd','Kartenfehler nach Resize: '+ex.message);}
+    },200);
 
   }catch(e){wtErr(el,'rd','Kartenfehler: '+e.message);}
 }
@@ -1068,7 +1073,9 @@ function loadRadarFrames(el,key,map,wurl,zoom,nativeMax){
         fi=fi<frames.length-1?fi+1:start;
       },900);
     },
-    function(){}
+    function(msg){
+      var ldg=el.querySelector('.rd-loading');if(ldg){var p=ldg.querySelector('p');if(p){p.textContent='Radar: '+msg;p.style.color='#ff8080';}var sp=ldg.querySelector('.wt-spin');if(sp)sp.style.display='none';}
+    }
   );
 }
 
@@ -1085,26 +1092,108 @@ function initBooking(el, key) {
 }
 
 function fetchBooking(el, key) {
+  // Try worker proxy first (in case CORS allows it), fall back to direct fetch
   var wurl = getWurl();
-  if(!wurl) { bkError(el, 'Worker-URL fehlt'); return; }
   var now = new Date();
   var dateStr = now.getFullYear()+'-'
     +String(now.getMonth()+1).padStart(2,'0')+'-'
     +String(now.getDate()).padStart(2,'0');
-  wtXHR(wurl + '/booking?date=' + dateStr,
-    function(resp) {
-      if(!resp.ok) { bkError(el, resp.error||'Fehler'); return; }
-      renderBooking(el, resp);
-    },
-    function(msg) { bkError(el, msg); }
-  );
+
+  // First try via worker
+  if(wurl){
+    wtXHR(wurl + '/booking?date=' + dateStr,
+      function(resp) {
+        if(!resp.ok || (!resp.times || !resp.times.length)) {
+          // Worker returned empty or error — try direct browser fetch
+          fetchBookingDirect(el, dateStr);
+          return;
+        }
+        renderBooking(el, resp);
+      },
+      function(msg) {
+        // Worker failed — try direct browser fetch
+        fetchBookingDirect(el, dateStr);
+      }
+    );
+  } else {
+    fetchBookingDirect(el, dateStr);
+  }
+}
+
+function fetchBookingDirect(el, dateStr){
+  // Direct browser fetch - works if booking page allows browser requests
+  var url = (el.dataset.bkUrl||'https://booking.tennisclub-geldern.de') + '/?date=' + dateStr;
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', url, true);
+  xhr.timeout = 15000;
+  xhr.onload = function(){
+    if(xhr.status >= 200 && xhr.status < 300){
+      var html = xhr.responseText;
+      var result = parseBookingHTML(html, dateStr);
+      if(result.times.length > 0){
+        renderBooking(el, result);
+      } else {
+        bkError(el, 'Keine Belegungsdaten verfügbar');
+      }
+    } else {
+      bkError(el, 'Buchungsseite nicht erreichbar (HTTP '+xhr.status+')');
+    }
+  };
+  xhr.ontimeout = function(){ bkError(el, 'Timeout beim Laden'); };
+  xhr.onerror = function(){ bkError(el, 'Verbindungsfehler zur Buchungsseite'); };
+  xhr.send();
+}
+
+function parseBookingHTML(html, date){
+  var slots = {}, times = [];
+  // Parse <tr> rows - time slot rows have "HH:MM" in first cell
+  var trRe = /<tr[^>]*>([\s\S]*?)<\/tr>/gi;
+  var trMatch;
+  while((trMatch = trRe.exec(html)) !== null){
+    var rowHtml = trMatch[1];
+    var cellRe = /<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/gi;
+    var cells = [];
+    var cellMatch;
+    while((cellMatch = cellRe.exec(rowHtml)) !== null){
+      var text = cellMatch[1]
+        .replace(/<[^>]+>/g,' ')
+        .replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>')
+        .replace(/&nbsp;/g,' ').replace(/&#[0-9]+;/g,' ')
+        .replace(/\s+/g,' ').trim();
+      cells.push(text);
+    }
+    if(cells.length < 2) continue;
+    var timeMatch = cells[0].match(/(\d{1,2}:\d{2})/);
+    if(!timeMatch) continue;
+    var timeStr = timeMatch[1].padStart(5,'0');
+    var statusValues = ['Frei','Belegt','Training','Vorbei','Reserviert','gesperrt'];
+    var courtNum = 1;
+    for(var ci = 1; ci < cells.length && courtNum <= 10; ci++){
+      var cell = cells[ci];
+      var status = statusValues.find(function(s){ return cell.toLowerCase().indexOf(s.toLowerCase()) !== -1; });
+      if(status !== undefined || cell === ''){
+        if(!slots[timeStr]){ slots[timeStr] = {}; times.push(timeStr); }
+        slots[timeStr][courtNum] = status || '';
+        courtNum++;
+      }
+    }
+  }
+  // Build courts list
+  var allCourts = {};
+  times.forEach(function(t){ Object.keys(slots[t]).forEach(function(c){ allCourts[parseInt(c)] = true; }); });
+  var courts = Object.keys(allCourts).map(Number).sort(function(a,b){return a-b;});
+  return { ok: true, date: date, slots: slots, times: times.sort(), courts: courts };
 }
 
 function bkError(el, msg) {
-  var p = el.querySelector('.bk-loading p');
-  if(p){ p.textContent = msg; p.style.color='#ff8080'; }
-  var sp = el.querySelector('.wt-spin');
-  if(sp) sp.style.display='none';
+  var loading = el.querySelector('.bk-loading');
+  if(loading){
+    var p = loading.querySelector('p');
+    if(p){ p.textContent = '⚠ '+msg; p.style.color='#ff8080'; p.style.fontSize='.9rem'; p.style.padding='0 20px'; p.style.textAlign='center'; }
+    var sp = loading.querySelector('.wt-spin');
+    if(sp) sp.style.display='none';
+    loading.style.display='flex'; // ensure visible
+  }
 }
 
 function renderBooking(el, resp) {
@@ -1184,10 +1273,10 @@ function triggerSlideInit(){
 function rebuildSlides(){
   cancelAnimationFrame(pA);
   stage.querySelectorAll('.sl').forEach(function(e){e.remove();});
-  // Reset init guards so radar/booking/weather re-init on new DOM elements
-  // (but keep _slideCache so weather doesn't re-fetch)
+  // Reset ALL init guards + cache so fresh render happens
   _wInits={};
   _bkInits={};
+  _slideCache={};
   // Stop radar animations (map instances are gone)
   Object.keys(_wRadarAnims).forEach(function(k){clearInterval(_wRadarAnims[k]);});
   _wRadarAnims={};
@@ -1198,6 +1287,7 @@ function rebuildSlides(){
   slides.forEach(function(s,i){var el=bs(s);el.dataset.i=i;el.classList.toggle('on',i===cur);stage.appendChild(el);});
   bd();document.getElementById('ct').textContent=(cur+1)+' / '+slides.length;
   startProg();
+  setTimeout(triggerSlideInit, 200);
 }
 
 function show(idx,an){
@@ -1215,7 +1305,7 @@ function show(idx,an){
   document.querySelectorAll('.dt').forEach(function(d,i){d.classList.toggle('on',i===cur);});
   document.getElementById('ct').textContent=(cur+1)+' / '+slides.length;
   startProg();
-  setTimeout(triggerSlideInit,400);
+  setTimeout(triggerSlideInit, doA ? 1900 : 200);
   // Increment show counter for current score slide (for flash repeat logic)
   if(slides[cur]&&slides[cur].type==='score'){
     var sid=slides[cur].id;
