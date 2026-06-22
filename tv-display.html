@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vereins-TV</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--font-body:'Inter';--font-display:'Bebas Neue';--fscale:1}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#1a3a2a;font-family:var(--font-body,'Inter'),sans-serif;color:#fff}
+#fr{position:fixed;inset:0;display:flex;flex-direction:column}
+#tb{display:flex;align-items:center;justify-content:space-between;padding:0 36px;height:62px;background:rgba(0,0,0,.4);border-bottom:3px solid #f5c842;flex-shrink:0;z-index:10}
+#cn{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:2rem;letter-spacing:.12em;color:#f5c842}
+#ck{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:1.9rem;letter-spacing:.08em;color:#e8d5a3}
+#st{flex:1;position:relative;overflow:hidden}
+#wipe{position:absolute;inset:0;background:#1a3a2a;transform:scaleX(0);transform-origin:left center;z-index:50;pointer-events:none}
+#wipe.go{animation:wpanim .7s cubic-bezier(.77,0,.18,1) forwards}
+@keyframes wpanim{0%{transform:scaleX(0);transform-origin:left center}45%{transform:scaleX(1);transform-origin:left center}46%{transform:scaleX(1);transform-origin:right center}100%{transform:scaleX(0);transform-origin:right center}}
+.sl{position:absolute;inset:0;display:none;overflow:hidden}
+.sl.on{display:flex}
+/* ANNOUNCE */
+.ann{flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:60px 80px;position:relative}
+.ann .ov{position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,0,0,.45),rgba(0,0,0,.15));z-index:0}
+.ann .bi{position:absolute;inset:0;background-size:cover;background-position:center;z-index:-1;opacity:.35}
+.ann .ct{position:relative;z-index:1;max-width:900px}
+.ann .ey{font-size:.8rem;font-weight:700;letter-spacing:.22em;text-transform:uppercase;margin-bottom:18px;opacity:.7}
+.ann h1{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(2.8rem,7vw,5.5rem);letter-spacing:.06em;line-height:1;margin-bottom:24px}
+.ann .al{width:64px;height:4px;margin:0 auto 28px;border-radius:2px}
+.ann p{font-size:clamp(1rem,2.2vw,1.4rem);line-height:1.65;font-weight:300;opacity:.92;max-width:720px}
+/* TABLE */
+.tbl{flex-direction:column;padding:36px 48px}
+.th2{display:flex;align-items:center;gap:16px;margin-bottom:28px}
+.th2 h2{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(1.8rem,4vw,3rem);letter-spacing:.1em}
+.th2 .ab{flex:1;height:3px;border-radius:2px;opacity:.5}
+.tw{flex:1;overflow:hidden;display:flex;flex-direction:column;justify-content:center}
+.tw table{width:100%;border-collapse:collapse}
+.tw th{font-size:clamp(.7rem,1.4vw,.95rem);font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:10px 14px;text-align:left;border-bottom:2px solid rgba(255,255,255,.15);opacity:.7}
+.tw td{font-size:clamp(.85rem,1.7vw,1.15rem);padding:11px 14px;border-bottom:1px solid rgba(255,255,255,.08)}
+.tw tr.hl td{background:rgba(255,255,255,.06)}
+.tw td:first-child,.tw th:first-child{opacity:.5;font-weight:800;width:44px}
+/* SCORE */
+.sc{flex-direction:column;padding:22px 44px 14px}
+.sc-sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:12px}
+.sc-te{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(1.5rem,3.2vw,2.8rem);letter-spacing:.08em;flex:1;line-height:1.05}
+.sc-te.h{text-align:left}.sc-te.g{text-align:right}
+.sc-sb{display:flex;align-items:center;flex-shrink:0}
+.sc-sn{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(3.5rem,8vw,6.5rem);line-height:1;padding:0 18px;min-width:80px;text-align:center}
+.sc-sn.ld{color:var(--ac,#f5c842)}
+.sc-cl{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(2.5rem,5.5vw,4.5rem);opacity:.28;line-height:1}
+.sc-dv{height:2px;opacity:.2;margin-bottom:10px;border-radius:1px}
+.sc-bd{flex:1;overflow:hidden;display:flex;flex-direction:column;gap:0}
+.sc-hd{font-size:.65rem;font-weight:800;letter-spacing:.2em;text-transform:uppercase;opacity:.38;padding:5px 0 3px;border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:1px}
+.sc-rw{display:grid;grid-template-columns:44px 1fr 1fr 170px;align-items:center;gap:0 12px;padding:7px 8px;border-bottom:1px solid rgba(255,255,255,.06);border-radius:5px}
+.sc-rw:last-child{border-bottom:none}
+.sc-rw.flash{animation:scfl 2s cubic-bezier(.4,0,.2,1) forwards;transition:none}
+@keyframes scfl{
+  0%  {background:rgba(245,200,66,.18);box-shadow:inset 0 0 0 1px rgba(245,200,66,.4)}
+  30% {background:rgba(245,200,66,.12);box-shadow:inset 0 0 0 1px rgba(245,200,66,.25)}
+  70% {background:rgba(245,200,66,.05);box-shadow:inset 0 0 0 1px rgba(245,200,66,.1)}
+  100%{background:transparent;box-shadow:none}
+}
+.sc-lb{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(.9rem,1.6vw,1.15rem);opacity:.35;text-align:left}
+.sc-pl{font-size:clamp(.95rem,1.75vw,1.2rem);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left}
+.sc-pl.winner{font-weight:800;opacity:1}
+.sc-ss{display:flex;gap:4px;align-items:center;justify-content:flex-start;flex-wrap:nowrap}
+.sc-sp{display:inline-flex;gap:2px;align-items:center;background:rgba(255,255,255,.08);border-radius:4px;padding:2px 6px}
+.sc-sv{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(1rem,1.8vw,1.3rem);min-width:18px;text-align:center;opacity:.55;line-height:1}
+.sc-sv.w{opacity:1;color:var(--ac,#f5c842)}
+.sc-se{font-size:.65rem;opacity:.2;padding:0 2px}
+.sc-sdv{width:1px;height:14px;background:rgba(255,255,255,.15);margin:0 5px}
+/* IMAGE */
+.img{flex-direction:column;align-items:center;justify-content:center;position:relative}
+.img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.img .ic{position:absolute;bottom:0;left:0;right:0;padding:18px 36px;background:linear-gradient(transparent,rgba(0,0,0,.75));font-size:clamp(.9rem,1.8vw,1.2rem);font-weight:500;z-index:2}
+.img .it{position:absolute;top:24px;left:36px;font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(1.5rem,3vw,2.2rem);letter-spacing:.1em;text-shadow:0 2px 8px rgba(0,0,0,.6);z-index:2}
+/* YOUTUBE */
+.yt{position:relative}
+.yt iframe{position:absolute;inset:0;width:100%;height:100%;border:none}
+.yt .yl{position:absolute;top:18px;left:24px;font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:1.3rem;letter-spacing:.1em;color:#f5c842;text-shadow:0 2px 8px rgba(0,0,0,.8);z-index:2}
+/* WEBPAGE */
+.wp{display:block;position:absolute;inset:0}
+.wp iframe{width:100%;height:100%;border:none;background:#fff}
+.wp .wp-err{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px;gap:14px;background:#1a2e22}
+.wp .wp-err h2{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:2rem;letter-spacing:.1em;color:#f5c842}
+/* NEWS TICKER */
+.news-sl{flex-direction:column;align-items:stretch;justify-content:flex-end}
+.news-bg{position:absolute;inset:0}
+.news-ticker-bar{position:absolute;bottom:0;left:0;right:0;height:72px;display:flex;align-items:center;overflow:hidden;gap:0;z-index:5}
+.news-logo{height:52px;width:auto;max-width:80px;object-fit:contain;flex-shrink:0;margin:0 16px 0 14px;border-radius:4px}
+.news-label{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:1.4rem;letter-spacing:.15em;padding:0 18px;flex-shrink:0;border-right:2px solid rgba(255,255,255,.3)}
+.news-scroll-wrap{flex:1;overflow:hidden;position:relative;height:100%}
+.news-scroll-inner{display:flex;align-items:center;height:100%;white-space:nowrap;font-size:clamp(1rem,2vw,1.35rem);font-weight:600;letter-spacing:.03em;animation:newsscroll linear infinite}
+@keyframes newsscroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+/* SPEISEKARTE */
+.mn-sl{flex-direction:column;padding:22px 44px 18px;overflow:hidden}
+.mn-hdr{display:flex;align-items:center;gap:16px;margin-bottom:14px;flex-shrink:0}
+.mn-hdr h2{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(1.8rem,4vw,3rem);letter-spacing:.1em}
+.mn-hdr .mn-ab{flex:1;height:3px;border-radius:2px;opacity:.5}
+.mn-body{flex:1;overflow:hidden;display:flex;gap:24px}
+.mn-col{flex:1;min-width:0;display:flex;flex-direction:column;gap:10px}
+.mn-cat{display:flex;flex-direction:column;gap:4px}
+.mn-cat-name{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(1rem,2vw,1.4rem);letter-spacing:.1em;margin-bottom:3px;padding-bottom:3px;border-bottom:1px solid rgba(255,255,255,.2)}
+.mn-item{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:2px 0;border-bottom:1px dotted rgba(255,255,255,.1)}
+.mn-item:last-child{border-bottom:none}
+.mn-item-name{font-size:clamp(.78rem,1.4vw,.98rem);opacity:.9}
+.mn-item-price{font-size:clamp(.78rem,1.4vw,.98rem);font-weight:700;white-space:nowrap;opacity:.85}
+/* HTML */
+.hm{display:block;position:absolute;inset:0}
+.hm iframe{width:100%;height:100%;border:none}
+/* BOTTOM */
+#bb{display:flex;align-items:center;padding:8px 32px;height:46px;background:rgba(0,0,0,.5);border-top:1px solid rgba(245,200,66,.22);flex-shrink:0;gap:18px;z-index:10}
+#dt{display:flex;gap:7px;align-items:center}
+.dt{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.2);transition:background .3s,transform .3s;cursor:pointer}
+.dt.on{background:#f5c842;transform:scale(1.45)}
+#pw{flex:1;height:3px;background:rgba(255,255,255,.11);border-radius:2px;overflow:hidden}
+#pb{height:100%;background:#f5c842;width:0%}
+#ct{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:.92rem;color:rgba(255,255,255,.4);letter-spacing:.1em}
+#pb2{font-size:.9rem;cursor:pointer;opacity:0;transition:opacity .3s;background:none;border:none;color:#fff;padding:0}
+#pb2.v{opacity:1}
+/* SETUP */
+#setup{display:flex;position:absolute;inset:0;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:40px;z-index:30;background:#1a3a2a}
+#setup h2{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:2.2rem;letter-spacing:.1em;color:#f5c842}
+#setup p{font-size:1rem;opacity:.7;max-width:500px;text-align:center;line-height:1.6}
+#setup input{padding:10px 16px;border-radius:8px;border:none;font-size:1rem;width:100%;max-width:440px;outline:none}
+#setup button{padding:11px 28px;background:#f5c842;color:#1a3a2a;border:none;border-radius:8px;font-size:1rem;font-weight:700;cursor:pointer}
+#ev{display:none;position:absolute;inset:0;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:14px;padding:40px}
+#ev.on{display:flex}
+#sync-dot{position:absolute;top:8px;right:10px;width:7px;height:7px;border-radius:50%;background:#27ae60;opacity:0;transition:opacity .4s;z-index:20}
+#sync-dot.flash{opacity:1}
+.sl .sc-pl,.sl .mn-item-name,.sl .mn-item-price,.sl .ann p,.sl .tw td,.sl .tw th,.sl .news-scroll-inner{font-size:calc(var(--fscale,1) * 1em)}
+
+
+/* ── WEATHER FORECAST SLIDE */
+.sl.wt{flex-direction:column;overflow:hidden}
+.wt-loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:10;background:inherit}
+.wt-loading p{font-size:1rem;opacity:.65;text-align:center;padding:0 20px}
+.wt-spin{width:36px;height:36px;border:3px solid rgba(255,255,255,.15);border-top-color:#f5c842;border-radius:50%;animation:wtspin .8s linear infinite}
+@keyframes wtspin{to{transform:rotate(360deg)}}
+.wt-inner{width:100%;height:100%;display:none;flex-direction:column}
+.wt-inner.show{display:flex}
+.wt-head{display:flex;align-items:center;justify-content:space-between;padding:10px 28px 8px;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.1)}
+.wt-hl{display:flex;align-items:baseline;gap:12px}
+.wt-loc{font-size:clamp(1.2rem,2.5vw,2rem);font-weight:700}
+.wt-time{font-size:.8rem;opacity:.5}
+.wt-hr{display:flex;align-items:center;gap:14px}
+.wt-desc{font-size:clamp(.75rem,1.3vw,1rem);opacity:.7;text-align:right;line-height:1.4}
+.wt-icon{font-size:clamp(1.8rem,4vw,3rem);line-height:1}
+.wt-temp{font-size:clamp(2.2rem,5.5vw,4rem);font-weight:800;line-height:1}
+.wt-body{flex:1;display:flex;gap:0;min-height:0}
+.wt-hourly{flex:1;overflow:hidden;padding:6px 12px;display:flex;flex-direction:column;justify-content:center;border-right:1px solid rgba(255,255,255,.1)}
+.wt-hrow{display:flex;align-items:center;padding:4px 0;gap:9px;border-bottom:1px solid rgba(255,255,255,.06)}
+.wt-hrow:last-child{border-bottom:none}
+.wt-ht{font-size:.82rem;opacity:.5;width:44px;flex-shrink:0}
+.wt-hi{font-size:1.15rem;width:28px;text-align:center;flex-shrink:0}
+.wt-hte{font-size:.95rem;font-weight:700;width:40px;text-align:right;flex-shrink:0}
+.wt-hbw{flex:1;height:5px;background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden}
+.wt-hb{height:100%;border-radius:3px}
+.wt-hrn{font-size:.75rem;width:36px;text-align:right;opacity:.6;flex-shrink:0;color:#7ec8e3}
+.wt-hwn{font-size:.7rem;opacity:.4;width:52px;text-align:right;flex-shrink:0}
+.wt-daily-wrap{width:220px;flex-shrink:0;display:flex;flex-direction:column;justify-content:center;padding:10px 8px;gap:6px}
+.wt-dc{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:6px;background:rgba(255,255,255,.06)}
+.wt-dn{font-size:.72rem;opacity:.5;font-weight:700;text-transform:uppercase;width:36px;flex-shrink:0}
+.wt-dico{font-size:1.3rem;width:28px;text-align:center;flex-shrink:0}
+.wt-dhi{font-size:.9rem;font-weight:700}
+.wt-dlo{font-size:.78rem;opacity:.45;margin-left:4px}
+.wt-drn{font-size:.7rem;color:#7ec8e3;margin-left:auto}
+/* ── RADAR SLIDE */
+.sl.rd{display:block;position:absolute;inset:0;overflow:hidden}
+.rd-map{position:absolute;inset:0;width:100%;height:100%}
+.rd-overlay{position:absolute;bottom:0;left:0;right:0;z-index:1000;background:linear-gradient(transparent,rgba(0,0,0,.7));padding:12px 20px 10px;display:flex;align-items:center;justify-content:space-between;pointer-events:none}
+.rd-title{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:.1em;color:#f5c842}
+.rd-time{font-size:.85rem;opacity:.7;background:rgba(0,0,0,.5);padding:4px 10px;border-radius:4px}
+.rd-loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:10;background:inherit}
+.rd-loading p{font-size:1rem;opacity:.65;text-align:center;padding:0 20px}
+.leaflet-container{background:#0d1a2e !important}
+
+/* ── BOOKING / PLATZBELEGUNG SLIDE */
+.sl.bk{flex-direction:column;overflow:hidden}
+.bk-head{display:flex;align-items:center;justify-content:space-between;padding:10px 28px 8px;flex-shrink:0;border-bottom:2px solid rgba(255,255,255,.1)}
+.bk-title{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(1.5rem,3vw,2.2rem);letter-spacing:.1em}
+.bk-date{font-size:.85rem;opacity:.55}
+.bk-updated{font-size:.72rem;opacity:.35}
+.bk-body{flex:1;overflow:hidden;padding:10px 20px 8px;display:flex;flex-direction:column;min-height:0}
+.bk-grid{flex:1;overflow:hidden;display:grid;min-height:0}
+.bk-cell{display:flex;align-items:center;justify-content:center;border-radius:3px;font-size:clamp(.55rem,1.1vw,.8rem);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.bk-cell.frei{background:rgba(39,174,96,.25);color:#6ddb9a}
+.bk-cell.belegt{background:rgba(192,57,43,.28);color:#ff8a7a}
+.bk-cell.training{background:rgba(52,152,219,.22);color:#7ec8e3}
+.bk-cell.vorbei{background:rgba(255,255,255,.04);color:rgba(255,255,255,.2)}
+.bk-cell.leer{background:transparent}
+.bk-hdr{display:flex;align-items:center;justify-content:center;font-size:clamp(.6rem,1.1vw,.8rem);font-weight:800;opacity:.55;letter-spacing:.06em}
+.bk-time{display:flex;align-items:center;font-size:clamp(.55rem,1vw,.75rem);opacity:.45;padding-right:4px;justify-content:flex-end;white-space:nowrap}
+.bk-loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;z-index:5;background:inherit}
+.bk-loading p{font-size:.95rem;opacity:.6}
+.bk-legend{display:flex;gap:14px;margin-top:6px;flex-shrink:0;justify-content:flex-start;padding:0 4px}
+.bk-leg{display:flex;align-items:center;gap:5px;font-size:.72rem;opacity:.7}
+.bk-leg-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+</style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+<div id="fr">
+  <div id="tb"><span id="cn">Vereins-TV</span><span id="ck">00:00</span></div>
+  <div id="st">
+    <div id="sync-dot"></div>
+    <div id="setup">
+      <h2>&#128250; Vereins-TV</h2>
+      <p>Bitte die Worker-URL aus der Verwaltungsseite eingeben.</p>
+      <input type="url" id="setup-url" placeholder="https://vereinstv.DEIN-NAME.workers.dev" autocomplete="off">
+      <button onclick="saveSetup()">Verbinden</button>
+      <p style="font-size:.78rem;opacity:.4">URL wird nur lokal gespeichert.</p>
+    </div>
+    <div id="ev">
+      <div style="font-size:5rem;opacity:.22">&#128250;</div>
+      <h2 style="font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:2.4rem;letter-spacing:.1em;color:#e8d5a3">Keine Folien</h2>
+      <p style="opacity:.45">In der Verwaltung Folien erstellen und speichern.</p>
+    </div>
+    <div id="wipe"></div>
+  </div>
+  <div id="bb"><div id="dt"></div><div id="pw"><div id="pb"></div></div><span id="ct"></span><button id="pb2">&#9208;</button></div>
+</div>
+<script>
+var WORKER_URL = localStorage.getItem('vtv_worker_url') || '';
+window.WORKER_URL = WORKER_URL;
+var POLL_MS = 15000;
+var knownVer = null;
+var slides = [], cur = 0, paused = false;
+var pA = null, pT = 0, pS = 0, pR = 0, DD = 10;
+var PD = {};
+var _flashTimers = {};
+var _slideShowCounts = {};
+var pollTimer = null;
+
+function saveSetup(){var url=document.getElementById('setup-url').value.trim();if(!url){alert('Bitte URL eingeben.');return;}if(!url.startsWith('http')){alert('URL muss mit https:// beginnen.');return;}WORKER_URL=url.replace(/\/$/,'');localStorage.setItem('vtv_worker_url',WORKER_URL);document.getElementById('setup').style.display='none';startPoll();fetchCfg();}
+var params=new URLSearchParams(location.search);var wp2=params.get('worker');
+if(wp2){WORKER_URL=wp2;localStorage.setItem('vtv_worker_url',WORKER_URL);}
+if(WORKER_URL){document.getElementById('setup').style.display='none';startPoll();fetchCfg();}
+
+function uc(){var n=new Date();document.getElementById('ck').textContent=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');}uc();setInterval(uc,15000);
+
+function startPoll(){clearInterval(pollTimer);pollTimer=setInterval(checkVer,POLL_MS);}
+async function checkVer(){if(!WORKER_URL)return;try{var r=await fetch(WORKER_URL+'/version',{cache:'no-store'});var d=await r.json();if(d.ok&&d.version&&d.version!==knownVer){flashSync();fetchCfg();}}catch(e){}}
+async function fetchCfg(){if(!WORKER_URL)return;try{var r=await fetch(WORKER_URL+'/config',{cache:'no-store'});var d=await r.json();if(d.ok&&d.config){applyCfg(d.config);fetch(WORKER_URL+'/version',{cache:'no-store'}).then(function(r2){return r2.json();}).then(function(d2){if(d2.ok)knownVer=d2.version;}).catch(function(){});}}catch(e){}}
+function flashSync(){var dot=document.getElementById('sync-dot');dot.classList.add('flash');setTimeout(function(){dot.classList.remove('flash');},1500);}
+
+function applyCfg(cfg){
+  DD=cfg.defaultDuration||10;
+  document.getElementById('cn').textContent=cfg.clubName||'Vereins-TV';
+  var fonts=cfg.fontFamily||'Inter';
+  var fsize=parseFloat(cfg.fontSize)||1;
+  var root=document.documentElement;
+  root.style.setProperty('--font-body',"'"+fonts+"'");
+  root.style.setProperty('--fscale',String(fsize));
+  var fontId='gf-'+fonts.replace(/\s+/g,'-');
+  if(!document.getElementById(fontId)&&fonts!=='Inter'){
+    var link=document.createElement('link');
+    link.id=fontId;link.rel='stylesheet';
+    link.href='https://fonts.googleapis.com/css2?family='+encodeURIComponent(fonts)+':wght@300;400;500;600;700;800&display=swap';
+    document.head.appendChild(link);
+  }
+  var prevSlides=slides;
+  var was=slides.length===0;
+  slides=(cfg.slides||[]).filter(function(s){return s.enabled!==false;});
+
+  // Smart update: if slide count/types unchanged, just update score content in-place
+  var sameStructure=(prevSlides.length===slides.length)&&slides.every(function(s,i){
+    return prevSlides[i]&&prevSlides[i].id===s.id&&prevSlides[i].type===s.type;
+  });
+
+  if(sameStructure&&!was){
+    // Only update changed score slides in-place — animation will work!
+    slides.forEach(function(s,i){
+      if(s.type!=='score')return;
+      var el=stage.querySelector('.sl[data-i="'+i+'"]');
+      if(el){
+        // Clear existing flash timers for this slide before updating
+        // (new change = restart counter)
+        Object.keys(_flashTimers).forEach(function(k){
+          if(k.indexOf(s.id+'_')===0){
+            clearInterval(_flashTimers[k].iv);
+            delete _flashTimers[k];
+          }
+        });
+        _slideShowCounts[s.id]=0;
+        bsc(s,el);
+      }
+    });
+    bd();
+  } else {
+    rebuildSlides();
+    if(was&&slides.length)show(0,false);
+  }
+}
+
+function pc(t){return(t||'').trim().split('\n').map(function(l){return l.split(',').map(function(c){return c.trim().replace(/^"|"$/g,'');});}).filter(function(r){return r.some(function(c){return c;});});}
+function es(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function en(s){return es(s).replace(/\n/g,'<br>');}
+
+// ── SCORE
+function bsc(s,div){
+  var d=s.data||{},ac=d.accent||'#f5c842';
+  div.style.setProperty('--ac',ac);
+  div.style.background=d.bg||'#0f2a1c';
+  var gh=parseInt(d.gesamtHeim)||0,gg=parseInt(d.gesamtGast)||0;
+  var hl=gh>gg,gl=gg>gh;
+
+  function setHtml(m){
+    var parts=m.sets.map(function(st){
+      if(!st.h&&!st.g)return '';
+      var hw=parseInt(st.h||0)>parseInt(st.g||0),gw=parseInt(st.g||0)>parseInt(st.h||0);
+      return '<div class="sc-sp">'
+        +'<span class="sc-sv'+(hw?' w':'')+'">'+es(st.h||'0')+'</span>'
+        +'<span class="sc-se">:</span>'
+        +'<span class="sc-sv'+(gw?' w':'')+'">'+es(st.g||'0')+'</span>'
+        +'</div>';
+    }).filter(Boolean);
+    return parts.join('<div class="sc-sdv"></div>');
+  }
+
+  function flashRow(row, rowKey){
+    // Clear any existing repeating flash for this row
+    if(_flashTimers[rowKey]){
+      clearInterval(_flashTimers[rowKey].iv);
+      delete _flashTimers[rowKey];
+    }
+    // Reset show counter for this slide
+    _slideShowCounts[s.id] = 0;
+
+    // Single flash trigger
+    function doFlash(){
+      row.classList.remove('flash');
+      void row.offsetWidth;
+      row.classList.add('flash');
+    }
+
+    doFlash();
+
+    // Repeat every 1.5s (slightly longer than animation duration 1.4s)
+    var iv = setInterval(function(){
+      // Stop if slide has been shown 5 times
+      var shown = _slideShowCounts[s.id] || 0;
+      if(shown >= 5){
+        clearInterval(iv);
+        delete _flashTimers[rowKey];
+        row.classList.remove('flash');
+        return;
+      }
+      doFlash();
+    }, 1500);
+
+    _flashTimers[rowKey] = {iv: iv, el: row};
+  }
+
+  // Build score header
+  var headHtml='<div class="sc-sh">'
+    +'<div class="sc-te h">'+es(d.heimTeam||'Heim')+'</div>'
+    +'<div class="sc-sb">'
+      +'<span class="sc-sn'+(hl?' ld':'')+'">'+gh+'</span>'
+      +'<span class="sc-cl">:</span>'
+      +'<span class="sc-sn'+(gl?' ld':'')+'">'+gg+'</span>'
+    +'</div>'
+    +'<div class="sc-te g">'+es(d.gastTeam||'Gast')+'</div>'
+    +'</div>'
+    +'<div class="sc-dv" style="background:'+ac+'"></div>';
+
+  // First render
+  if(!div.querySelector('.sc-bd')){
+    div.innerHTML=headHtml
+      +'<div class="sc-bd">'
+        +'<div class="sc-hd">Einzel</div>'
+        +'<div class="sc-singles"></div>'
+        +'<div class="sc-hd" style="margin-top:6px">Doppel</div>'
+        +'<div class="sc-doubles"></div>'
+      +'</div>';
+  } else {
+    // Update header
+    var hEl=div.querySelector('.sc-sh');
+    if(hEl){var t=document.createElement('div');t.innerHTML=headHtml;if(hEl.outerHTML!==t.querySelector('.sc-sh').outerHTML)hEl.outerHTML=t.querySelector('.sc-sh').outerHTML;}
+  }
+
+  function updateRows(containerSel, matches){
+    var container=div.querySelector(containerSel);
+    if(!container)return;
+    var visible=matches.filter(function(m){
+      return m.heimPlayer||m.gastPlayer||m.sets.some(function(x){return x.h||x.g;});
+    });
+    visible.forEach(function(m,i){
+      var k=s.id+'_'+m.type;
+      var prev=PD[k]||null;
+      var mStr=JSON.stringify(m);
+      var changed=!prev||(JSON.stringify(prev)!==mStr);
+      PD[k]=JSON.parse(mStr);
+      var hw=m.winner==='heim',gw=m.winner==='gast';
+      var rowHtml='<span class="sc-lb">'+es(m.type)+'</span>'
+        +'<span class="sc-pl'+(hw?' winner':'')+'">'+es(m.heimPlayer||'–')+'</span>'
+        +'<span class="sc-pl'+(gw?' winner':'')+'">'+es(m.gastPlayer||'–')+'</span>'
+        +'<div class="sc-ss">'+setHtml(m)+'</div>';
+      var existing=container.children[i];
+      if(!existing){
+        var row=document.createElement('div');
+        row.className='sc-rw';
+        row.innerHTML=rowHtml;
+        container.appendChild(row);
+        // Flash new rows that appear after initial load (prev was null but PD had no entry)
+        if(prev!==null&&changed) flashRow(row,k);
+      } else if(changed){
+        existing.innerHTML=rowHtml;
+        if(prev!==null) flashRow(existing,k);
+      }
+    });
+    while(container.children.length>visible.length){
+      container.removeChild(container.lastChild);
+    }
+  }
+
+  var ma=d.matches||[];
+  updateRows('.sc-singles',ma.slice(0,6));
+  updateRows('.sc-doubles',ma.slice(6,9));
+}
+
+
+// ── NEWS TICKER
+function buildNews(s,div){
+  var d=s.data||{};
+  div.style.background=d.slideBg||'#0f2a1c';
+  var ac=d.fg||'#f5c842',bg=d.bg||'#1a3a2a';
+  var spd=parseInt(d.speed)||120;
+  var txt=d.text||'';
+  // Duplicate text for seamless loop
+  var doubled=txt+' ++ '+txt+' ++ ';
+  var logoHtml=d.logo?'<img class="news-logo" src="'+es(d.logo)+'" alt="Logo">':'';
+  var dur=s.duration||30;
+  // animation duration based on text length and speed
+  var animDur=Math.max(8,Math.round(txt.length*14/spd))+'s';
+  div.innerHTML='<div class="news-bg" style="background:'+es(d.slideBg||'#0f2a1c')+'"></div>'
+    +'<div class="news-ticker-bar" style="background:'+es(bg)+'">'
+    +logoHtml
+    +'<span class="news-label" style="color:'+es(ac)+'">NEWS</span>'
+    +'<div class="news-scroll-wrap">'
+    +'<div class="news-scroll-inner" style="color:'+es(ac)+';animation-duration:'+animDur+'">'
+    +es(doubled)+'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'+es(doubled)
+    +'</div></div></div>';
+}
+
+// ── SPEISEKARTE
+function buildMenu(s,div){
+  var d=s.data||{},ac=d.accent||'#f5c842';
+  div.style.background=d.bg||'#1a2e22';
+  var cats=d.categories||[];
+  // split cats into 2 columns
+  var mid=Math.ceil(cats.length/2);
+  var col1=cats.slice(0,mid),col2=cats.slice(mid);
+  function renderCol(items){
+    return items.map(function(cat){
+      var itemsHtml=(cat.items||[]).map(function(it){
+        return '<div class="mn-item"><span class="mn-item-name">'+es(it.name||'')+'</span>'+(it.price?'<span class="mn-item-price">'+es(it.price)+'</span>':'')+'</div>';
+      }).join('');
+      return '<div class="mn-cat"><div class="mn-cat-name" style="color:'+es(ac)+'">'+es(cat.name||'')+'</div>'+itemsHtml+'</div>';
+    }).join('');
+  }
+  div.innerHTML='<div class="mn-hdr"><h2 style="color:'+es(ac)+'">'+es(d.title||'Speisekarte')+'</h2><div class="mn-ab" style="background:'+es(ac)+'"></div></div>'
+    +'<div class="mn-body">'
+    +'<div class="mn-col">'+renderCol(col1)+'</div>'
+    +(col2.length?'<div class="mn-col">'+renderCol(col2)+'</div>':'')
+    +'</div>';
+}
+
+// ── SLIDE BUILDER
+function bs(s){
+  var d=s.data||{},div=document.createElement('div');
+  if(s.type==='announce'){
+    div.className='sl ann';div.style.background=d.bg||'#1a3a2a';div.style.color=d.fg||'#fff';
+    var bi=d.img?'<div class="bi" style="background-image:url('+JSON.stringify(d.img)+')"></div>':'';
+    div.innerHTML=bi+'<div class="ov"></div><div class="ct"><div class="ey" style="color:'+es(d.accent||'#f5c842')+'">&#128226; Ank&uuml;ndigung</div><h1>'+en(d.title||'')+'</h1><div class="al" style="background:'+es(d.accent||'#f5c842')+'"></div>'+(d.body?'<p>'+en(d.body)+'</p>':'')+'</div>';
+  } else if(s.type==='table'){
+    div.className='sl tbl';div.style.background=d.bg||'#1a3a2a';
+    var rows=pc(d.csv||''),ac2=es(d.accent||'#f5c842'),th='',tb='';
+    if(rows.length>0){th='<tr>'+rows[0].map(function(c){return '<th>'+es(c)+'</th>';}).join('')+'</tr>';tb=rows.slice(1).map(function(r,ri){return '<tr class="'+(ri%2===0?'hl':'')+'">'+r.map(function(c){return '<td>'+es(c)+'</td>';}).join('')+'</tr>';}).join('');}
+    div.innerHTML='<div class="th2"><h2 style="color:'+ac2+'">'+es(d.title||'Tabelle')+'</h2><div class="ab" style="background:'+ac2+'"></div></div><div class="tw"><table><thead>'+th+'</thead><tbody>'+tb+'</tbody></table></div>';
+  } else if(s.type==='score'){
+    div.className='sl sc';bsc(s,div);
+  } else if(s.type==='image'){
+    div.className='sl img';div.style.background=d.bg||'#0d1f15';
+    div.innerHTML='<img src="'+es(d.url||'')+'" alt="'+es(d.title||'')+'">'+(d.title?'<div class="it">'+es(d.title)+'</div>':'')+(d.caption?'<div class="ic">'+es(d.caption)+'</div>':'');
+  } else if(s.type==='youtube'){
+    div.className='sl yt';
+    var vid=d.vid||'',src='https://www.youtube-nocookie.com/embed/'+vid+'?autoplay='+(d.autoplay||'1')+'&mute='+(d.mute||'1')+'&controls=0&rel=0&loop=1&playlist='+vid;
+    div.innerHTML=(d.title?'<div class="yl">&#9654; '+es(d.title)+'</div>':'')+'<iframe src="'+src+'" allow="autoplay; encrypted-media" allowfullscreen></iframe>';
+  } else if(s.type==='webpage'){
+    div.className='sl wp';
+    // Try iframe, show error hint inside
+    div.innerHTML='<div class="wp-err" id="wp-err-'+s.id+'"><h2>&#127760; '+es(d.title||d.url||'')+'</h2><p style="opacity:.6;margin-top:8px">Lade Seite...</p></div>'
+      +'<iframe src="'+es(d.url||'')+'" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" onload="document.getElementById(\'wp-err-'+s.id+'\').style.display=\'none\'" onerror="document.getElementById(\'wp-err-'+s.id+'\').querySelector(\'p\').textContent=\'Seite konnte nicht geladen werden.\'" style="position:absolute;inset:0;width:100%;height:100%;border:none;z-index:2"></iframe>';
+  } else if(s.type==='news'){
+    div.className='sl news-sl';buildNews(s,div);
+  } else if(s.type==='menu'){
+    div.className='sl mn-sl';buildMenu(s,div);
+  } else if(s.type==='weather'){
+    div.className='sl wt';
+    div.style.background=d.bg||'#0d1a2e';
+    div.dataset.wtLat=String(d.lat||0);
+    div.dataset.wtLon=String(d.lon||0);
+    div.dataset.wtLoc=d.location||'Wetter';
+    div.innerHTML=''
+      +'<div class="wt-loading"><div class="wt-spin"></div><p>Wetterdaten laden…</p></div>'
+      +'<div class="wt-inner">'
+        +'<div class="wt-head">'
+          +'<div class="wt-hl"><span class="wt-loc"></span><span class="wt-time"></span></div>'
+          +'<div class="wt-hr"><div class="wt-desc"></div><span class="wt-icon"></span><span class="wt-temp"></span></div>'
+        +'</div>'
+        +'<div class="wt-body">'
+          +'<div class="wt-hourly"></div>'
+          +'<div class="wt-daily-wrap"></div>'
+        +'</div>'
+      +'</div>';
+  } else if(s.type==='radar'){
+    div.className='sl rd';
+    div.style.background=d.bg||'#0d1a2e';
+    div.dataset.rdLat=String(d.lat||0);
+    div.dataset.rdLon=String(d.lon||0);
+    div.dataset.rdLoc=d.location||'Radar';
+    div.dataset.rdZoom=String(d.zoom||5);
+    div.dataset.rdRadius=String(d.radius||0);
+    div.innerHTML=''
+      +'<div class="rd-loading"><div class="wt-spin"></div><p>Regenradar laden…</p></div>'
+      +'<div class="rd-map"></div>'
+      +'<div class="rd-overlay" style="display:none">'
+        +'<span class="rd-title">🌧 Regenradar – <span class="rd-loc"></span></span>'
+        +'<span class="rd-time"></span>'
+      +'</div>';
+  } else if(s.type==='booking'){
+    div.className='sl bk';
+    div.style.background=d.bg||'#0d2010';
+    div.dataset.bkUrl=d.url||'https://booking.tennisclub-geldern.de';
+    div.dataset.bkTitle=d.title||'Platzbelegung heute';
+    div.dataset.bkCourts=String(d.courts||10);
+    div.dataset.bkBg=d.bg||'#0d2010';
+    div.dataset.bkAc=d.accent||'#f5c842';
+    div.innerHTML='<div class="bk-loading"><div class="wt-spin"></div><p>Platzbelegung laden…</p></div>'
+      +'<div class="bk-head" style="display:none">'
+        +'<div><div class="bk-title" style="color:'+es(d.accent||'#f5c842')+'">'+es(d.title||'Platzbelegung')+'</div><div class="bk-date"></div></div>'
+        +'<div class="bk-updated"></div>'
+      +'</div>'
+      +'<div class="bk-body" style="display:none">'
+        +'<div class="bk-grid"></div>'
+        +'<div class="bk-legend">'
+          +'<div class="bk-leg"><div class="bk-leg-dot" style="background:rgba(39,174,96,.5)"></div>Frei</div>'
+          +'<div class="bk-leg"><div class="bk-leg-dot" style="background:rgba(192,57,43,.5)"></div>Belegt</div>'
+          +'<div class="bk-leg"><div class="bk-leg-dot" style="background:rgba(52,152,219,.4)"></div>Training</div>'
+        +'</div>'
+      +'</div>';
+  } else if(s.type==='upload'){
+    div.className='sl img';
+    div.style.background=d.bg||'#0d1f15';
+    if(d.imageData){
+      div.innerHTML='<img src="'+d.imageData+'" alt="'+es(d.title||'')+'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain">'
+        +(d.title?'<div class="it">'+es(d.title)+'</div>':'')
+        +(d.caption?'<div class="ic">'+es(d.caption)+'</div>':'');
+    } else {
+      div.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;opacity:.3;font-size:4rem">&#128247;</div>';
+    }
+  } else if(s.type==='html'){
+    div.className='sl hm';
+    var blob=new Blob([d.code||''],{type:'text/html'}),burl=URL.createObjectURL(blob);
+    div.innerHTML='<iframe src="'+burl+'" sandbox="allow-scripts allow-same-origin"></iframe>';
+  }
+  return div;
+}
+
+function bd(){var e=document.getElementById('dt');e.innerHTML='';slides.forEach(function(_,i){var d=document.createElement('div');d.className='dt'+(i===cur?' on':'');d.onclick=function(){jmp(i);};e.appendChild(d);});}
+
+var stage=document.getElementById('st');
+// ════════════════════════════════════════════════════════════════
+// WEATHER & RADAR LOGIC
+// ════════════════════════════════════════════════════════════════
+var _wMaps={}, _wRadarLayers={}, _wRadarAnims={}, _wInits={};
+
+var WCI={0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',48:'🌫',
+  51:'🌦',53:'🌦',55:'🌧',61:'🌧',63:'🌧',65:'🌧',
+  71:'❄️',73:'❄️',75:'❄️',77:'🌨',80:'🌦',81:'🌧',82:'⛈',
+  85:'🌨',86:'🌨',95:'⛈',96:'⛈',99:'⛈'};
+var WCD={0:'Klar',1:'Überwiegend klar',2:'Teilw. bewölkt',3:'Bedeckt',
+  45:'Nebel',48:'Reifnebel',51:'Nieselregen',53:'Nieselregen',55:'Starker Niesel',
+  61:'Leichter Regen',63:'Mäßiger Regen',65:'Starker Regen',
+  71:'Leichter Schnee',73:'Mäßiger Schnee',75:'Starker Schnee',
+  80:'Leichte Schauer',81:'Schauer',82:'Heftige Schauer',
+  95:'Gewitter',96:'Gewitter+Hagel',99:'Starkes Gewitter'};
+function wtIcon(c){return WCI[c]||'🌡';}
+function wtDesc(c){return WCD[c]||'Unbekannt';}
+function getWurl(){return(WORKER_URL||localStorage.getItem('vtv_worker_url')||'').replace(/\/$/,'');}
+
+function wtXHR(url,onOk,onFail){
+  if(!url){onFail('URL fehlt');return;}
+  var xhr=new XMLHttpRequest();
+  try{xhr.open('GET',url,true);}catch(e){onFail('XHR: '+e.message);return;}
+  xhr.timeout=20000;
+  xhr.onload=function(){
+    if(xhr.status>=200&&xhr.status<300){
+      try{onOk(JSON.parse(xhr.responseText));}
+      catch(e){onFail('JSON: '+xhr.responseText.slice(0,80));}
+    }else{onFail('HTTP '+xhr.status);}
+  };
+  xhr.ontimeout=function(){onFail('Timeout (20s)');};
+  xhr.onerror=function(){onFail('Netzwerkfehler');};
+  xhr.send();
+}
+function wtErr(el,cls,msg){
+  var lp=el.querySelector('.'+cls+'-loading p');
+  if(lp){lp.textContent=msg;lp.style.color='#ff8080';}
+  var sp=el.querySelector('.'+cls+'-loading .wt-spin');
+  if(sp)sp.style.display='none';
+}
+
+// ─── WEATHER FORECAST ────────────────────────────────────────────
+function initWeather(el,key){
+  if(_wInits[key+'-wt'])return;
+  _wInits[key+'-wt']=true;
+  var lat=parseFloat(el.dataset.wtLat)||0;
+  var lon=parseFloat(el.dataset.wtLon)||0;
+  var loc=el.dataset.wtLoc||'Wetter';
+  var wurl=getWurl();
+  if(!wurl){wtErr(el,'wt','Worker-URL fehlt');return;}
+  fetchWeather(el,key,lat,lon,loc,wurl);
+  setInterval(function(){fetchWeather(el,key,lat,lon,loc,getWurl());},600000);
+}
+
+function fetchWeather(el,key,lat,lon,loc,wurl){
+  wtXHR(wurl+'/weather?lat='+lat+'&lon='+lon,
+    function(resp){
+      if(!resp.ok){wtErr(el,'wt','Worker: '+(resp.error||'Fehler'));return;}
+      renderWeather(el,resp.data,loc);
+    },
+    function(msg){wtErr(el,'wt',msg);}
+  );
+}
+
+function renderWeather(el,d,loc){
+  var cw=d.current_weather;
+  if(!cw){wtErr(el,'wt','Keine Daten');return;}
+  var now=new Date();
+  el.querySelector('.wt-loc').textContent=loc;
+  el.querySelector('.wt-time').textContent=
+    now.toLocaleDateString('de-DE',{weekday:'short',day:'numeric',month:'short'})+
+    ' · '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  el.querySelector('.wt-temp').textContent=Math.round(cw.temperature)+'°';
+  el.querySelector('.wt-icon').textContent=wtIcon(cw.weathercode);
+  el.querySelector('.wt-desc').innerHTML=wtDesc(cw.weathercode)+
+    '<br><span style="font-size:.72rem;opacity:.5">'+Math.round(cw.windspeed)+' km/h</span>';
+
+  var h=d.hourly;
+  var today=now.toISOString().slice(0,10);
+  var hStr=String(now.getHours()).padStart(2,'0');
+  var si=0;
+  for(var x=0;x<h.time.length;x++){if(h.time[x]>=today+'T'+hStr){si=x;break;}}
+  var idxs=[];for(var i=si;i<si+12&&i<h.time.length;i++)idxs.push(i);
+  var temps=idxs.map(function(i){return h.temperature_2m[i]||0;});
+  var tMin=Math.min.apply(null,temps),tMax=Math.max.apply(null,temps),tRng=Math.max(1,tMax-tMin);
+
+  var hourlyEl=el.querySelector('.wt-hourly');hourlyEl.innerHTML='';
+  idxs.forEach(function(i){
+    var t=(h.time[i].split('T')[1]||'').slice(0,5);
+    var temp=h.temperature_2m[i]||0,rp=h.precipitation_probability[i]||0;
+    var wind=Math.round(h.windspeed_10m[i]||0);
+    var pct=Math.round((temp-tMin)/tRng*100);
+    var bc=temp>=25?'#ff6b6b':temp>=15?'#ffd166':temp>=5?'#7ec8e3':'#a8d8ea';
+    var row=document.createElement('div');row.className='wt-hrow';
+    row.innerHTML='<span class="wt-ht">'+t+'</span>'
+      +'<span class="wt-hi">'+wtIcon(h.weathercode[i])+'</span>'
+      +'<span class="wt-hte">'+Math.round(temp)+'°</span>'
+      +'<div class="wt-hbw"><div class="wt-hb" style="width:'+pct+'%;background:'+bc+'"></div></div>'
+      +(rp>0?'<span class="wt-hrn">'+rp+'%</span>':'<span class="wt-hrn"></span>')
+      +'<span class="wt-hwn">'+wind+'km/h</span>';
+    hourlyEl.appendChild(row);
+  });
+
+  var dy=d.daily,dns=['So','Mo','Di','Mi','Do','Fr','Sa'];
+  var dailyEl=el.querySelector('.wt-daily-wrap');dailyEl.innerHTML='';
+  for(var j=0;j<Math.min(7,(dy.time||[]).length);j++){
+    var dt=new Date(dy.time[j]+'T12:00:00');
+    var dn=j===0?'Heute':j===1?'Morgen':dns[dt.getDay()];
+    var card=document.createElement('div');card.className='wt-dc';
+    card.innerHTML='<span class="wt-dn">'+dn+'</span>'
+      +'<span class="wt-dico">'+wtIcon(dy.weathercode[j])+'</span>'
+      +'<span class="wt-dhi">'+Math.round(dy.temperature_2m_max[j])+'°</span>'
+      +'<span class="wt-dlo">'+Math.round(dy.temperature_2m_min[j])+'°</span>'
+      +(dy.precipitation_sum[j]>0?'<span class="wt-drn">'+dy.precipitation_sum[j].toFixed(1)+'mm</span>':'');
+    dailyEl.appendChild(card);
+  }
+
+  el.querySelector('.wt-loading').style.display='none';
+  el.querySelector('.wt-inner').classList.add('show');
+}
+
+// ─── RADAR ───────────────────────────────────────────────────────
+function initRadar(el,key){
+  if(_wInits[key+'-rd'])return;
+  if(!window.L){setTimeout(function(){initRadar(el,key);},300);return;}
+  _wInits[key+'-rd']=true;
+
+  var lat=parseFloat(el.dataset.rdLat)||0;
+  var lon=parseFloat(el.dataset.rdLon)||0;
+  var loc=el.dataset.rdLoc||'Radar';
+  var zoom=parseInt(el.dataset.rdZoom)||5;
+  var radius=parseInt(el.dataset.rdRadius)||0;
+  var wurl=getWurl();
+
+  var mapEl=el.querySelector('.rd-map');
+  if(!mapEl||mapEl._leaflet_id){return;}
+
+  // RainViewer native zoom support: tiles available up to zoom 6
+  // use maxNativeZoom so Leaflet upscales beyond that without error
+  var RADAR_NATIVE_MAX=6;
+
+  try{
+    var map=L.map(mapEl,{
+      zoomControl:false,attributionControl:false,
+      dragging:false,scrollWheelZoom:false,doubleClickZoom:false,keyboard:false,
+      minZoom:zoom,maxZoom:zoom
+    });
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+      {maxZoom:zoom,maxNativeZoom:Math.min(zoom,19),subdomains:'abcd'}).addTo(map);
+    map.setView([lat,lon],zoom);
+    L.circleMarker([lat,lon],{radius:6,color:'#f5c842',fillColor:'#f5c842',fillOpacity:1,weight:2}).addTo(map);
+    if(radius>0){
+      L.circle([lat,lon],{radius:radius*1000,color:'#f5c842',fillColor:'#f5c842',
+        fillOpacity:0.05,weight:1.5,dashArray:'6,4'}).addTo(map);
+    }
+    _wMaps[key]=map;
+
+    // Show overlay
+    var overlay=el.querySelector('.rd-overlay');
+    if(overlay){overlay.style.display='flex';}
+    var locEl=el.querySelector('.rd-loc');
+    if(locEl)locEl.textContent=loc;
+
+    // Load radar frames
+    loadRadarFrames(el,key,map,wurl,zoom,RADAR_NATIVE_MAX);
+    setInterval(function(){loadRadarFrames(el,key,map,getWurl(),zoom,RADAR_NATIVE_MAX);},600000);
+
+  }catch(e){wtErr(el,'rd','Kartenfehler: '+e.message);}
+}
+
+function loadRadarFrames(el,key,map,wurl,zoom,nativeMax){
+  if(!wurl)return;
+  wtXHR(wurl+'/radar',
+    function(resp){
+      var d=resp.ok?resp.data:null;if(!d)return;
+      var frames=(d.radar&&d.radar.past?d.radar.past:[])
+        .concat(d.radar&&d.radar.nowcast?d.radar.nowcast:[]);
+      if(!frames.length)return;
+      clearInterval(_wRadarAnims[key]);
+      var start=Math.max(0,frames.length-4),fi=start;
+      // Hide loading
+      var ldg=el.querySelector('.rd-loading');if(ldg)ldg.style.display='none';
+      _wRadarAnims[key]=setInterval(function(){
+        if(_wRadarLayers[key]){try{map.removeLayer(_wRadarLayers[key]);}catch(ex){}}
+        var fr=frames[fi];
+        // Use maxNativeZoom to prevent "Zoom level not supported"
+        _wRadarLayers[key]=L.tileLayer(
+          'https://tilecache.rainviewer.com'+fr.path+'/256/{z}/{x}/{y}/2/1_1.png',
+          {opacity:0.7,maxZoom:zoom,maxNativeZoom:nativeMax,tileSize:256}
+        );
+        _wRadarLayers[key].addTo(map);
+        var dt=new Date(fr.time*1000);
+        var rtEl=el.querySelector('.rd-time');
+        if(rtEl)rtEl.textContent=String(dt.getHours()).padStart(2,'0')+':'+
+          String(dt.getMinutes()).padStart(2,'0')+' Uhr';
+        fi=fi<frames.length-1?fi+1:start;
+      },900);
+    },
+    function(){}
+  );
+}
+
+// ─── TRIGGER on slide show ────────────────────────────────────────
+
+// ─── PLATZBELEGUNG ───────────────────────────────────────────
+var _bkInits={}, _bkRefresh={};
+
+function initBooking(el, key) {
+  if(_bkInits[key]) return;
+  _bkInits[key] = true;
+  fetchBooking(el, key);
+  _bkRefresh[key] = setInterval(function(){ fetchBooking(el, key); }, 300000);
+}
+
+function fetchBooking(el, key) {
+  var wurl = getWurl();
+  if(!wurl) { bkError(el, 'Worker-URL fehlt'); return; }
+  var now = new Date();
+  var dateStr = now.getFullYear()+'-'
+    +String(now.getMonth()+1).padStart(2,'0')+'-'
+    +String(now.getDate()).padStart(2,'0');
+  wtXHR(wurl + '/booking?date=' + dateStr,
+    function(resp) {
+      if(!resp.ok) { bkError(el, resp.error||'Fehler'); return; }
+      renderBooking(el, resp);
+    },
+    function(msg) { bkError(el, msg); }
+  );
+}
+
+function bkError(el, msg) {
+  var p = el.querySelector('.bk-loading p');
+  if(p){ p.textContent = msg; p.style.color='#ff8080'; }
+  var sp = el.querySelector('.wt-spin');
+  if(sp) sp.style.display='none';
+}
+
+function renderBooking(el, resp) {
+  var slots = resp.slots || {};
+  var times = resp.times || [];
+  var courts = resp.courts || [];
+  var numCourts = parseInt(el.dataset.bkCourts) || 10;
+  var ac = el.dataset.bkAc || '#f5c842';
+
+  courts = courts.filter(function(c){ return c <= numCourts; });
+  if(!courts.length) courts = Array.from({length:numCourts},function(_,i){return i+1;});
+
+  var nowMins = new Date().getHours()*60 + new Date().getMinutes();
+  var activeTimes = times.filter(function(t){
+    var p=t.split(':'); return parseInt(p[0])*60+parseInt(p[1]||0) >= nowMins-60;
+  });
+  if(!activeTimes.length) activeTimes = times;
+  if(activeTimes.length > 16) activeTimes = activeTimes.slice(0,16);
+
+  var grid = el.querySelector('.bk-grid');
+  grid.style.gridTemplateColumns = '52px ' + courts.map(function(){return '1fr';}).join(' ');
+  grid.style.gridTemplateRows = '26px ' + activeTimes.map(function(){return '1fr';}).join(' ');
+  grid.style.gap = '2px';
+  grid.innerHTML = '';
+
+  // Header: corner + court numbers
+  var corner = document.createElement('div'); corner.className='bk-hdr'; grid.appendChild(corner);
+  courts.forEach(function(c){
+    var h=document.createElement('div'); h.className='bk-hdr'; h.style.color=ac;
+    h.textContent='P'+c; grid.appendChild(h);
+  });
+
+  // Rows: time + cells
+  activeTimes.forEach(function(t){
+    var tl=document.createElement('div'); tl.className='bk-time'; tl.textContent=t; grid.appendChild(tl);
+    courts.forEach(function(c){
+      var cell=document.createElement('div');
+      var status=(slots[t]&&slots[t][c])||'';
+      var cls='leer', txt='';
+      if(status==='Frei')    {cls='frei';    txt='Frei';}
+      if(status==='Belegt')  {cls='belegt';  txt='Bel.';}
+      if(status==='Training'){cls='training';txt='Trai.';}
+      if(status==='Vorbei')  {cls='vorbei';}
+      cell.className='bk-cell '+cls; cell.textContent=txt; grid.appendChild(cell);
+    });
+  });
+
+  // Date + update time in header
+  var dEl=el.querySelector('.bk-date');
+  if(dEl){var d=new Date(resp.date+'T12:00:00');dEl.textContent=d.toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long',year:'numeric'});}
+  var uEl=el.querySelector('.bk-updated');
+  if(uEl){var n=new Date();uEl.textContent='Stand: '+String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+' Uhr';}
+
+  el.querySelector('.bk-loading').style.display='none';
+  var head=el.querySelector('.bk-head'); if(head){head.style.display='flex';}
+  var body=el.querySelector('.bk-body'); if(body){body.style.display='flex';body.style.flexDirection='column';}
+}
+// ─── END PLATZBELEGUNG ───────────────────────────────────────
+
+function triggerSlideInit(){
+  if(!slides[cur])return;
+  var activeEl=stage.querySelector('.sl.on');
+  if(!activeEl)return;
+  var k=slides[cur].data&&(slides[cur].data.lat+'_'+slides[cur].data.lon)||cur;
+  if(slides[cur].type==='weather') initWeather(activeEl,k);
+  if(slides[cur].type==='radar')   initRadar(activeEl,k);
+  if(slides[cur].type==='booking') initBooking(activeEl,slides[cur].id);
+}
+// ════════════════════════════════════════════════════════════════
+// END WEATHER & RADAR LOGIC
+// ════════════════════════════════════════════════════════════════
+
+
+
+
+
+function rebuildSlides(){
+  cancelAnimationFrame(pA);
+  stage.querySelectorAll('.sl').forEach(function(e){e.remove();});
+  if(!slides.length){document.getElementById('ev').classList.add('on');bd();return;}
+  document.getElementById('ev').classList.remove('on');
+  if(cur>=slides.length)cur=0;
+  slides.forEach(function(s,i){var el=bs(s);el.dataset.i=i;el.classList.toggle('on',i===cur);stage.appendChild(el);});
+  bd();document.getElementById('ct').textContent=(cur+1)+' / '+slides.length;
+  startProg();
+
+}
+
+function show(idx,an){
+  if(!slides.length)return;
+  cur=((idx%slides.length)+slides.length)%slides.length;
+  var all=stage.querySelectorAll('.sl'),doA=an&&all.length>1;
+  if(doA){var w=document.getElementById('wipe');w.classList.remove('go');void w.offsetWidth;w.classList.add('go');setTimeout(function(){all.forEach(function(el,i){el.classList.toggle('on',i===cur);});},320);}
+  else{all.forEach(function(el,i){el.classList.toggle('on',i===cur);});}
+  document.querySelectorAll('.dt').forEach(function(d,i){d.classList.toggle('on',i===cur);});
+  document.getElementById('ct').textContent=(cur+1)+' / '+slides.length;
+  startProg();
+  setTimeout(triggerSlideInit,400);
+  // Increment show counter for current score slide (for flash repeat logic)
+  if(slides[cur]&&slides[cur].type==='score'){
+    var sid=slides[cur].id;
+    _slideShowCounts[sid]=(_slideShowCounts[sid]||0)+1;
+  }
+}
+function startProg(){cancelAnimationFrame(pA);if(paused||!slides.length)return;pT=((slides[cur]&&slides[cur].duration)?slides[cur].duration:DD)*1000;pR=pT;pS=Date.now();ap();}
+function ap(){var e=Date.now()-pS,p=Math.min(100,e/pT*100);document.getElementById('pb').style.width=p+'%';if(e>=pT){show(cur+1,true);return;}pA=requestAnimationFrame(ap);}
+function jmp(i){cancelAnimationFrame(pA);show(i,true);}
+function tp(){paused=!paused;var b=document.getElementById('pb2');if(paused){cancelAnimationFrame(pA);pR=Math.max(0,pT-(Date.now()-pS));b.textContent='\u25b6';b.classList.add('v');}else{b.textContent='\u23f8';pT=pR;pS=Date.now();ap();setTimeout(function(){if(!paused)b.classList.remove('v');},1500);}}
+document.addEventListener('keydown',function(e){if(e.code==='Space'){e.preventDefault();tp();}else if(e.code==='ArrowRight'){cancelAnimationFrame(pA);show(cur+1,true);}else if(e.code==='ArrowLeft'){cancelAnimationFrame(pA);show(cur-1,true);}});
+document.getElementById('pb2').onclick=tp;
+var ht2;document.addEventListener('mousemove',function(){var b=document.getElementById('pb2');b.classList.add('v');clearTimeout(ht2);if(!paused)ht2=setTimeout(function(){b.classList.remove('v');},3000);});
+</script>
+</body>
+</html>
