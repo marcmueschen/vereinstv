@@ -291,7 +291,10 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a3a2a;font-family:
   <div id="bb"><div id="dt"></div><div id="pw"><div id="pb"></div></div><span id="ct"></span><button id="pb2">&#9208;</button></div>
 </div>
 <script>
-var WORKER_URL = localStorage.getItem('vtv_worker_url') || '';
+function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
+function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+function pad2(n){return(n<10?'0':'')+n;}
+var WORKER_URL = lsGet('vtv_worker_url') || '';
 window.WORKER_URL = WORKER_URL;
 var POLL_MS = 15000;
 var knownVer = null;
@@ -302,12 +305,12 @@ var _flashTimers = {};
 var _slideShowCounts = {};
 var pollTimer = null;
 
-function saveSetup(){var url=document.getElementById('setup-url').value.trim();if(!url){alert('Bitte URL eingeben.');return;}if(!url.startsWith('http')){alert('URL muss mit https:// beginnen.');return;}WORKER_URL=url.replace(/\/$/,'');localStorage.setItem('vtv_worker_url',WORKER_URL);document.getElementById('setup').style.display='none';startPoll();fetchCfg();}
+function saveSetup(){var url=document.getElementById('setup-url').value.trim();if(!url){alert('Bitte URL eingeben.');return;}if(url.indexOf('http')!==0){alert('URL muss mit https:// beginnen.');return;}WORKER_URL=url.replace(/\/$/,'');lsSet('vtv_worker_url',WORKER_URL);document.getElementById('setup').style.display='none';startPoll();fetchCfg();}
 var wp2=(function(){var m=location.search.match(/[?&]worker=([^&]*)/);return m?decodeURIComponent(m[1]):'';})();
-if(wp2){WORKER_URL=wp2;localStorage.setItem('vtv_worker_url',WORKER_URL);}
+if(wp2){WORKER_URL=wp2;lsSet('vtv_worker_url',WORKER_URL);}
 if(WORKER_URL){document.getElementById('setup').style.display='none';startPoll();fetchCfg();}
 
-function uc(){var n=new Date();document.getElementById('ck').textContent=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');}uc();setInterval(uc,15000);
+function uc(){var n=new Date();var h=n.getHours();var m=n.getMinutes();document.getElementById('ck').textContent=(h<10?'0':'')+h+':'+(m<10?'0':'')+m;}uc();setInterval(uc,15000);
 
 function startPoll(){clearInterval(pollTimer);pollTimer=setInterval(checkVer,POLL_MS);}
 function xhrJson(url,cb){var x=new XMLHttpRequest();x.open('GET',url,true);x.timeout=15000;x.onload=function(){if(x.status>=200&&x.status<300){try{cb(null,JSON.parse(x.responseText));}catch(e){cb(e);}}else{cb(new Error('HTTP '+x.status));}}; x.ontimeout=function(){cb(new Error('timeout'));};x.onerror=function(){cb(new Error('error'));};x.send();}
@@ -715,7 +718,7 @@ var WCD={0:'Klar',1:'Überwiegend klar',2:'Teilw. bewölkt',3:'Bedeckt',
   95:'Gewitter',96:'Gewitter+Hagel',99:'Starkes Gewitter'};
 function wtIcon(c){return WCI[c]||'🌡';}
 function wtDesc(c){return WCD[c]||'Unbekannt';}
-function getWurl(){return(WORKER_URL||localStorage.getItem('vtv_worker_url')||'').replace(/\/$/,'');}
+function getWurl(){return(WORKER_URL||lsGet('vtv_worker_url')||'').replace(/\/$/,'');}
 
 function wtXHR(url,onOk,onFail){
   if(!url){onFail('URL fehlt');return;}
@@ -772,7 +775,7 @@ function renderWeather(el,d,loc){
   el.querySelector('.wt-loc').textContent=loc;
   el.querySelector('.wt-time').textContent=
     now.toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long'})+
-    ' · '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+' Uhr';
+    ' · '+pad2(now.getHours())+':'+pad2(now.getMinutes())+' Uhr';
   el.querySelector('.wt-temp').textContent=Math.round(cw.temperature)+'°';
   el.querySelector('.wt-now-icon').textContent=wtIcon(cw.weathercode);
   el.querySelector('.wt-desc').textContent=wtDesc(cw.weathercode);
@@ -805,7 +808,7 @@ function renderWeather(el,d,loc){
     // Fallback: hourly, interpolate to 30-min
     var h=d.hourly;
     var today=now.toISOString().slice(0,10);
-    var hStr=String(now.getHours()).padStart(2,'0');
+    var hStr=pad2(now.getHours());
     var si2=0;
     for(var x2=0;x2<h.time.length;x2++){if(h.time[x2]>=today+'T'+hStr){si2=x2;break;}}
     for(var i2=si2;i2<si2+13&&i2<h.time.length-1;i2++){
@@ -818,7 +821,7 @@ function renderWeather(el,d,loc){
       // half hour (interpolated)
       var hh=Math.floor(parseInt((t0.split('T')[1]||'00:').split(':')[0])+0);
       var mm=30;
-      var halfTime=String(hh).padStart(2,'0')+':30';
+      var halfTime=pad2(hh)+':30';
       slots.push({time:halfTime,
         temp:((h.temperature_2m[i2]||0)+(h.temperature_2m[i2+1]||0))/2,
         rain:0,rainProb:((h.precipitation_probability[i2]||0)+(h.precipitation_probability[i2+1]||0))/2,
@@ -1063,8 +1066,8 @@ function loadRadarFrames(el,key,map,wurl,zoom,nativeMax){
         _wRadarLayers[key].addTo(map);
         var dt=new Date(fr.time*1000);
         var rtEl=el.querySelector('.rd-time');
-        if(rtEl)rtEl.textContent=String(dt.getHours()).padStart(2,'0')+':'+
-          String(dt.getMinutes()).padStart(2,'0')+' Uhr';
+        if(rtEl)rtEl.textContent=pad2(dt.getHours())+':'+
+          pad2(dt.getMinutes())+' Uhr';
         fi=fi<frames.length-1?fi+1:start;
       },900);
     },
@@ -1091,8 +1094,8 @@ function fetchBooking(el, key) {
   var wurl = getWurl();
   var now = new Date();
   var dateStr = now.getFullYear()+'-'
-    +String(now.getMonth()+1).padStart(2,'0')+'-'
-    +String(now.getDate()).padStart(2,'0');
+    +pad2(now.getMonth()+1)+'-'
+    +pad2(now.getDate());
 
   // First try via worker
   if(wurl){
@@ -1160,7 +1163,7 @@ function parseBookingHTML(html, date){
     if(cells.length < 2) continue;
     var timeMatch = cells[0].match(/(\d{1,2}:\d{2})/);
     if(!timeMatch) continue;
-    var timeStr = timeMatch[1].padStart(5,'0');
+    var timeStr = ('00000'+timeMatch[1]).slice(-5);
     var statusValues = ['Frei','Belegt','Training','Vorbei','Reserviert','gesperrt'];
     var courtNum = 1;
     for(var ci = 1; ci < cells.length && courtNum <= 10; ci++){
@@ -1240,7 +1243,7 @@ function renderBooking(el, resp) {
   var dEl=el.querySelector('.bk-date');
   if(dEl){var d=new Date(resp.date+'T12:00:00');dEl.textContent=d.toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long',year:'numeric'});}
   var uEl=el.querySelector('.bk-updated');
-  if(uEl){var n=new Date();uEl.textContent='Stand: '+String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+' Uhr';}
+  if(uEl){var n=new Date();uEl.textContent='Stand: '+pad2(n.getHours())+':'+pad2(n.getMinutes())+' Uhr';}
 
   el.querySelector('.bk-loading').style.display='none';
   var head=el.querySelector('.bk-head'); if(head){head.style.display='flex';}
