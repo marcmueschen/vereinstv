@@ -548,12 +548,15 @@ function bs(s){
   } else if(s.type==='score'){
     div.className='sl sc';bsc(s,div);
   } else if(s.type==='image'){
-    div.className='sl img';div.style.background=d.bg||'#0d1f15';div.style.position='relative';
+    div.className='sl img';div.style.background=d.bg||'#0d1f15';
     var imgUrl=d.url||'';
     if(imgUrl){
-      div.innerHTML='<img src="'+imgUrl+'" alt="'+es(d.title||'')+'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1">'
-        +(d.title?'<div class="it" style="z-index:2">'+es(d.title)+'</div>':'')
-        +(d.caption?'<div class="ic" style="z-index:2">'+es(d.caption)+'</div>':'');
+      // Bild als background-image laden — vermeidet position-Konflikte mit flex/absolute
+      div.style.backgroundImage='url('+JSON.stringify(imgUrl)+')';
+      div.style.backgroundSize='cover';
+      div.style.backgroundPosition='center';
+      div.innerHTML=(d.title?'<div class="it">'+es(d.title)+'</div>':'')
+        +(d.caption?'<div class="ic">'+es(d.caption)+'</div>':'');
     } else {
       div.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;opacity:.3;font-size:4rem">&#128247;</div>';
     }
@@ -563,9 +566,9 @@ function bs(s){
     div.innerHTML=(d.title?'<div class="yl">&#9654; '+es(d.title)+'</div>':'')+'<iframe src="'+src+'" allow="autoplay; encrypted-media" allowfullscreen></iframe>';
   } else if(s.type==='webpage'){
     div.className='sl wp';
-    // Try iframe, show error hint inside
+    // iframe wird LAZY geladen (src erst beim Aktivieren gesetzt) um Overlay-Probleme zu vermeiden
     div.innerHTML='<div class="wp-err" id="wp-err-'+s.id+'"><h2>&#127760; '+es(d.title||d.url||'')+'</h2><p style="opacity:.6;margin-top:8px">Lade Seite...</p></div>'
-      +'<iframe src="'+es(d.url||'')+'" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" onload="document.getElementById(\'wp-err-'+s.id+'\').style.display=\'none\'" onerror="document.getElementById(\'wp-err-'+s.id+'\').querySelector(\'p\').textContent=\'Seite konnte nicht geladen werden.\'" style="position:absolute;inset:0;width:100%;height:100%;border:none;z-index:2"></iframe>';
+      +'<iframe data-src="'+es(d.url||'')+'" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" style="position:absolute;inset:0;width:100%;height:100%;border:none;z-index:2;display:none"></iframe>';
   } else if(s.type==='news'){
     div.className='sl news-sl';buildNews(s,div);
   } else if(s.type==='menu'){
@@ -1229,6 +1232,31 @@ function triggerSlideInit(){
   if(slides[cur].type==='weather') initWeather(activeEl,k);
   if(slides[cur].type==='radar')   initRadar(activeEl,k);
   if(slides[cur].type==='booking') initBooking(activeEl,slides[cur].id);
+  // Webpage: alle inaktiven iframes leeren, aktiven laden
+  stage.querySelectorAll('.sl.wp iframe').forEach(function(fr){
+    var parentOn=fr.closest('.sl').classList.contains('on');
+    if(parentOn){
+      if(!fr.src||fr.src==='about:blank'){
+        var src=fr.dataset.src||'';
+        if(src){
+          fr.onload=function(){
+            var errDiv=fr.parentElement.querySelector('.wp-err');
+            if(errDiv)errDiv.style.display='none';
+            fr.style.display='block';
+          };
+          fr.onerror=function(){
+            var p=fr.parentElement.querySelector('.wp-err p');
+            if(p)p.textContent='Seite konnte nicht geladen werden.';
+          };
+          fr.src=src;
+        }
+      } else {
+        fr.style.display='block';
+      }
+    } else {
+      fr.style.display='none';
+    }
+  });
 }
 // ════════════════════════════════════════════════════════════════
 // END WEATHER & RADAR LOGIC
