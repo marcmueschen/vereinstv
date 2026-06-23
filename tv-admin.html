@@ -251,6 +251,27 @@ main{max-width:920px;margin:0 auto;padding:24px 16px 80px}
         <label>Vorschau</label>
         <div id="font-preview" style="padding:6px 12px;background:var(--gd);color:var(--ye);border-radius:6px;font-size:.95rem">Vereins-TV</div>
       </div>
+      <div class="fl" style="margin:0">
+        <label>Folien-Titelfarbe</label>
+        <div style="display:flex;gap:6px;align-items:center">
+          <input type="color" id="cfg-stc" value="#f5c842" style="width:36px;height:32px;border:none;border-radius:4px;cursor:pointer;padding:1px" oninput="document.getElementById('cfg-stc-hex').value=this.value">
+          <input type="text" id="cfg-stc-hex" value="#f5c842" style="width:76px" oninput="document.getElementById('cfg-stc').value=this.value">
+        </div>
+      </div>
+      <div class="fl" style="margin:0">
+        <label>Folien-Titelschrift</label>
+        <select id="cfg-stf" style="width:160px">
+          <option value="">Wie Hauptschrift</option>
+          <option value="Bebas Neue">Bebas Neue</option>
+          <option value="Inter">Inter</option>
+          <option value="Roboto">Roboto</option>
+          <option value="Montserrat">Montserrat</option>
+          <option value="Oswald">Oswald</option>
+          <option value="Poppins">Poppins</option>
+          <option value="Raleway">Raleway</option>
+          <option value="Nunito">Nunito</option>
+        </select>
+      </div>
     </div>
   </div>
 
@@ -704,6 +725,8 @@ async function loadFromWorker(){
         if(c.defaultDuration)sv('cfg-dur',c.defaultDuration);
         if(c.fontFamily){var fs=document.getElementById('cfg-font');for(var i=0;i<fs.options.length;i++){if(fs.options[i].value===c.fontFamily){fs.selectedIndex=i;break;}}previewFont();}
         if(c.fontSize){var fss=document.getElementById('cfg-fontsize');for(var i=0;i<fss.options.length;i++){if(parseFloat(fss.options[i].value)===parseFloat(c.fontSize)){fss.selectedIndex=i;break;}}}
+        if(c.slideTitleColor){sv('cfg-stc-hex',c.slideTitleColor);var stcEl=document.getElementById('cfg-stc');if(stcEl)stcEl.value=c.slideTitleColor;}
+        if(c.slideTitleFont!==undefined){var stfEl=document.getElementById('cfg-stf');if(stfEl)for(var j=0;j<stfEl.options.length;j++){if(stfEl.options[j].value===c.slideTitleFont){stfEl.selectedIndex=j;break;}}}
       }
       renderList();setSt('ok','Geladen');
       // Teams für Score-Formular laden
@@ -734,7 +757,8 @@ async function doSave(){
 
   if(role==='admin'){
     var payload={clubName:gv('cfg-club')||'TC Vereins-TV',defaultDuration:parseInt(gv('cfg-dur'))||10,
-      fontFamily:gv('cfg-font')||'Inter',fontSize:parseFloat(gv('cfg-fontsize'))||1,slides:slides};
+      fontFamily:gv('cfg-font')||'Inter',fontSize:parseFloat(gv('cfg-fontsize'))||1,
+      slideTitleColor:gv('cfg-stc-hex')||'#f5c842',slideTitleFont:gv('cfg-stf')||'',slides:slides};
     var adminPw=localStorage.getItem('vtv_admin_pw')||'';
     if(!adminPw){
       adminPw=prompt('Admin-Passwort:','');

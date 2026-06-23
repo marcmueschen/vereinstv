@@ -10,9 +10,11 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{width:100%;height:100%;overflow:hidden;background:#1a3a2a;font-family:var(--font-body,'Inter'),sans-serif;color:#fff}
 #fr{position:fixed;inset:0;display:flex;flex-direction:column}
-#tb{display:flex;align-items:center;justify-content:space-between;padding:0 36px;height:62px;background:rgba(0,0,0,.4);border-bottom:3px solid #f5c842;flex-shrink:0;z-index:10}
-#cn{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:2rem;letter-spacing:.12em;color:#f5c842}
-#ck{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:1.9rem;letter-spacing:.08em;color:#e8d5a3}
+#tb{display:flex;align-items:center;justify-content:space-between;padding:0 36px;height:62px;background:rgba(0,0,0,.4);border-bottom:3px solid #f5c842;flex-shrink:0;z-index:10;gap:18px}
+#cn{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:2rem;letter-spacing:.12em;color:#f5c842;white-space:nowrap;flex-shrink:0}
+#sl-title{flex:1;font-family:var(--font-slide-title,var(--font-display,'Bebas Neue')),sans-serif;font-size:clamp(1rem,2.2vw,1.6rem);letter-spacing:.06em;color:var(--slide-title-color,#f5c842);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.0;transition:opacity .4s}
+#sl-title.vis{opacity:1}
+#ck{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:1.9rem;letter-spacing:.08em;color:#e8d5a3;white-space:nowrap;flex-shrink:0}
 #st{flex:1;position:relative;overflow:hidden}
 /* ── LOGO BALL TRANSITION ── */
 #wipe{position:absolute;inset:0;z-index:50;pointer-events:none;display:none;overflow:hidden;background:transparent}
@@ -263,7 +265,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a3a2a;font-family:
 </head>
 <body>
 <div id="fr">
-  <div id="tb"><span id="cn">Vereins-TV</span><span id="ck">00:00</span></div>
+  <div id="tb"><span id="cn">Vereins-TV</span><span id="sl-title"></span><span id="ck">00:00</span></div>
   <div id="st">
     <div id="sync-dot"></div>
     <div id="setup">
@@ -320,6 +322,21 @@ function applyCfg(cfg){
   var root=document.documentElement;
   root.style.setProperty('--font-body',"'"+fonts+"'");
   root.style.setProperty('--fscale',String(fsize));
+  // Folien-Titelfarbe und -Schriftart
+  var stColor=cfg.slideTitleColor||'#f5c842';
+  var stFont=cfg.slideTitleFont||'';
+  root.style.setProperty('--slide-title-color',stColor);
+  root.style.setProperty('--font-slide-title',stFont?"'"+stFont+"'":('var(--font-display,\'Bebas Neue\')'));
+  // Schriftart laden falls nötig
+  if(stFont&&stFont!=='Bebas Neue'&&stFont!==fonts){
+    var stfId='gf-st-'+stFont.replace(/\s+/g,'-');
+    if(!document.getElementById(stfId)){
+      var stfLink=document.createElement('link');
+      stfLink.id=stfId;stfLink.rel='stylesheet';
+      stfLink.href='https://fonts.googleapis.com/css2?family='+encodeURIComponent(stFont)+':wght@400;700&display=swap';
+      document.head.appendChild(stfLink);
+    }
+  }
   var fontId='gf-'+fonts.replace(/\s+/g,'-');
   if(!document.getElementById(fontId)&&fonts!=='Inter'){
     var link=document.createElement('link');
@@ -1328,6 +1345,16 @@ function show(idx,an){
   else{all.forEach(function(el,i){el.classList.toggle('on',i===cur);});}
   document.querySelectorAll('.dt').forEach(function(d,i){d.classList.toggle('on',i===cur);});
   document.getElementById('ct').textContent=(cur+1)+' / '+slides.length;
+  // Folien-Titel in Toolbar aktualisieren
+  var stEl=document.getElementById('sl-title');
+  if(stEl){
+    var sName=slides[cur]?slides[cur].name||'':'';
+    stEl.classList.remove('vis');
+    if(sName){
+      stEl.textContent=sName;
+      setTimeout(function(){stEl.classList.add('vis');},doA?2650:50);
+    }
+  }
   startProg();
   setTimeout(triggerSlideInit, doA ? 2700 : 200);
   // Increment show counter for current score slide (for flash repeat logic)
