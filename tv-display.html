@@ -1274,6 +1274,11 @@ function triggerSlideInit(){
 
 function rebuildSlides(){
   cancelAnimationFrame(pA);
+  // Wipe-Animation abbrechen falls aktiv
+  var w=document.getElementById('wipe');
+  if(w)w.classList.remove('go');
+  var wns=document.getElementById('wipe-new-slide');
+  if(wns){wns.innerHTML='';wns.style.backgroundImage='';wns.style.backgroundSize='';wns.style.backgroundPosition='';}
   stage.querySelectorAll('.sl').forEach(function(e){e.remove();});
   // Reset ALL init guards + cache so fresh render happens
   _wInits={};
@@ -1310,9 +1315,12 @@ function show(idx,an){
     }
     // Animation starten
     w.classList.remove('go');void w.offsetWidth;w.classList.add('go');
-    // Echter Slide-Wechsel nach Ende der Animation (1.5s Ball + fade)
+    // Echter Slide-Wechsel nach Ende der Animation
+    var targetIdx=cur;
     setTimeout(function(){
-      all.forEach(function(el,i){el.classList.toggle('on',i===cur);});
+      // Frische DOM-Referenz holen – rebuildSlides() könnte inzwischen gelaufen sein
+      var freshAll=stage.querySelectorAll('.sl');
+      freshAll.forEach(function(el,i){el.classList.toggle('on',i===targetIdx);});
       w.classList.remove('go');
       if(wns){wns.innerHTML='';wns.style.backgroundImage='';wns.style.backgroundSize='';wns.style.backgroundPosition='';}
     },2600);
