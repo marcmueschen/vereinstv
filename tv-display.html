@@ -774,18 +774,22 @@ function initWeather(el,key){
   var lon=parseFloat(el.dataset.wtLon)||0;
   var loc=el.dataset.wtLoc||'Wetter';
   var wurl=getWurl();
+  dbg('initWeather: loc='+loc+' lat='+lat+' lon='+lon+' wurl='+(wurl?wurl.slice(0,30):'(leer)'));
   if(!wurl){wtErr(el,'wt','Worker-URL fehlt');return;}
   fetchWeather(el,key,lat,lon,loc,wurl);
   setInterval(function(){fetchWeather(el,key,lat,lon,loc,getWurl());},600000);
 }
 
 function fetchWeather(el,key,lat,lon,loc,wurl){
+  dbg('fetchWeather: lat='+lat+' lon='+lon);
   wtXHR(wurl+'/weather?lat='+lat+'&lon='+lon,
     function(resp){
+      dbg('weather resp ok='+resp.ok+' has_cw='+(resp.data&&resp.data.current_weather?'ja':'nein'));
       if(!resp.ok){wtErr(el,'wt','Worker: '+(resp.error||'Fehler'));return;}
+      if(!resp.data){wtErr(el,'wt','Keine Wetterdaten im Response');return;}
       renderWeather(el,resp.data,loc);
     },
-    function(msg){wtErr(el,'wt',msg);}
+    function(msg){dbg('weather XHR fail: '+msg,'#ffaaaa');wtErr(el,'wt',msg);}
   );
 }
 
