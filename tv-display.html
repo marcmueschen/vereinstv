@@ -324,13 +324,41 @@ var wp2=(function(){var m=location.search.match(/[?&]worker=([^&]*)/);return m?d
 if(wp2){WORKER_URL=wp2;lsSet('vtv_worker_url',WORKER_URL);}
 dbg('Start – WORKER_URL: '+(WORKER_URL||'(leer)'));
 dbg('localStorage: '+(function(){try{localStorage.setItem('_t','1');localStorage.removeItem('_t');return 'OK';}catch(e){return 'FEHLER: '+e;}})());
+dbg('UserAgent: '+navigator.userAgent.slice(0,80));
+// Netzwerktest: kann der Browser überhaupt externe URLs laden?
+if(DBG){
+  var testImg=new Image();
+  testImg.onload=function(){dbg('Netzwerk OK (Bild geladen)','#aaffaa');};
+  testImg.onerror=function(){dbg('Netzwerk FEHLER – kein Internet?','#ffaaaa');};
+  testImg.src='https://www.gstatic.com/generate_204?t='+Date.now();
+}
 if(WORKER_URL){document.getElementById('setup').style.display='none';startPoll();fetchCfg();}
 else{dbg('Kein WORKER_URL → Setup anzeigen','#ffdd44');}
 
 function uc(){var n=new Date();var h=n.getHours();var m=n.getMinutes();document.getElementById('ck').textContent=(h<10?'0':'')+h+':'+(m<10?'0':'')+m;}uc();setInterval(uc,15000);
 
 function startPoll(){clearInterval(pollTimer);pollTimer=setInterval(checkVer,POLL_MS);}
-function xhrJson(url,cb){var x=new XMLHttpRequest();dbg('XHR: '+url.slice(0,60));x.open('GET',url,true);x.timeout=15000;x.onload=function(){if(x.status>=200&&x.status<300){try{var d=JSON.parse(x.responseText);dbg('XHR OK '+x.status+' ok='+d.ok);cb(null,d);}catch(e){dbg('XHR JSON ERR: '+e,'#ffaaaa');cb(e);}}else{dbg('XHR HTTP '+x.status,'#ffaaaa');cb(new Error('HTTP '+x.status));}}; x.ontimeout=function(){dbg('XHR TIMEOUT','#ffaaaa');cb(new Error('timeout'));};x.onerror=function(){dbg('XHR ERROR','#ffaaaa');cb(new Error('error'));};x.send();}
+function xhrJson(url,cb){
+  var x=new XMLHttpRequest();
+  dbg('XHR: '+url.slice(0,70));
+  try{
+    x.open('GET',url,true);
+  }catch(e){dbg('XHR open ERR: '+e,'#ffaaaa');cb(e);return;}
+  x.timeout=15000;
+  x.onload=function(){
+    if(x.status>=200&&x.status<300){
+      try{var d=JSON.parse(x.responseText);dbg('XHR OK '+x.status+' ok='+d.ok);cb(null,d);}
+      catch(e){dbg('XHR JSON ERR: '+e,'#ffaaaa');cb(e);}
+    }else{dbg('XHR HTTP '+x.status,'#ffaaaa');cb(new Error('HTTP '+x.status));}
+  };
+  x.ontimeout=function(){dbg('XHR TIMEOUT (15s)','#ffaaaa');cb(new Error('timeout'));};
+  x.onerror=function(){
+    dbg('XHR NETZWERK-FEHLER – status='+x.status+' readyState='+x.readyState,'#ffaaaa');
+    dbg('(DNS-Fehler, TLS/HTTPS-Problem, oder CORS-Block)','#ffdd44');
+    cb(new Error('error'));
+  };
+  x.send();
+}
 function checkVer(){if(!WORKER_URL)return;xhrJson(WORKER_URL+'/version',function(e,d){if(!e&&d.ok&&d.version&&d.version!==knownVer){flashSync();fetchCfg();}});}
 function fetchCfg(){if(!WORKER_URL){dbg('fetchCfg: kein WORKER_URL','#ffaaaa');return;}dbg('fetchCfg: '+WORKER_URL.slice(0,50));xhrJson(WORKER_URL+'/config',function(e,d){if(!e&&d.ok&&d.config){dbg('Config OK, '+((d.config.slides||[]).length)+' Folien');applyCfg(d.config);xhrJson(WORKER_URL+'/version',function(e2,d2){if(!e2&&d2.ok)knownVer=d2.version;});}else if(e){dbg('Config ERR: '+e.message,'#ffaaaa');}});}
 function flashSync(){var dot=document.getElementById('sync-dot');dot.classList.add('flash');setTimeout(function(){dot.classList.remove('flash');},1500);}
