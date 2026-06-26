@@ -928,7 +928,7 @@ function initRadar(el,key){
     var overlay=el.querySelector('.rd-overlay');
     if(overlay){overlay.style.display='flex';}
     var locEl=el.querySelector('.rd-loc');
-    if(locEl)locEl.textContent=loc+' (Z'+zoom+'/'+map.getZoom()+')';
+    if(locEl)locEl.textContent=loc;
 
     // Wait 200ms for element to be fully visible, THEN invalidate and load
     setTimeout(function(){
