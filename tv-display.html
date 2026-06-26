@@ -1153,6 +1153,7 @@ function triggerSlideInit(){
   if(!slides[cur])return;
   var activeEl=stage.querySelector('.sl.on');
   if(!activeEl)return;
+  dbg('triggerSlideInit: cur='+cur+' type='+slides[cur].type);
   var k=slides[cur].data&&(slides[cur].data.lat+'_'+slides[cur].data.lon)||cur;
   if(slides[cur].type==='weather') initWeather(activeEl,k);
   if(slides[cur].type==='radar')   initRadar(activeEl,k);
@@ -1210,6 +1211,7 @@ function rebuildSlides(){
   if(!slides.length){document.getElementById('ev').classList.add('on');bd();return;}
   document.getElementById('ev').classList.remove('on');
   if(cur>=slides.length)cur=0;
+  dbg('rebuildSlides: '+slides.length+' Folien, cur='+cur+' Typen: '+slides.slice(0,5).map(function(s){return s.type;}).join(','));
   slides.forEach(function(s,i){var el=bs(s);el.dataset.i=i;el.classList.toggle('on',i===cur);stage.appendChild(el);});
   bd();document.getElementById('ct').textContent=(cur+1)+' / '+slides.length;
   startProg();
