@@ -656,7 +656,7 @@ function bs(s){
         +'</div>'
         +'<div class="wt-forecast"></div>'
       +'</div>';
-    } else if(s.type==='radar'){  } else if(s.type==='radar'){
+  } else if(s.type==='radar'){
     div.className='sl rd';
     div.style.background=d.bg||'#0d1a2e';
     // Radar: never cache (Leaflet map can't be cloned), but mark as needing re-init
@@ -1213,9 +1213,17 @@ function rebuildSlides(){
   document.getElementById('ev').classList.remove('on');
   if(cur>=slides.length)cur=0;
   dbg('rebuildSlides: '+slides.length+' Folien, cur='+cur+' Typen: '+slides.slice(0,5).map(function(s){return s.type;}).join(','));
-  try{
-    slides.forEach(function(s,i){var el=bs(s);el.dataset.i=i;el.classList.toggle('on',i===cur);stage.appendChild(el);});
-  }catch(e){dbg('rebuildSlides FEHLER: '+e.message,'#ffaaaa');}
+  slides.forEach(function(s,i){
+    try{
+      var el=bs(s);el.dataset.i=i;el.classList.toggle('on',i===cur);stage.appendChild(el);
+    }catch(e){
+      dbg('bs() FEHLER Folie '+i+' type='+s.type+': '+e.message,'#ffaaaa');
+      // Fallback: leere Folie einfügen damit Index stimmt
+      var fb=document.createElement('div');fb.className='sl';fb.dataset.i=i;
+      fb.style.background='#111';fb.innerHTML='<div style="color:#f00;padding:20px">Fehler: '+e.message+'</div>';
+      fb.classList.toggle('on',i===cur);stage.appendChild(fb);
+    }
+  });
   bd();document.getElementById('ct').textContent=(cur+1)+' / '+slides.length;
   startProg();
   setTimeout(triggerSlideInit, 200);
