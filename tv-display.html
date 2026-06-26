@@ -901,8 +901,6 @@ function initRadar(el,key){
   var mapEl=el.querySelector('.rd-map');
   if(!mapEl||mapEl._leaflet_id){return;}
 
-  var RADAR_NATIVE_MAX=8;
-
   try{
     var map=L.map(mapEl,{
       zoomControl:false,attributionControl:false,
@@ -921,21 +919,17 @@ function initRadar(el,key){
       L.circle([lat,lon],{radius:radius*1000,color:'#f5c842',fillColor:'#f5c842',
         fillOpacity:0.05,weight:1.5,dashArray:'6,4'}).addTo(map);
     }
-    // Store map BEFORE setTimeout so it's available
     _wMaps[key]=map;
 
-    // Show overlay
     var overlay=el.querySelector('.rd-overlay');
     if(overlay){overlay.style.display='flex';}
     var locEl=el.querySelector('.rd-loc');
     if(locEl)locEl.textContent=loc;
 
-    // Wait 200ms for element to be fully visible, THEN invalidate and load
     setTimeout(function(){
       try{
         map.invalidateSize(false);
-        loadRadarFrames(el,key,map,getWurl(),zoom,RADAR_NATIVE_MAX);
-        setInterval(function(){loadRadarFrames(el,key,map,getWurl(),zoom,RADAR_NATIVE_MAX);},600000);
+        loadRadarFrames(el,key,map,getWurl(),zoom,0);
       }catch(ex){wtErr(el,'rd','Kartenfehler nach Resize: '+ex.message);}
     },200);
 
@@ -943,37 +937,33 @@ function initRadar(el,key){
 }
 
 function loadRadarFrames(el,key,map,wurl,zoom,nativeMax){
-  if(!wurl)return;
-  wtXHR(wurl+'/radar',
-    function(resp){
-      var d=resp.ok?resp.data:null;if(!d)return;
-      var frames=(d.radar&&d.radar.past?d.radar.past:[])
-        .concat(d.radar&&d.radar.nowcast?d.radar.nowcast:[]);
-      if(!frames.length)return;
-      clearInterval(_wRadarAnims[key]);
-      var start=Math.max(0,frames.length-4),fi=start;
-      // Hide loading
-      var ldg=el.querySelector('.rd-loading');if(ldg)ldg.style.display='none';
-      _wRadarAnims[key]=setInterval(function(){
-        if(_wRadarLayers[key]){try{map.removeLayer(_wRadarLayers[key]);}catch(ex){}}
-        var fr=frames[fi];
-        // Use maxNativeZoom to prevent "Zoom level not supported"
-        _wRadarLayers[key]=L.tileLayer(
-          'https://tilecache.rainviewer.com'+fr.path+'/256/{z}/{x}/{y}/2/1_1.png',
-          {opacity:0.7,maxZoom:zoom,maxNativeZoom:nativeMax,tileSize:256}
-        );
-        _wRadarLayers[key].addTo(map);
-        var dt=new Date(fr.time*1000);
-        var rtEl=el.querySelector('.rd-time');
-        if(rtEl)rtEl.textContent=pad2(dt.getHours())+':'+
-          pad2(dt.getMinutes())+' Uhr';
-        fi=fi<frames.length-1?fi+1:start;
-      },900);
-    },
-    function(msg){
-      var ldg=el.querySelector('.rd-loading');if(ldg){var p=ldg.querySelector('p');if(p){p.textContent='Radar: '+msg;p.style.color='#ff8080';}var sp=ldg.querySelector('.wt-spin');if(sp)sp.style.display='none';}
-    }
-  );
+  // DWD Niederschlagsradar via WMS – kostenlos, kein API-Key, beliebiger Zoom
+  var ldg=el.querySelector('.rd-loading');if(ldg)ldg.style.display='none';
+  var rtEl=el.querySelector('.rd-time');
+
+  function addDwdLayer(){
+    if(_wRadarLayers[key]){try{map.removeLayer(_wRadarLayers[key]);}catch(ex){}}
+    // Cache-Buster damit immer das aktuellste Bild geladen wird
+    var ts=Math.floor(Date.now()/300000)*300000; // 5-Min-Raster
+    _wRadarLayers[key]=L.tileLayer.wms('https://maps.dwd.de/geoserver/dwd/wms',{
+      layers:'dwd:Niederschlagsradar',
+      format:'image/png',
+      transparent:true,
+      version:'1.3.0',
+      opacity:0.8,
+      attribution:'© DWD',
+      // Cache-Buster als SLD-Umweg (WMS ignoriert unbekannte Parameter nicht immer)
+      _ts:ts
+    });
+    _wRadarLayers[key].addTo(map);
+    var now=new Date();
+    if(rtEl)rtEl.textContent=pad2(now.getHours())+':'+pad2(now.getMinutes())+' Uhr';
+  }
+
+  addDwdLayer();
+  // Alle 5 Minuten aktualisieren
+  clearInterval(_wRadarAnims[key]);
+  _wRadarAnims[key]=setInterval(function(){addDwdLayer();},5*60*1000);
 }
 
 // ─── TRIGGER on slide show ────────────────────────────────────────
