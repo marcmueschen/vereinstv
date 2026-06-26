@@ -413,6 +413,7 @@ function applyCfg(cfg){
     });
     bd();
   } else {
+    dbg('applyCfg: rufe rebuildSlides auf (was='+was+' same='+sameStructure+')');
     rebuildSlides();
     if(was&&slides.length)show(0,false);
   }
@@ -1212,7 +1213,9 @@ function rebuildSlides(){
   document.getElementById('ev').classList.remove('on');
   if(cur>=slides.length)cur=0;
   dbg('rebuildSlides: '+slides.length+' Folien, cur='+cur+' Typen: '+slides.slice(0,5).map(function(s){return s.type;}).join(','));
-  slides.forEach(function(s,i){var el=bs(s);el.dataset.i=i;el.classList.toggle('on',i===cur);stage.appendChild(el);});
+  try{
+    slides.forEach(function(s,i){var el=bs(s);el.dataset.i=i;el.classList.toggle('on',i===cur);stage.appendChild(el);});
+  }catch(e){dbg('rebuildSlides FEHLER: '+e.message,'#ffaaaa');}
   bd();document.getElementById('ct').textContent=(cur+1)+' / '+slides.length;
   startProg();
   setTimeout(triggerSlideInit, 200);
