@@ -937,8 +937,7 @@ function initRadar(el,key){
 }
 
 function loadRadarFrames(el,key,map,wurl,zoom,nativeMax){
-  // DWD Niederschlagsradar + Vorhersage via WMS mit TIME-Parameter
-  // RV-Produkt: aktuell + Nowcast bis +2h in 5-Min-Schritten
+  // DWD Regenradar-Animation: aktuell bis +30 Min in 5-Min-Schritten
   var ldg=el.querySelector('.rd-loading');if(ldg)ldg.style.display='none';
   var rtEl=el.querySelector('.rd-time');
 
@@ -946,14 +945,24 @@ function loadRadarFrames(el,key,map,wurl,zoom,nativeMax){
   function makeFrames(){
     var frames=[];
     var now=new Date();
-    // Auf 5-Min-Raster abrunden
-    var base=new Date(Math.floor(now.getTime()/(5*60000))*(5*60000));
+    // Auf 5-Min-Raster abrunden (UTC)
+    var ms=now.getTime();
+    var base=new Date(Math.floor(ms/(5*60000))*(5*60000));
     for(var i=0;i<=6;i++){
       var t=new Date(base.getTime()+i*5*60000);
+      // ISO 8601 UTC
+      var iso=t.getUTCFullYear()+'-'+
+        pad2(t.getUTCMonth()+1)+'-'+
+        pad2(t.getUTCDate())+'T'+
+        pad2(t.getUTCHours())+':'+
+        pad2(t.getUTCMinutes())+':00.000Z';
+      // Lokale Uhrzeit für Anzeige
+      var lh=t.getHours(),lm=t.getMinutes();
       frames.push({
         ts:t,
-        iso:t.toISOString().slice(0,16)+'Z',
-        label:(i===0?'Jetzt':'+'+( i*5)+' Min')
+        iso:iso,
+        label:(i===0?'Jetzt':'+'+( i*5)+' Min'),
+        localTime:pad2(lh)+':'+pad2(lm)
       });
     }
     return frames;
@@ -961,8 +970,9 @@ function loadRadarFrames(el,key,map,wurl,zoom,nativeMax){
 
   function addFrame(frame){
     if(_wRadarLayers[key]){try{map.removeLayer(_wRadarLayers[key]);}catch(ex){}}
+    // dwd:WN-Produkt = Radarkomposit WN mit 5-Min-Nowcast
     _wRadarLayers[key]=L.tileLayer.wms('https://maps.dwd.de/geoserver/dwd/wms',{
-      layers:'dwd:Niederschlagsradar',
+      layers:'dwd:WN-Produkt',
       format:'image/png',
       transparent:true,
       version:'1.3.0',
@@ -972,8 +982,7 @@ function loadRadarFrames(el,key,map,wurl,zoom,nativeMax){
     });
     _wRadarLayers[key].addTo(map);
     if(rtEl){
-      var h=frame.ts.getHours(),m=frame.ts.getMinutes();
-      rtEl.textContent=pad2(h)+':'+pad2(m)+' Uhr ('+frame.label+')';
+      rtEl.textContent=frame.localTime+' Uhr ('+frame.label+')';
     }
   }
 
@@ -985,9 +994,9 @@ function loadRadarFrames(el,key,map,wurl,zoom,nativeMax){
   _wRadarAnims[key]=setInterval(function(){
     fi=(fi+1)%frames.length;
     addFrame(frames[fi]);
-    // Frames stündlich neu berechnen
+    // Frames jede Stunde neu berechnen
     if(fi===0) frames=makeFrames();
-  },1200); // 1.2s pro Frame → ~8s für eine Runde
+  },1500); // 1.5s pro Frame → ~10s für eine Runde
 }
 
 // ─── TRIGGER on slide show ────────────────────────────────────────
