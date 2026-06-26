@@ -937,33 +937,57 @@ function initRadar(el,key){
 }
 
 function loadRadarFrames(el,key,map,wurl,zoom,nativeMax){
-  // DWD Niederschlagsradar via WMS – kostenlos, kein API-Key, beliebiger Zoom
+  // DWD Niederschlagsradar + Vorhersage via WMS mit TIME-Parameter
+  // RV-Produkt: aktuell + Nowcast bis +2h in 5-Min-Schritten
   var ldg=el.querySelector('.rd-loading');if(ldg)ldg.style.display='none';
   var rtEl=el.querySelector('.rd-time');
 
-  function addDwdLayer(){
+  // Zeitschritte: jetzt bis +30 Min in 5-Min-Schritten = 7 Frames
+  function makeFrames(){
+    var frames=[];
+    var now=new Date();
+    // Auf 5-Min-Raster abrunden
+    var base=new Date(Math.floor(now.getTime()/(5*60000))*(5*60000));
+    for(var i=0;i<=6;i++){
+      var t=new Date(base.getTime()+i*5*60000);
+      frames.push({
+        ts:t,
+        iso:t.toISOString().slice(0,16)+'Z',
+        label:(i===0?'Jetzt':'+'+( i*5)+' Min')
+      });
+    }
+    return frames;
+  }
+
+  function addFrame(frame){
     if(_wRadarLayers[key]){try{map.removeLayer(_wRadarLayers[key]);}catch(ex){}}
-    // Cache-Buster damit immer das aktuellste Bild geladen wird
-    var ts=Math.floor(Date.now()/300000)*300000; // 5-Min-Raster
     _wRadarLayers[key]=L.tileLayer.wms('https://maps.dwd.de/geoserver/dwd/wms',{
       layers:'dwd:Niederschlagsradar',
       format:'image/png',
       transparent:true,
       version:'1.3.0',
-      opacity:0.8,
+      opacity:0.85,
       attribution:'© DWD',
-      // Cache-Buster als SLD-Umweg (WMS ignoriert unbekannte Parameter nicht immer)
-      _ts:ts
+      TIME:frame.iso
     });
     _wRadarLayers[key].addTo(map);
-    var now=new Date();
-    if(rtEl)rtEl.textContent=pad2(now.getHours())+':'+pad2(now.getMinutes())+' Uhr';
+    if(rtEl){
+      var h=frame.ts.getHours(),m=frame.ts.getMinutes();
+      rtEl.textContent=pad2(h)+':'+pad2(m)+' Uhr ('+frame.label+')';
+    }
   }
 
-  addDwdLayer();
-  // Alle 5 Minuten aktualisieren
+  var frames=makeFrames();
+  var fi=0;
+  addFrame(frames[fi]);
+
   clearInterval(_wRadarAnims[key]);
-  _wRadarAnims[key]=setInterval(function(){addDwdLayer();},5*60*1000);
+  _wRadarAnims[key]=setInterval(function(){
+    fi=(fi+1)%frames.length;
+    addFrame(frames[fi]);
+    // Frames stündlich neu berechnen
+    if(fi===0) frames=makeFrames();
+  },1200); // 1.2s pro Frame → ~8s für eine Runde
 }
 
 // ─── TRIGGER on slide show ────────────────────────────────────────
