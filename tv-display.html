@@ -349,8 +349,9 @@ function xhrJson(url,cb){
   };
   x.send();
 }
-function checkVer(){if(!WORKER_URL)return;xhrJson(WORKER_URL+'/version',function(e,d){if(!e&&d.ok&&d.version&&d.version!==knownVer){flashSync();fetchCfg();}});}
-function fetchCfg(){if(!WORKER_URL){dbg('fetchCfg: kein WORKER_URL','#ffaaaa');return;}dbg('fetchCfg: '+WORKER_URL.slice(0,50));xhrJson(WORKER_URL+'/config',function(e,d){if(!e&&d.ok&&d.config){dbg('Config OK, '+((d.config.slides||[]).length)+' Folien');applyCfg(d.config);xhrJson(WORKER_URL+'/version',function(e2,d2){if(!e2&&d2.ok)knownVer=d2.version;});}else if(e){dbg('Config ERR: '+e.message,'#ffaaaa');}});}
+function checkVer(){if(!WORKER_URL)return;xhrJson(WORKER_URL+'/version',function(e,d){if(!e&&d.ok){if(d.version!==knownVer){flashSync();fetchCfg();}}});}
+function fetchCfg(){if(!WORKER_URL){dbg('fetchCfg: kein WORKER_URL','#ffaaaa');return;}dbg('fetchCfg: '+WORKER_URL.slice(0,50));xhrJson(WORKER_URL+'/config',function(e,d){if(!e&&d.ok&&d.config){dbg('Config OK, '+((d.config.slides||[]).length)+' Folien');applyCfg(d.config);xhrJson(WORKER_URL+'/version',function(e2,d2){if(!e2&&d2.ok)knownVer=d2.version;});}else{dbg('Config ERR: '+(e?e.message:'kein config'),'#ffaaaa');// Retry after 3s
+setTimeout(fetchCfg,3000);}});}
 function flashSync(){var dot=document.getElementById('sync-dot');dot.classList.add('flash');setTimeout(function(){dot.classList.remove('flash');},1500);}
 
 function applyCfg(cfg){
