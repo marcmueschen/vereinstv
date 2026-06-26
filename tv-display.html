@@ -413,7 +413,6 @@ function applyCfg(cfg){
     });
     bd();
   } else {
-    dbg('applyCfg: rufe rebuildSlides auf (was='+was+' same='+sameStructure+')');
     rebuildSlides();
     if(was&&slides.length)show(0,false);
   }
@@ -776,22 +775,19 @@ function initWeather(el,key){
   var lon=parseFloat(el.dataset.wtLon)||0;
   var loc=el.dataset.wtLoc||'Wetter';
   var wurl=getWurl();
-  dbg('initWeather: loc='+loc+' lat='+lat+' lon='+lon+' wurl='+(wurl?wurl.slice(0,30):'(leer)'));
   if(!wurl){wtErr(el,'wt','Worker-URL fehlt');return;}
   fetchWeather(el,key,lat,lon,loc,wurl);
   setInterval(function(){fetchWeather(el,key,lat,lon,loc,getWurl());},600000);
 }
 
 function fetchWeather(el,key,lat,lon,loc,wurl){
-  dbg('fetchWeather: lat='+lat+' lon='+lon);
   wtXHR(wurl+'/weather?lat='+lat+'&lon='+lon,
     function(resp){
-      dbg('weather resp ok='+resp.ok+' has_cw='+(resp.data&&resp.data.current_weather?'ja':'nein'));
       if(!resp.ok){wtErr(el,'wt','Worker: '+(resp.error||'Fehler'));return;}
       if(!resp.data){wtErr(el,'wt','Keine Wetterdaten im Response');return;}
       renderWeather(el,resp.data,loc);
     },
-    function(msg){dbg('weather XHR fail: '+msg,'#ffaaaa');wtErr(el,'wt',msg);}
+    function(msg){wtErr(el,'wt',msg);}
   );
 }
 
@@ -916,6 +912,7 @@ function initRadar(el,key){
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
       {maxZoom:zoom,maxNativeZoom:Math.min(zoom,19),subdomains:'abcd'}).addTo(map);
     map.setView([lat,lon],zoom);
+    setTimeout(function(){map.invalidateSize();map.setView([lat,lon],zoom);},200);
     L.circleMarker([lat,lon],{radius:6,color:'#f5c842',fillColor:'#f5c842',fillOpacity:1,weight:2}).addTo(map);
     if(radius>0){
       L.circle([lat,lon],{radius:radius*1000,color:'#f5c842',fillColor:'#f5c842',
@@ -1154,10 +1151,23 @@ function triggerSlideInit(){
   if(!slides[cur])return;
   var activeEl=stage.querySelector('.sl.on');
   if(!activeEl)return;
-  dbg('triggerSlideInit: cur='+cur+' type='+slides[cur].type);
   var k=slides[cur].data&&(slides[cur].data.lat+'_'+slides[cur].data.lon)||cur;
   if(slides[cur].type==='weather') initWeather(activeEl,k);
-  if(slides[cur].type==='radar')   initRadar(activeEl,k);
+  if(slides[cur].type==='radar'){
+    initRadar(activeEl,k);
+    // invalidateSize nach Sichtbarwerden – Karte hat beim Erstellen falsche Größe
+    if(_wMaps[k]){
+      setTimeout(function(){
+        if(_wMaps[k]){
+          _wMaps[k].invalidateSize();
+          var zoom=parseInt(activeEl.dataset.rdZoom)||5;
+          var lat=parseFloat(activeEl.dataset.rdLat)||0;
+          var lon=parseFloat(activeEl.dataset.rdLon)||0;
+          _wMaps[k].setView([lat,lon],zoom);
+        }
+      },100);
+    }
+  }
   if(slides[cur].type==='booking') initBooking(activeEl,slides[cur].id);
   // Webpage: alle inaktiven iframes leeren, aktiven laden
   stage.querySelectorAll('.sl.wp iframe').forEach(function(fr){
@@ -1218,12 +1228,13 @@ function rebuildSlides(){
       var el=bs(s);el.dataset.i=i;el.classList.toggle('on',i===cur);stage.appendChild(el);
     }catch(e){
       dbg('bs() FEHLER Folie '+i+' type='+s.type+': '+e.message,'#ffaaaa');
-      // Fallback: leere Folie einfügen damit Index stimmt
       var fb=document.createElement('div');fb.className='sl';fb.dataset.i=i;
       fb.style.background='#111';fb.innerHTML='<div style="color:#f00;padding:20px">Fehler: '+e.message+'</div>';
       fb.classList.toggle('on',i===cur);stage.appendChild(fb);
     }
   });
+  var domCount=stage.querySelectorAll('.sl').length;
+  dbg('rebuildSlides fertig: '+domCount+' DOM-Elemente, slides.length='+slides.length);
   var domCount=stage.querySelectorAll('.sl').length;
   dbg('rebuildSlides fertig: '+domCount+' DOM-Elemente, slides.length='+slides.length);
   startProg();
@@ -1234,7 +1245,6 @@ function show(idx,an){
   if(!slides.length)return;
   cur=((idx%slides.length)+slides.length)%slides.length;
   var all=stage.querySelectorAll('.sl'),doA=an&&all.length>1;
-  dbg('show: idx='+idx+' cur='+cur+' slides='+slides.length+' DOM='+all.length);
   if(doA){
     var w=document.getElementById('wipe');
     var wns=document.getElementById('wipe-new-slide');
