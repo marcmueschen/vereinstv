@@ -190,32 +190,55 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a3a2a;font-family:
 /* ── WETTER NEU: Screenshot-Style ── */
 .wt-inner{width:100%;height:100%;display:none;flex-direction:column}
 .wt-inner.show{display:flex}
-/* Obere Hero-Zone */
-.wt-hero{flex:1;position:relative;min-height:0;overflow:hidden;
-  background:linear-gradient(135deg,#1a6fc4 0%,#5baaee 45%,#87ceeb 100%)}
-.wt-hero-bg{position:absolute;inset:0;
-  background:radial-gradient(ellipse at 70% 30%,rgba(255,255,255,.95) 0%,rgba(255,255,255,0) 55%)}
-.wt-hero-loc{position:absolute;top:18px;left:28px;z-index:2}
-.wt-hero-place{font-size:clamp(1.6rem,3.2vw,2.4rem);font-weight:900;letter-spacing:.01em;text-shadow:0 1px 4px rgba(0,0,0,.25)}
-.wt-hero-date{font-size:clamp(.7rem,1.2vw,.9rem);opacity:.75;margin-top:2px;text-shadow:0 1px 3px rgba(0,0,0,.2)}
-.wt-hero-now{position:absolute;bottom:16px;left:28px;z-index:2;display:flex;flex-direction:column;gap:2px}
-.wt-hero-temp{font-size:clamp(3rem,8vw,6rem);font-weight:900;line-height:1;text-shadow:0 2px 8px rgba(0,0,0,.2)}
-.wt-hero-desc{font-size:clamp(.85rem,1.6vw,1.1rem);opacity:.8;text-shadow:0 1px 3px rgba(0,0,0,.2)}
-.wt-hero-icon{position:absolute;right:32px;top:50%;transform:translateY(-50%);z-index:2;
-  font-size:clamp(5rem,13vw,10rem);line-height:1;filter:drop-shadow(0 4px 16px rgba(0,0,0,.15))}
-/* Untere Vorhersage-Zeile */
-.wt-forecast{flex-shrink:0;background:rgba(255,255,255,.12);backdrop-filter:blur(4px);
-  border-top:1px solid rgba(255,255,255,.25);display:flex;overflow:hidden}
+/* ── WETTER: Hero-Zone (Asche-Tennisplatz-Hintergrund) */
+.wt-hero{flex:1;position:relative;min-height:0;overflow:hidden}
+/* Tennisplatz SVG als Hintergrund */
+.wt-hero-bg{position:absolute;inset:0;z-index:0}
+.wt-hero-overlay{position:absolute;inset:0;z-index:1;
+  background:linear-gradient(160deg,rgba(0,0,0,.35) 0%,rgba(0,0,0,.1) 50%,rgba(0,0,0,.25) 100%)}
+.wt-hero-loc{position:absolute;top:18px;left:28px;z-index:3}
+.wt-hero-place{font-size:clamp(1.6rem,3.2vw,2.4rem);font-weight:900;letter-spacing:.01em;
+  color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.6)}
+.wt-hero-date{font-size:clamp(.7rem,1.2vw,.95rem);color:rgba(255,255,255,.85);margin-top:2px;
+  text-shadow:0 1px 4px rgba(0,0,0,.5)}
+.wt-hero-now{position:absolute;bottom:16px;left:28px;z-index:3;display:flex;flex-direction:column;gap:2px}
+.wt-hero-temp{font-size:clamp(3.5rem,9vw,7rem);font-weight:900;line-height:1;
+  color:#fff;text-shadow:0 3px 12px rgba(0,0,0,.5)}
+.wt-hero-desc{font-size:clamp(.9rem,1.7vw,1.2rem);color:rgba(255,255,255,.9);
+  text-shadow:0 1px 4px rgba(0,0,0,.5)}
+/* Animiertes Haupticon */
+.wt-hero-icon{position:absolute;right:28px;top:50%;transform:translateY(-50%);z-index:3;
+  width:clamp(120px,20vw,200px);height:clamp(120px,20vw,200px)}
+/* Animationsstile für verschiedene Wettertypen */
+@keyframes wtSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes wtBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+@keyframes wtPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+@keyframes wtShake{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg)}}
+@keyframes wtRain{from{transform:translateY(-10px);opacity:0}to{transform:translateY(60px);opacity:1}}
+@keyframes wtSnow{from{transform:translateY(-10px) rotate(0deg);opacity:0}
+  to{transform:translateY(60px) rotate(360deg);opacity:.8}}
+@keyframes wtFlash{0%,90%,100%{opacity:1}91%,99%{opacity:.1}}
+@keyframes wtWave{0%,100%{transform:scaleX(1)}50%{transform:scaleX(1.1)}}
+.wt-anim-spin{animation:wtSpin 8s linear infinite}
+.wt-anim-bob{animation:wtBob 3s ease-in-out infinite}
+.wt-anim-pulse{animation:wtPulse 2s ease-in-out infinite}
+.wt-anim-shake{animation:wtShake 0.5s ease-in-out infinite}
+.wt-anim-flash{animation:wtFlash 3s linear infinite}
+/* ── Vorhersage-Leiste (größer) */
+.wt-forecast{flex-shrink:0;height:38%;background:rgba(0,0,0,.45);
+  backdrop-filter:blur(8px);border-top:2px solid rgba(255,255,255,.2);
+  display:flex;overflow:hidden}
 .wt-fc-cell{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:10px 4px;gap:4px;min-width:0;
-  border-right:1px solid rgba(255,255,255,.12)}
+  padding:12px 4px;gap:6px;min-width:0;
+  border-right:1px solid rgba(255,255,255,.1)}
 .wt-fc-cell:last-child{border-right:none}
-.wt-fc-cell.now-cell{background:rgba(255,255,255,.15)}
-.wt-fc-time{font-size:clamp(.55rem,.9vw,.75rem);opacity:.7;font-weight:600;white-space:nowrap}
+.wt-fc-cell.now-cell{background:rgba(255,255,255,.15);border-right:1px solid rgba(255,255,255,.2)}
+.wt-fc-time{font-size:clamp(.65rem,1.1vw,.9rem);color:rgba(255,255,255,.7);
+  font-weight:700;white-space:nowrap}
 .wt-fc-time.now-mark{color:#f5c842;opacity:1}
-.wt-fc-icon{font-size:clamp(1.6rem,3vw,2.4rem);line-height:1;filter:drop-shadow(0 1px 4px rgba(0,0,0,.3))}
-.wt-fc-temp{font-size:clamp(.75rem,1.4vw,1rem);font-weight:700}
-.wt-fc-rain{font-size:clamp(.5rem,.8vw,.65rem);opacity:.6;color:#7ec8e3;font-weight:600;min-height:.7em}
+.wt-fc-icon{font-size:clamp(2rem,4vw,3.2rem);line-height:1;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5))}
+.wt-fc-temp{font-size:clamp(.9rem,1.7vw,1.3rem);font-weight:900;color:#fff}
+.wt-fc-rain{font-size:clamp(.6rem,1vw,.8rem);color:#7ec8e3;font-weight:700;min-height:.8em}
 
 /* ── RADAR SLIDE */
 /* ── RADAR SLIDE */
@@ -648,10 +671,11 @@ function bs(s){
       +'<div class="wt-loading"><div class="wt-spin"></div><p>Wetterdaten laden…</p></div>'
       +'<div class="wt-inner">'
         +'<div class="wt-hero">'
-          +'<div class="wt-hero-bg"></div>'
+          +'<div class="wt-hero-bg" id="wt-court-bg"></div>'
+          +'<div class="wt-hero-overlay"></div>'
           +'<div class="wt-hero-loc"><div class="wt-hero-place"></div><div class="wt-hero-date"></div></div>'
           +'<div class="wt-hero-now"><div class="wt-hero-temp"></div><div class="wt-hero-desc"></div></div>'
-          +'<div class="wt-hero-icon"></div>'
+          +'<div class="wt-hero-icon" id="wt-anim-icon"></div>'
         +'</div>'
         +'<div class="wt-forecast"></div>'
       +'</div>';
@@ -721,7 +745,7 @@ var _slideCache={}; // key=slideId, value=rendered innerHTML
 
 // 🎾 = Tennisball für klares Wetter (TC Geldern!)
 var WCI={
-  0:'🎾',   // Strahlend klar → Tennisball!
+  0:'☀️',   // Strahlend klar
   1:'🌤️',  // Überwiegend klar
   2:'⛅',   // Teilweise bewölkt
   3:'☁️',   // Bedeckt
@@ -743,6 +767,99 @@ var WCD={0:'Klar',1:'Überwiegend klar',2:'Teilw. bewölkt',3:'Bedeckt',
   95:'Gewitter',96:'Gewitter+Hagel',99:'Starkes Gewitter'};
 function wtIcon(c){return WCI[c]||'🌡';}
 function wtDesc(c){return WCD[c]||'Unbekannt';}
+
+// Animierte SVG-Icons für den Hero-Bereich
+function wtAnimIcon(c){
+  var S='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="100%" height="100%">';
+  // Sonne
+  var sun=S
+    +'<g style="transform-origin:60px 60px;animation:wtSpin 12s linear infinite">'
+    +'<circle cx="60" cy="60" r="22" fill="#FFD700"/>'
+    +'<g fill="#FFD700">'
+    +'<rect x="57" y="6" width="6" height="18" rx="3"/>'
+    +'<rect x="57" y="96" width="6" height="18" rx="3"/>'
+    +'<rect x="6" y="57" width="18" height="6" rx="3"/>'
+    +'<rect x="96" y="57" width="18" height="6" rx="3"/>'
+    +'<rect x="20" y="20" width="18" height="6" rx="3" transform="rotate(45 29 23)"/>'
+    +'<rect x="82" y="20" width="18" height="6" rx="3" transform="rotate(-45 91 23)"/>'
+    +'<rect x="20" y="94" width="18" height="6" rx="3" transform="rotate(-45 29 97)"/>'
+    +'<rect x="82" y="94" width="18" height="6" rx="3" transform="rotate(45 91 97)"/>'
+    +'</g></g></svg>';
+  // Sonne+Wolke
+  var suncld=S
+    +'<g style="transform-origin:45px 45px;animation:wtSpin 10s linear infinite">'
+    +'<circle cx="38" cy="42" r="15" fill="#FFD700"/>'
+    +'<g fill="#FFD700">'
+    +'<rect x="35" y="16" width="6" height="12" rx="3"/>'
+    +'<rect x="35" y="64" width="6" height="12" rx="3"/>'
+    +'<rect x="10" y="39" width="12" height="6" rx="3"/>'
+    +'<rect x="58" y="39" width="12" height="6" rx="3"/>'
+    +'</g></g>'
+    +'<g style="animation:wtBob 4s ease-in-out infinite">'
+    +'<ellipse cx="75" cy="78" rx="28" ry="16" fill="#ddd"/>'
+    +'<ellipse cx="60" cy="72" rx="20" ry="14" fill="#eee"/>'
+    +'<ellipse cx="80" cy="68" rx="18" ry="13" fill="#fff"/>'
+    +'</g></svg>';
+  // Wolke
+  var cld=S
+    +'<g style="animation:wtBob 4s ease-in-out infinite">'
+    +'<ellipse cx="60" cy="72" rx="40" ry="22" fill="#ccc"/>'
+    +'<ellipse cx="45" cy="62" rx="28" ry="20" fill="#ddd"/>'
+    +'<ellipse cx="72" cy="58" rx="26" ry="18" fill="#e8e8e8"/>'
+    +'</g></svg>';
+  // Regen
+  var rain=S
+    +'<g style="animation:wtBob 3s ease-in-out infinite">'
+    +'<ellipse cx="60" cy="50" rx="38" ry="20" fill="#aaa"/>'
+    +'<ellipse cx="45" cy="42" rx="26" ry="18" fill="#bbb"/>'
+    +'<ellipse cx="70" cy="38" rx="24" ry="16" fill="#ccc"/>'
+    +'</g>'
+    +'<g fill="#5ba3e0">'
+    +'<ellipse cx="40" cy="82" rx="3" ry="7" style="animation:wtRain 1.2s ease-in infinite;animation-delay:0s"/>'
+    +'<ellipse cx="55" cy="82" rx="3" ry="7" style="animation:wtRain 1.2s ease-in infinite;animation-delay:.3s"/>'
+    +'<ellipse cx="70" cy="82" rx="3" ry="7" style="animation:wtRain 1.2s ease-in infinite;animation-delay:.6s"/>'
+    +'<ellipse cx="85" cy="82" rx="3" ry="7" style="animation:wtRain 1.2s ease-in infinite;animation-delay:.15s"/>'
+    +'</g></svg>';
+  // Schnee
+  var snow=S
+    +'<g style="animation:wtBob 4s ease-in-out infinite">'
+    +'<ellipse cx="60" cy="48" rx="38" ry="20" fill="#b0c4d8"/>'
+    +'<ellipse cx="44" cy="40" rx="26" ry="18" fill="#c5d8e8"/>'
+    +'<ellipse cx="70" cy="36" rx="24" ry="16" fill="#ddeeff"/>'
+    +'</g>'
+    +'<g fill="white" font-size="20" text-anchor="middle">'
+    +'<text x="38" y="92" style="animation:wtSnow 2s ease-in infinite;animation-delay:0s">❄</text>'
+    +'<text x="60" y="95" style="animation:wtSnow 2s ease-in infinite;animation-delay:.5s">❄</text>'
+    +'<text x="82" y="90" style="animation:wtSnow 2s ease-in infinite;animation-delay:.9s">❄</text>'
+    +'</g></svg>';
+  // Gewitter
+  var storm=S
+    +'<g style="animation:wtShake .4s ease-in-out infinite">'
+    +'<ellipse cx="60" cy="45" rx="42" ry="22" fill="#555"/>'
+    +'<ellipse cx="42" cy="36" rx="28" ry="20" fill="#666"/>'
+    +'<ellipse cx="72" cy="33" rx="25" ry="17" fill="#777"/>'
+    +'</g>'
+    +'<polygon points="65,62 52,82 62,82 58,105 78,72 66,72 72,62" fill="#FFD700"'
+    +' style="animation:wtFlash 2.5s ease-in-out infinite"/>'
+    +'</svg>';
+  // Nebel
+  var fog=S
+    +'<g fill="rgba(200,210,220,.7)">'
+    +'<rect x="15" y="35" width="90" height="10" rx="5" style="animation:wtWave 3s ease-in-out infinite"/>'
+    +'<rect x="20" y="52" width="80" height="10" rx="5" style="animation:wtWave 3s ease-in-out infinite;animation-delay:.5s"/>'
+    +'<rect x="10" y="69" width="100" height="10" rx="5" style="animation:wtWave 3s ease-in-out infinite;animation-delay:1s"/>'
+    +'<rect x="18" y="86" width="84" height="10" rx="5" style="animation:wtWave 3s ease-in-out infinite;animation-delay:1.5s"/>'
+    +'</g></svg>';
+
+  if(c===0) return sun;
+  if(c===1||c===2) return suncld;
+  if(c===3) return cld;
+  if(c===45||c===48) return fog;
+  if(c>=51&&c<=67||c>=80&&c<=82) return rain;
+  if(c>=71&&c<=77||c===85||c===86) return snow;
+  if(c>=95) return storm;
+  return sun;
+}
 function getWurl(){return(WORKER_URL||lsGet('vtv_worker_url')||'').replace(/\/$/,'');}
 
 function wtXHR(url,onOk,onFail){
@@ -796,6 +913,41 @@ function renderWeather(el,d,loc){
   if(!cw){wtErr(el,'wt','Keine Daten');return;}
   var now=new Date();
   var ac=el.dataset.wtAc||'#f5c842';
+  var wcode=cw.weathercode;
+
+  // ── Tennisplatz-Hintergrund (Asche) als SVG
+  var bgEl=el.querySelector('.wt-hero-bg');
+  if(bgEl){
+    bgEl.innerHTML='<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" preserveAspectRatio="xMidYMid slice">'
+    // Asche-Grundfarbe
+    +'<defs>'
+    +'<pattern id="clay" x="0" y="0" width="4" height="4" patternUnits="userSpaceOnUse">'
+    +'<rect width="4" height="4" fill="#c1440e"/>'
+    +'<rect x="0" y="0" width="2" height="2" fill="#c84c14" opacity=".5"/>'
+    +'<rect x="2" y="2" width="2" height="2" fill="#b83c0a" opacity=".4"/>'
+    +'</pattern>'
+    +'<linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">'
+    +'<stop offset="0%" stop-color="#1a6fc4"/>'
+    +'<stop offset="100%" stop-color="#5baaee"/>'
+    +'</linearGradient>'
+    +'</defs>'
+    // Himmel oben
+    +'<rect width="100%" height="45%" fill="url(#skyGrad)"/>'
+    // Asche-Fläche
+    +'<rect y="45%" width="100%" height="55%" fill="url(#clay)"/>'
+    // Linien
+    +'<line x1="10%" y1="45%" x2="90%" y2="45%" stroke="#e8d5c0" stroke-width="3" opacity=".8"/>'
+    +'<line x1="10%" y1="95%" x2="90%" y2="95%" stroke="#e8d5c0" stroke-width="3" opacity=".8"/>'
+    +'<line x1="10%" y1="45%" x2="10%" y2="95%" stroke="#e8d5c0" stroke-width="3" opacity=".8"/>'
+    +'<line x1="90%" y1="45%" x2="90%" y2="95%" stroke="#e8d5c0" stroke-width="3" opacity=".8"/>'
+    +'<line x1="50%" y1="45%" x2="50%" y2="95%" stroke="#e8d5c0" stroke-width="2" opacity=".6"/>'
+    // Aufschlaglinie
+    +'<line x1="10%" y1="70%" x2="90%" y2="70%" stroke="#e8d5c0" stroke-width="2" opacity=".6"/>'
+    // Netz
+    +'<line x1="8%" y1="69%" x2="92%" y2="69%" stroke="#555" stroke-width="4"/>'
+    +'<line x1="8%" y1="67%" x2="92%" y2="67%" stroke="#888" stroke-width="1" opacity=".5"/>'
+    +'</svg>';
+  }
 
   // ── Hero-Bereich füllen
   var placeEl=el.querySelector('.wt-hero-place');
@@ -808,8 +960,10 @@ function renderWeather(el,d,loc){
     now.toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long'})+
     ' · '+pad2(now.getHours())+':'+pad2(now.getMinutes())+' Uhr';
   if(tempEl) tempEl.textContent=Math.round(cw.temperature)+'°';
-  if(descEl) descEl.textContent=wtDesc(cw.weathercode);
-  if(iconEl) iconEl.textContent=wtIcon(cw.weathercode);
+  if(descEl) descEl.textContent=wtDesc(wcode);
+
+  // ── Animiertes Hauptsymbol als SVG
+  if(iconEl) iconEl.innerHTML=wtAnimIcon(wcode);
 
   // ── Slots aufbauen (30-Min-Intervall, 12h = 24 Slots)
   var slots=[];
