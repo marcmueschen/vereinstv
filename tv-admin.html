@@ -214,7 +214,7 @@ main{max-width:920px;margin:0 auto;padding:24px 16px 80px}
   <div class="api-bar uncfg" id="api-bar">
     <div style="font-size:.82rem;font-weight:700;color:#5a7a65;margin-bottom:10px;text-transform:uppercase;letter-spacing:.08em">&#9881; Cloudflare Worker URL</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
-      <div class="fl" style="flex:1;margin:0;min-width:200px"><label>Worker-URL</label><input type="url" id="cfg-url" placeholder="https://vereinstv.xyz.workers.dev" oninput="saveApiCfg()"></div>
+      <div class="fl" style="flex:1;margin:0;min-width:200px"><label>Worker-URL</label><input type="url" id="cfg-url" value="https://vereinstv.marc-d55.workers.dev" readonly style="opacity:.6;cursor:default"></div>
       <button class="btn bp sm" onclick="testConn()">Verbindung testen</button>
     </div>
   </div>
@@ -597,8 +597,8 @@ var ROLE_TABS = {
 // ══════════════════════════════════════════════════════════════
 // LOGIN
 // ══════════════════════════════════════════════════════════════
-function getWurl(){ return (localStorage.getItem('vtv_url')||'').replace(/\/$/,''); }
-function saveApiCfg(){ var u=gv('cfg-url'); if(u) localStorage.setItem('vtv_url',u); upApiBar(); }
+function getWurl(){ return 'https://vereinstv.marc-d55.workers.dev'; }
+function saveApiCfg(){ upApiBar(); }
 
 async function doLogin(){
   var user=gv('login-user')||'admin';
@@ -607,7 +607,7 @@ async function doLogin(){
   if(!wurl){
     // Check if URL is saved
     var saved=localStorage.getItem('vtv_url');
-    if(!saved){ showLoginNote('Bitte zuerst die Worker-URL eintragen (nach dem Einloggen oben sichtbar).'); }
+    // Worker-URL ist fest hinterlegt
   }
   if(!pw){ setLoginErr('Bitte Passwort eingeben.'); return; }
 
@@ -691,7 +691,7 @@ function showApp(){
   // Load config and users
   var wurl=getWurl();
   if(wurl) {
-    document.getElementById('cfg-url').value=wurl;
+    document.getElementById('cfg-url').value='https://vereinstv.marc-d55.workers.dev';
     loadFromWorker();
     if(role==='admin'){ loadUsers(); loadTeams(); }
   }
@@ -739,7 +739,7 @@ function selTab(el,t){
 // API / SAVE / LOAD
 // ══════════════════════════════════════════════════════════════
 function setSt(s,t){document.getElementById('sdot').className='sdot '+s;document.getElementById('stxt').textContent=t;}
-function upApiBar(){var u=getWurl();document.getElementById('api-bar').classList.toggle('uncfg',!u);}
+function upApiBar(){document.getElementById('api-bar').classList.remove('uncfg');}
 
 async function testConn(){
   var wurl=getWurl();if(!wurl){toast('Bitte Worker-URL eingeben.','err');return;}

@@ -321,8 +321,8 @@ function dbg(msg,col){
   _dbgEl.appendChild(p);
   _dbgEl.scrollTop=_dbgEl.scrollHeight;
 }
-var WORKER_URL = lsGet('vtv_worker_url') || '';
-window.WORKER_URL = WORKER_URL;
+var WORKER_URL = 'https://vereinstv.marc-d55.workers.dev';
+window.WORKER_URL = 'https://vereinstv.marc-d55.workers.dev';
 var POLL_MS = 15000;
 var knownVer = null;
 var slides = [], cur = 0, paused = false;
@@ -332,7 +332,7 @@ var _flashTimers = {};
 var _slideShowCounts = {};
 var pollTimer = null;
 
-function saveSetup(){var url=document.getElementById('setup-url').value.trim();if(!url){alert('Bitte URL eingeben.');return;}if(url.indexOf('http')!==0){alert('URL muss mit https:// beginnen.');return;}WORKER_URL=url.replace(/\/$/,'');lsSet('vtv_worker_url',WORKER_URL);document.getElementById('setup').style.display='none';startPoll();fetchCfg();}
+function saveSetup(){WORKER_URL='https://vereinstv.marc-d55.workers.dev';document.getElementById('setup').style.display='none';startPoll();fetchCfg();}
 var wp2=(function(){var m=location.search.match(/[?&]worker=([^&]*)/);return m?decodeURIComponent(m[1]):'';})();
 if(wp2){WORKER_URL=wp2;lsSet('vtv_worker_url',WORKER_URL);}
 dbg('Start – WORKER_URL: '+(WORKER_URL||'(leer)'));
@@ -345,8 +345,8 @@ if(DBG){
   testImg.onerror=function(){dbg('Netzwerk FEHLER – kein Internet?','#ffaaaa');};
   testImg.src='https://www.gstatic.com/generate_204?t='+Date.now();
 }
-if(WORKER_URL){document.getElementById('setup').style.display='none';startPoll();fetchCfg();}
-else{dbg('Kein WORKER_URL → Setup anzeigen','#ffdd44');}
+document.getElementById('setup').style.display='none';startPoll();fetchCfg();
+
 
 function uc(){var n=new Date();var h=n.getHours();var m=n.getMinutes();document.getElementById('ck').textContent=(h<10?'0':'')+h+':'+(m<10?'0':'')+m;}uc();setInterval(uc,15000);
 
