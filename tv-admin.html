@@ -1523,8 +1523,16 @@ function mkCounter(id, initVal, onChange){
   var bm=document.createElement('button');bm.type='button';bm.className='sf-minus';bm.textContent='−';bm.setAttribute('aria-label','minus');
   var val=document.createElement('span');val.className='sf-val';val.id=id;val.textContent=initVal||'0';val._v=parseInt(initVal)||0;
   var bp=document.createElement('button');bp.type='button';bp.className='sf-plus';bp.textContent='+';bp.setAttribute('aria-label','plus');
-  bm.addEventListener('click',function(){val._v=Math.max(0,val._v-1);val.textContent=val._v;if(onChange)onChange();});
-  bp.addEventListener('click',function(){val._v=Math.min(99,val._v+1);val.textContent=val._v;if(onChange)onChange();});
+  bm.addEventListener('click',function(){
+    val._v=Math.max(0,val._v-1);val.textContent=val._v;
+    if(onChange)onChange();
+    scheduleScorePush();
+  });
+  bp.addEventListener('click',function(){
+    val._v=Math.min(99,val._v+1);val.textContent=val._v;
+    if(onChange)onChange();
+    scheduleScorePush();
+  });
   wrap.appendChild(bm);wrap.appendChild(val);wrap.appendChild(bp);
   return wrap;
 }
@@ -1566,6 +1574,11 @@ function updateWinBtn(btnEl,win){
 function autoSaveScore(){
   if(_autoSaveTimer)clearTimeout(_autoSaveTimer);
   _autoSaveTimer=setTimeout(pushScoreNow,800);
+}
+// Direkt-Version für Button-Klicks (kein Debounce nötig, da User bewusst klickt)
+function scheduleScorePush(){
+  if(_autoSaveTimer)clearTimeout(_autoSaveTimer);
+  _autoSaveTimer=setTimeout(pushScoreNow,500);
 }
 
 async function pushScoreNow(){
@@ -1656,8 +1669,7 @@ function updateTotalScore(){
   var gScEl=document.getElementById('sf-total-gast-score');
   if(hScEl)hScEl.textContent=heimTotal;
   if(gScEl)gScEl.textContent=gastTotal;
-  // Auto-Save auslösen wenn eine Folie aktiv ist (nicht beim initialen Laden)
-  if(_activeScoreId&&!_suppressAutoSave) autoSaveScore();
+  // (Auto-Save wird direkt von den Buttons ausgelöst, nicht hier)
 }
 
 function buildSFRows(contId,prefix,count,ownPlayers,opponent,isHome,isDbl){
@@ -1720,6 +1732,7 @@ function buildSFRows(contId,prefix,count,ownPlayers,opponent,isHome,isDbl){
       else btn._win='';
       updateWinBtn(btn,btn._win);
       updateTotalScore();
+      scheduleScorePush();
     });
     heimSets.appendChild(winBtn);
 
