@@ -507,7 +507,7 @@ main{max-width:920px;margin:0 auto;padding:24px 16px 80px}
       </div>
     </div>
 
-    <div style="display:flex;justify-content:flex-end;margin-top:12px">
+    <div style="display:flex;justify-content:flex-end;margin-top:12px" id="add-slide-bar">
       <button class="btn bp" onclick="addSlide()">+ Folie hinzufügen</button>
     </div>
   </div>
@@ -727,6 +727,9 @@ function selTab(el,t){
   curTab=t;
   document.querySelectorAll('.tt').forEach(function(x){x.classList.toggle('on',x.dataset.t===t);});
   document.querySelectorAll('.tf').forEach(function(x){x.classList.toggle('on',x.id==='tf-'+t);});
+  // Score-Tab: kein manueller "Hinzufügen"-Button — Folie wird automatisch angelegt
+  var addBar=document.getElementById('add-slide-bar');
+  if(addBar)addBar.style.display=t==='score'?'none':'flex';
   if(t==='score'){initScoreForm();}
   if(t==='menu'&&!document.getElementById('mn-cats').children.length)addMenuCat('mn-cats');
 }
@@ -801,7 +804,7 @@ async function doSave(){
     try{
       var r=await fetch(wurl+'/config',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Password':adminPw},body:JSON.stringify(payload)});
       var d=await r.json();
-      if(d.ok){setSt('ok','Gespeichert');toast('Gespeichert! TV aktualisiert sich.');}
+      if(d.ok){setSt('ok','✓ Live');toast(_activeScoreId?'Spielstand live übertragen!':'Gespeichert! TV aktualisiert sich.');}
       else{setSt('err','Fehler');toast(d.error||'Fehler.','err');if(d.error&&d.error.includes('Passwort')){localStorage.removeItem('vtv_admin_pw');}}
     }catch(e){setSt('err','Fehler');toast('Netzwerkfehler: '+e.message,'err');}
 
@@ -814,7 +817,7 @@ async function doSave(){
     try{
       var r2=await fetch(wurl+'/config',{method:'POST',headers:{'Content-Type':'application/json','X-Role-Token':SESSION.token},body:JSON.stringify({slides:roleSlides})});
       var d2=await r2.json();
-      if(d2.ok){setSt('ok','Gespeichert');toast('Gespeichert! TV aktualisiert sich.');}
+      if(d2.ok){setSt('ok','✓ Live');toast(_activeScoreId?'Spielstand live übertragen!':'Gespeichert! TV aktualisiert sich.');}
       else{setSt('err','Fehler');toast(d2.error||'Fehler.','err');}
     }catch(e){setSt('err','Fehler');toast('Fehler: '+e.message,'err');}
   }
@@ -1455,12 +1458,8 @@ function onMatchChange(){
   _activeScoreId=null;
   var existingSlide=slides.find(function(s){
     return s.type==='score'&&s.data&&
-      ((s.data.heimTeam===heim&&s.data.gastTeam===gast)||
-       (s.teamId&&s.teamId===(gv('s-team-sel')||'')));
+      s.data.heimTeam===heim&&s.data.gastTeam===gast;
   });
-  if(existingSlide){
-    _activeScoreId=existingSlide.id;
-  }
 
   // Spieler-Selects aufbauen
   var ownPlayers=team.ownPlayers||[];
@@ -1468,14 +1467,47 @@ function onMatchChange(){
   buildSFRows('sf-dbl','D',3,ownPlayers,match.opponent,isHome,true);
   wrap.style.display='block';
 
-  // Vorhandene Spielstände laden
-  if(existingSlide&&existingSlide.data&&existingSlide.data.matches){
-    setTimeout(function(){
-      var ms=existingSlide.data.matches||[];
-      fillMatch('sf-E',ms.slice(0,6));
-      fillMatch('sf-D',ms.slice(6,9));
-      updateTotalScore();
-    },50);
+  if(existingSlide){
+    // Folie gefunden: ID setzen und Daten laden
+    _activeScoreId=existingSlide.id;
+    if(existingSlide.data&&existingSlide.data.matches){
+      setTimeout(function(){
+        var ms=existingSlide.data.matches||[];
+        fillMatch('sf-E',ms.slice(0,6));
+        fillMatch('sf-D',ms.slice(6,9));
+        // Gesamtstand aus Folie setzen (nicht neu berechnen, erst nach Laden)
+        var hs=document.getElementById('sf-total-heim-score');
+        var gs=document.getElementById('sf-total-gast-score');
+        if(hs)hs.textContent=existingSlide.data.gesamtHeim||0;
+        if(gs)gs.textContent=existingSlide.data.gesamtGast||0;
+        document.getElementById('s-gh').value=existingSlide.data.gesamtHeim||0;
+        document.getElementById('s-gg').value=existingSlide.data.gesamtGast||0;
+      },50);
+    }
+  } else {
+    // Folie existiert noch nicht → automatisch anlegen und sofort speichern
+    var dur=gv('s-dur');
+    var newSlide={
+      id:Date.now(),
+      type:'score',
+      name:heim+' vs '+gast,
+      enabled:true,
+      duration:dur?parseInt(dur):null,
+      teamId:gv('s-team-sel')||null,
+      data:{
+        heimTeam:heim,gastTeam:gast,
+        gesamtHeim:'0',gesamtGast:'0',
+        bg:gv('s-bg')||'#0f2a1c',
+        accent:gv('s-ac')||'#f5c842',
+        matches:[]
+      }
+    };
+    slides.push(newSlide);
+    renderList();
+    _activeScoreId=newSlide.id;
+    // Sofort übertragen
+    doSave();
+    toast('Spielstand-Folie angelegt und übertragen');
   }
 }
 
@@ -1533,12 +1565,10 @@ function autoSaveScore(){
   _autoSaveTimer=setTimeout(doSaveScore,600);
 }
 
-async function doSaveScore(){
+function doSaveScore(){
   if(!_activeScoreId)return;
-  var wurl=getWurl();
-  if(!wurl)return;
 
-  // Aktuelle Werte aus dem Formular lesen
+  // Aktuelle Werte aus dem Formular in slides[] schreiben
   var sin2=readSFMatches('E',6);
   var dbl2=readSFMatches('D',3);
   var gh=0,gg=0;
@@ -1547,55 +1577,23 @@ async function doSaveScore(){
     else if(m.winner==='gast')gg++;
   });
 
-  // Folie im slides-Array aktualisieren
-  var idx=slides.findIndex(function(s){return s.id===_activeScoreId;});
-  if(idx===-1)return;
-  var s=slides[idx];
-  s.data.matches=sin2.concat(dbl2);
-  s.data.gesamtHeim=String(gh);
-  s.data.gesamtGast=String(gg);
+  var slideIdx=slides.findIndex(function(s){return s.id===_activeScoreId;});
+  if(slideIdx===-1)return;
+  var sl=slides[slideIdx];
+  sl.data.matches=sin2.concat(dbl2);
+  sl.data.gesamtHeim=String(gh);
+  sl.data.gesamtGast=String(gg);
 
-  // Gesamtstand-Anzeige aktualisieren
-  var hScEl=document.getElementById('sf-total-heim-score');
-  var gScEl=document.getElementById('sf-total-gast-score');
-  if(hScEl)hScEl.textContent=gh;
-  if(gScEl)gScEl.textContent=gg;
+  // Anzeige aktualisieren
+  var hEl=document.getElementById('sf-total-heim-score');
+  var gEl=document.getElementById('sf-total-gast-score');
+  if(hEl)hEl.textContent=gh;
+  if(gEl)gEl.textContent=gg;
   document.getElementById('s-gh').value=gh;
   document.getElementById('s-gg').value=gg;
 
-  // Direkt speichern und übertragen
-  setSt('busy','Speichere...');
-  try{
-    var role=SESSION?SESSION.role:'admin';
-    if(role==='admin'){
-      var payload={clubName:gv('cfg-club')||'TC Vereins-TV',
-        defaultDuration:parseInt(gv('cfg-dur'))||10,
-        fontFamily:gv('cfg-font')||'Inter',
-        fontSize:parseFloat(gv('cfg-fontsize'))||1,
-        slideTitleColor:gv('cfg-stc-hex')||'#f5c842',
-        slideTitleFont:gv('cfg-stf')||'',
-        slides:slides};
-      var pw=localStorage.getItem('vtv_admin_pw')||'';
-      if(!pw){pw=prompt('Admin-Passwort:','');if(!pw){setSt('err','Abgebrochen');return;}localStorage.setItem('vtv_admin_pw',pw);}
-      var r=await fetch(wurl+'/config',{method:'POST',
-        headers:{'Content-Type':'application/json','X-Admin-Password':pw},
-        body:JSON.stringify(payload)});
-      var d=await r.json();
-      if(d.ok){setSt('ok','✓ Übertragen');toast('Spielstand gespeichert');}
-      else{setSt('err','Fehler');toast(d.error||'Fehler','err');if(d.error&&d.error.includes('Passwort'))localStorage.removeItem('vtv_admin_pw');}
-    } else {
-      var roleSlides=slides.map(function(sl){
-        if(role==='teamleader'&&SESSION.teamId)sl.teamId=SESSION.teamId;
-        return sl;
-      });
-      var r2=await fetch(wurl+'/config',{method:'POST',
-        headers:{'Content-Type':'application/json','X-Role-Token':SESSION.token},
-        body:JSON.stringify({slides:roleSlides})});
-      var d2=await r2.json();
-      if(d2.ok){setSt('ok','✓ Übertragen');toast('Spielstand gespeichert');}
-      else{setSt('err','Fehler');toast(d2.error||'Fehler','err');}
-    }
-  }catch(e){setSt('err','Offline');toast('Netzwerkfehler: '+e.message,'err');}
+  // Direkt über doSave() übertragen (nutzt bestehende Auth-Logik)
+  doSave();
 }
 
 function updateTotalScore(){
