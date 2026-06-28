@@ -570,6 +570,7 @@ main{max-width:920px;margin:0 auto;padding:24px 16px 80px}
 var slides = [];
 var _activeScoreId = null; // ID der aktuell im Score-Tab bearbeiteten Folie
 var _autoSaveTimer = null;
+var _suppressAutoSave = false; // Verhindert Auto-Save beim initialen Laden
 var curTab = '';
 var editId = null;
 var SESSION = null; // {role, name, token, teamId}
@@ -969,6 +970,7 @@ function mkSel(lbl,id,opts){var d=document.createElement('div');d.className='fl'
 function rdMatch(px,count){var res=[];for(var i=0;i<count;i++){var sets=[];for(var s=0;s<3;s++){sets.push({h:gv(px+'-'+i+'-s'+s+'h'),g:gv(px+'-'+i+'-s'+s+'g')});}res.push({heimPlayer:gv(px+'-'+i+'-hp'),gastPlayer:gv(px+'-'+i+'-gp'),winner:gv(px+'-'+i+'-win'),sets:sets});}return res;}
 function fillMatch(px,matches){
   // px = 'sf-E' oder 'sf-D' -> IDs: 'sf-E1-hp', 'sf-E1-s0h', etc.
+  _suppressAutoSave=true; // Kein Auto-Save während des Ladens
   matches.forEach(function(m,i){
     var lbl=px+(i+1); // z.B. 'sf-E1'
     var hpEl=document.getElementById(lbl+'-hp');
@@ -987,6 +989,7 @@ function fillMatch(px,matches){
     });
   });
   updateTotalScore();
+  _suppressAutoSave=false; // Wieder aktivieren
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1558,94 +1561,75 @@ function updateWinBtn(btnEl,win){
 }
 
 // ══════════════════════════════════════════════════════════
-// AUTO-SAVE SPIELSTAND
+// LIVE SPIELSTAND-ÜBERTRAGUNG
 // ══════════════════════════════════════════════════════════
 function autoSaveScore(){
   if(_autoSaveTimer)clearTimeout(_autoSaveTimer);
-  _autoSaveTimer=setTimeout(doSaveScore,600);
+  _autoSaveTimer=setTimeout(pushScoreNow,800);
 }
 
-async function doSaveScore(){
-  if(!_activeScoreId)return;
+async function pushScoreNow(){
   var wurl=getWurl();
-  if(!wurl){toast('Keine Worker-URL','err');return;}
+  if(!wurl)return;
+  if(!_activeScoreId)return;
 
-  // 1. Aktuelle Formular-Werte lesen
+  // Formular auslesen
   var sin2=readSFMatches('E',6);
   var dbl2=readSFMatches('D',3);
+  var matches=sin2.concat(dbl2);
   var gh=0,gg=0;
-  sin2.concat(dbl2).forEach(function(m){
-    if(m.winner==='heim')gh++;
-    else if(m.winner==='gast')gg++;
-  });
+  matches.forEach(function(m){if(m.winner==='heim')gh++;else if(m.winner==='gast')gg++;});
 
-  // 2. Lokales slides[] patchen
-  var slideIdx=slides.findIndex(function(s){return s.id===_activeScoreId;});
-  if(slideIdx===-1)return;
-  slides[slideIdx].data.matches=sin2.concat(dbl2);
-  slides[slideIdx].data.gesamtHeim=String(gh);
-  slides[slideIdx].data.gesamtGast=String(gg);
+  // Lokales slides[] aktuell halten
+  var si=slides.findIndex(function(s){return s.id===_activeScoreId;});
+  if(si!==-1){
+    slides[si].data.matches=matches;
+    slides[si].data.gesamtHeim=String(gh);
+    slides[si].data.gesamtGast=String(gg);
+  }
 
-  // 3. Anzeige aktualisieren
-  var hEl=document.getElementById('sf-total-heim-score');
-  var gEl=document.getElementById('sf-total-gast-score');
-  if(hEl)hEl.textContent=gh;
-  if(gEl)gEl.textContent=gg;
-  document.getElementById('s-gh').value=gh;
-  document.getElementById('s-gg').value=gg;
+  // Score-Folie die gesendet wird
+  var scoreSlide=si!==-1?slides[si]:null;
+  if(!scoreSlide)return;
 
-  // 4. Aktuellen Config vom Worker laden, Score-Folie patchen, zurückschicken
-  setSt('busy','⚡ Live...');
+  setSt('busy','⚡...');
   try{
-    // GET aktuellen Config
-    var rGet=await fetch(wurl+'/config');
-    var dGet=await rGet.json();
-    var fullConfig=dGet.ok?dGet.config:{slides:[]};
-    var allSlides=fullConfig.slides||[];
-
-    // Score-Folie im Gesamt-Config patchen (nach ID suchen oder anhängen)
-    var patchedSlide=slides[slideIdx];
-    var existIdx=allSlides.findIndex(function(s){return s.id===patchedSlide.id;});
-    if(existIdx!==-1){
-      allSlides[existIdx]=patchedSlide;
-    } else {
-      allSlides.push(patchedSlide);
-    }
-    fullConfig.slides=allSlides;
-
-    // POST zurück
     var role=SESSION?SESSION.role:'admin';
-    var resp,data;
+    var postBody,headers={'Content-Type':'application/json'};
+
     if(role==='admin'){
+      // Admin: kompletten Config holen, Score patchen, zurückschicken
       var pw=localStorage.getItem('vtv_admin_pw')||'';
-      if(!pw){pw=prompt('Admin-Passwort:','');if(!pw){setSt('err','Abgebrochen');return;}localStorage.setItem('vtv_admin_pw',pw);}
-      resp=await fetch(wurl+'/config',{method:'POST',
-        headers:{'Content-Type':'application/json','X-Admin-Password':pw},
-        body:JSON.stringify(fullConfig)});
-      data=await resp.json();
-      if(data.error&&data.error.includes('Passwort'))localStorage.removeItem('vtv_admin_pw');
+      if(!pw)return; // kein Auto-Prompt beim Auto-Save
+      var gr=await fetch(wurl+'/config');
+      var gc=await gr.json();
+      var cfg=gc.ok&&gc.config?gc.config:{slides:[]};
+      var as=cfg.slides||[];
+      var ei=as.findIndex(function(s){return s.id===scoreSlide.id;});
+      if(ei!==-1)as[ei]=scoreSlide;else as.push(scoreSlide);
+      cfg.slides=as;
+      postBody=JSON.stringify(cfg);
+      headers['X-Admin-Password']=pw;
     } else {
-      // Teamleader: nur die eigene Folie im Token-basierten Patch schicken
-      resp=await fetch(wurl+'/config',{method:'POST',
-        headers:{'Content-Type':'application/json','X-Role-Token':SESSION.token},
-        body:JSON.stringify({slides:[patchedSlide]})});
-      data=await resp.json();
+      // Teamleader/Wirtin: nur eigene Folie schicken, Worker merged
+      postBody=JSON.stringify({slides:[scoreSlide]});
+      headers['X-Role-Token']=SESSION.token;
     }
 
-    if(data&&data.ok){
+    var r=await fetch(wurl+'/config',{method:'POST',headers:headers,body:postBody});
+    var d=await r.json();
+    if(d.ok){
       setSt('ok','✓ Live');
-      // Toast nur alle 3s zeigen damit es nicht nervt
-      if(!doSaveScore._lastToast||Date.now()-doSaveScore._lastToast>3000){
-        toast('⚡ Spielstand live!');
-        doSaveScore._lastToast=Date.now();
+      if(!pushScoreNow._t||Date.now()-pushScoreNow._t>4000){
+        toast('⚡ Live übertragen');pushScoreNow._t=Date.now();
       }
     } else {
-      setSt('err','Fehler');
-      toast((data&&data.error)||'Übertragung fehlgeschlagen','err');
+      setSt('err','!');
+      console.warn('pushScoreNow Fehler:',d.error);
     }
   }catch(e){
     setSt('err','Offline');
-    toast('Netzwerkfehler: '+e.message,'err');
+    console.warn('pushScoreNow Netzwerkfehler:',e.message);
   }
 }
 
@@ -1672,8 +1656,8 @@ function updateTotalScore(){
   var gScEl=document.getElementById('sf-total-gast-score');
   if(hScEl)hScEl.textContent=heimTotal;
   if(gScEl)gScEl.textContent=gastTotal;
-  // Auto-Save auslösen wenn eine Folie aktiv ist
-  if(_activeScoreId) autoSaveScore();
+  // Auto-Save auslösen wenn eine Folie aktiv ist (nicht beim initialen Laden)
+  if(_activeScoreId&&!_suppressAutoSave) autoSaveScore();
 }
 
 function buildSFRows(contId,prefix,count,ownPlayers,opponent,isHome,isDbl){
