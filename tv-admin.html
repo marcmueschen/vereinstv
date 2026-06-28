@@ -568,6 +568,8 @@ main{max-width:920px;margin:0 auto;padding:24px 16px 80px}
 // STATE
 // ══════════════════════════════════════════════════════════════
 var slides = [];
+var _activeScoreId = null; // ID der aktuell im Score-Tab bearbeiteten Folie
+var _autoSaveTimer = null;
 var curTab = '';
 var editId = null;
 var SESSION = null; // {role, name, token, teamId}
@@ -1043,6 +1045,7 @@ function addSlide(){
       teamId:teamId||SESSION&&SESSION.teamId||null,
       data:{heimTeam:hm,gastTeam:ga,gesamtHeim:gv('s-gh'),gesamtGast:gv('s-gg'),
         bg:gv('s-bg'),accent:gv('s-ac'),matches:sin2.concat(dbl2)}};
+    _activeScoreId=s.id; // ab jetzt Auto-Save auf diese Folie
   }
   else if(t==='image'){var url=normImgUrl(gv('i-url'));if(!url){toast('Bitte Bild-URL.','err');return;}s={id:Date.now(),type:t,name:gv('i-title')||'Bild',enabled:true,duration:dur?parseInt(dur):null,data:{title:gv('i-title'),url:url,caption:gv('i-cap'),bg:gv('i-bg')}};}
   else if(t==='upload'){var upd=gv('up-data');if(!upd){toast('Bitte Bild hochladen.','err');return;}s={id:Date.now(),type:t,name:gv('up-title')||'Bild-Upload',enabled:true,duration:dur?parseInt(dur):null,data:{title:gv('up-title'),caption:gv('up-caption'),bg:gv('up-bg'),imageData:upd}};}
@@ -1448,11 +1451,32 @@ function onMatchChange(){
   document.getElementById('s-match-info-detail').textContent=dt+(isHome?' · Heimspiel':' · Auswärtsspiel');
   info.style.display='block';
 
+  // Vorhandene Score-Folie für diese Begegnung suchen
+  _activeScoreId=null;
+  var existingSlide=slides.find(function(s){
+    return s.type==='score'&&s.data&&
+      ((s.data.heimTeam===heim&&s.data.gastTeam===gast)||
+       (s.teamId&&s.teamId===(gv('s-team-sel')||'')));
+  });
+  if(existingSlide){
+    _activeScoreId=existingSlide.id;
+  }
+
   // Spieler-Selects aufbauen
   var ownPlayers=team.ownPlayers||[];
   buildSFRows('sf-sin','E',6,ownPlayers,match.opponent,isHome);
   buildSFRows('sf-dbl','D',3,ownPlayers,match.opponent,isHome,true);
   wrap.style.display='block';
+
+  // Vorhandene Spielstände laden
+  if(existingSlide&&existingSlide.data&&existingSlide.data.matches){
+    setTimeout(function(){
+      var ms=existingSlide.data.matches||[];
+      fillMatch('sf-E',ms.slice(0,6));
+      fillMatch('sf-D',ms.slice(6,9));
+      updateTotalScore();
+    },50);
+  }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1501,6 +1525,79 @@ function updateWinBtn(btnEl,win){
   else{btnEl.textContent='×';btnEl.classList.add('no-win');}
 }
 
+// ══════════════════════════════════════════════════════════
+// AUTO-SAVE SPIELSTAND
+// ══════════════════════════════════════════════════════════
+function autoSaveScore(){
+  if(_autoSaveTimer)clearTimeout(_autoSaveTimer);
+  _autoSaveTimer=setTimeout(doSaveScore,600);
+}
+
+async function doSaveScore(){
+  if(!_activeScoreId)return;
+  var wurl=getWurl();
+  if(!wurl)return;
+
+  // Aktuelle Werte aus dem Formular lesen
+  var sin2=readSFMatches('E',6);
+  var dbl2=readSFMatches('D',3);
+  var gh=0,gg=0;
+  sin2.concat(dbl2).forEach(function(m){
+    if(m.winner==='heim')gh++;
+    else if(m.winner==='gast')gg++;
+  });
+
+  // Folie im slides-Array aktualisieren
+  var idx=slides.findIndex(function(s){return s.id===_activeScoreId;});
+  if(idx===-1)return;
+  var s=slides[idx];
+  s.data.matches=sin2.concat(dbl2);
+  s.data.gesamtHeim=String(gh);
+  s.data.gesamtGast=String(gg);
+
+  // Gesamtstand-Anzeige aktualisieren
+  var hScEl=document.getElementById('sf-total-heim-score');
+  var gScEl=document.getElementById('sf-total-gast-score');
+  if(hScEl)hScEl.textContent=gh;
+  if(gScEl)gScEl.textContent=gg;
+  document.getElementById('s-gh').value=gh;
+  document.getElementById('s-gg').value=gg;
+
+  // Direkt speichern und übertragen
+  setSt('busy','Speichere...');
+  try{
+    var role=SESSION?SESSION.role:'admin';
+    if(role==='admin'){
+      var payload={clubName:gv('cfg-club')||'TC Vereins-TV',
+        defaultDuration:parseInt(gv('cfg-dur'))||10,
+        fontFamily:gv('cfg-font')||'Inter',
+        fontSize:parseFloat(gv('cfg-fontsize'))||1,
+        slideTitleColor:gv('cfg-stc-hex')||'#f5c842',
+        slideTitleFont:gv('cfg-stf')||'',
+        slides:slides};
+      var pw=localStorage.getItem('vtv_admin_pw')||'';
+      if(!pw){pw=prompt('Admin-Passwort:','');if(!pw){setSt('err','Abgebrochen');return;}localStorage.setItem('vtv_admin_pw',pw);}
+      var r=await fetch(wurl+'/config',{method:'POST',
+        headers:{'Content-Type':'application/json','X-Admin-Password':pw},
+        body:JSON.stringify(payload)});
+      var d=await r.json();
+      if(d.ok){setSt('ok','✓ Übertragen');toast('Spielstand gespeichert');}
+      else{setSt('err','Fehler');toast(d.error||'Fehler','err');if(d.error&&d.error.includes('Passwort'))localStorage.removeItem('vtv_admin_pw');}
+    } else {
+      var roleSlides=slides.map(function(sl){
+        if(role==='teamleader'&&SESSION.teamId)sl.teamId=SESSION.teamId;
+        return sl;
+      });
+      var r2=await fetch(wurl+'/config',{method:'POST',
+        headers:{'Content-Type':'application/json','X-Role-Token':SESSION.token},
+        body:JSON.stringify({slides:roleSlides})});
+      var d2=await r2.json();
+      if(d2.ok){setSt('ok','✓ Übertragen');toast('Spielstand gespeichert');}
+      else{setSt('err','Fehler');toast(d2.error||'Fehler','err');}
+    }
+  }catch(e){setSt('err','Offline');toast('Netzwerkfehler: '+e.message,'err');}
+}
+
 function updateTotalScore(){
   var heimTotal=0,gastTotal=0;
   // Alle Einzel und Doppel durchgehen
@@ -1524,6 +1621,8 @@ function updateTotalScore(){
   var gScEl=document.getElementById('sf-total-gast-score');
   if(hScEl)hScEl.textContent=heimTotal;
   if(gScEl)gScEl.textContent=gastTotal;
+  // Auto-Save auslösen wenn eine Folie aktiv ist
+  if(_activeScoreId) autoSaveScore();
 }
 
 function buildSFRows(contId,prefix,count,ownPlayers,opponent,isHome,isDbl){
