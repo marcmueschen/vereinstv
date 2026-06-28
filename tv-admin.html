@@ -1217,7 +1217,15 @@ function saveEdit(){
   else if(s.type==='weather'){var ewlat=g('ewt-lat')||String(s.data.lat||'');var ewlon=g('ewt-lon')||String(s.data.lon||'');s.name='Wetter '+(g('ewt-loc')||s.data.location||'');s.data={location:g('ewt-loc')||s.data.location,lat:parseFloat(ewlat)||s.data.lat,lon:parseFloat(ewlon)||s.data.lon,bg:g('ewt-bg')};s.duration=g('ewt-dur')?parseInt(g('ewt-dur')):30;}
   else if(s.type==='radar'){var erlat=g('erd-lat')||String(s.data.lat||'');var erlon=g('erd-lon')||String(s.data.lon||'');s.name='Radar '+(g('erd-loc')||s.data.location||'');s.data={location:g('erd-loc')||s.data.location,lat:parseFloat(erlat)||s.data.lat,lon:parseFloat(erlon)||s.data.lon,zoom:parseInt(g('erd-zoom'))||5,radius:parseInt(g('erd-radius'))||0,bg:g('erd-bg')};s.duration=g('erd-dur')?parseInt(g('erd-dur')):30;}
   else if(s.type==='html'){s.name=g('eh-tit')||s.name;s.data={title:g('eh-tit'),code:g('eh-cod')};s.duration=g('eh-dur')?parseInt(g('eh-dur')):null;}
-  closeModal();renderList();toast('Gespeichert!');
+  closeModal();renderList();
+  // Score-Folie sofort live übertragen
+  if(s&&s.type==='score'){
+    toast('⚡ Übertrage...');
+    _activeScoreId=s.id;
+    pushScoreNow(true);
+  } else {
+    toast('Gespeichert!');
+  }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1581,29 +1589,31 @@ function scheduleScorePush(){
   _autoSaveTimer=setTimeout(pushScoreNow,500);
 }
 
-async function pushScoreNow(){
+async function pushScoreNow(allowPrompt){
   var wurl=getWurl();
   if(!wurl)return;
   if(!_activeScoreId)return;
 
-  // Formular auslesen
-  var sin2=readSFMatches('E',6);
-  var dbl2=readSFMatches('D',3);
-  var matches=sin2.concat(dbl2);
-  var gh=0,gg=0;
-  matches.forEach(function(m){if(m.winner==='heim')gh++;else if(m.winner==='gast')gg++;});
-
-  // Lokales slides[] aktuell halten
+  // Folie aus lokalem slides[] holen
   var si=slides.findIndex(function(s){return s.id===_activeScoreId;});
-  if(si!==-1){
+  if(si===-1)return;
+
+  // Wenn Score-Tab offen: Formular auslesen und in slides[] schreiben
+  // Wenn Modal geschlossen: slides[] enthält bereits die Daten (saveEdit hat sie gesetzt)
+  var formEl=document.getElementById('sf-E1-hp');
+  if(formEl){
+    var sin2=readSFMatches('E',6);
+    var dbl2=readSFMatches('D',3);
+    var matches=sin2.concat(dbl2);
+    var gh=0,gg=0;
+    matches.forEach(function(m){if(m.winner==='heim')gh++;else if(m.winner==='gast')gg++;});
     slides[si].data.matches=matches;
     slides[si].data.gesamtHeim=String(gh);
     slides[si].data.gesamtGast=String(gg);
   }
 
-  // Score-Folie die gesendet wird
-  var scoreSlide=si!==-1?slides[si]:null;
-  if(!scoreSlide)return;
+  // Score-Folie die gesendet wird (mit aktuellen Daten aus slides[])
+  var scoreSlide=slides[si];
 
   setSt('busy','⚡...');
   try{
@@ -1613,7 +1623,12 @@ async function pushScoreNow(){
     if(role==='admin'){
       // Admin: kompletten Config holen, Score patchen, zurückschicken
       var pw=localStorage.getItem('vtv_admin_pw')||'';
-      if(!pw)return; // kein Auto-Prompt beim Auto-Save
+      if(!pw){
+        if(!allowPrompt)return; // kein Auto-Prompt beim Auto-Save
+        pw=prompt('Admin-Passwort:','');
+        if(!pw){setSt('err','Abgebrochen');return;}
+        localStorage.setItem('vtv_admin_pw',pw);
+      }
       var gr=await fetch(wurl+'/config');
       var gc=await gr.json();
       var cfg=gc.ok&&gc.config?gc.config:{slides:[]};
