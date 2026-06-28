@@ -526,9 +526,9 @@ main{max-width:920px;margin:0 auto;padding:24px 16px 80px}
   <div class="md">
     <h3 id="modal-ttl">Folie bearbeiten</h3>
     <div id="modal-body"></div>
-    <div class="mf">
+    <div class="mf" id="modal-footer">
       <button class="btn bo2" onclick="closeModal()">Abbrechen</button>
-      <button class="btn bp" onclick="saveEdit()">Speichern</button>
+      <button class="btn bp" id="modal-save-btn" onclick="saveEdit()">Speichern</button>
     </div>
   </div>
 </div>
@@ -1064,7 +1064,13 @@ function addSlide(){
   else if(t==='radar'){var rdlat=gv('rd-lat'),rdlon=gv('rd-lon'),rdloc=gv('rd-loc');if(!rdlat||!rdlon){toast('Bitte Ort suchen.','err');return;}s={id:Date.now(),type:t,name:'Radar '+rdloc,enabled:true,duration:dur?parseInt(dur)||30:30,data:{location:rdloc,lat:parseFloat(rdlat),lon:parseFloat(rdlon),zoom:parseInt(gv('rd-zoom'))||5,radius:parseInt(gv('rd-radius'))||0,bg:gv('rd-bg')}};}
   else if(t==='html'){var code=gv('h-code');if(!code){toast('Bitte HTML-Code.','err');return;}s={id:Date.now(),type:t,name:gv('h-title')||'HTML',enabled:true,duration:dur?parseInt(dur):null,data:{title:gv('h-title'),code:code}};}
   if(!s)return;
-  slides.push(s);renderList();clearForm(t);toast('Folie hinzugefügt!');
+  slides.push(s);renderList();
+  if(t==='score'){
+    clearForm(t);
+    doSave();
+  } else {
+    clearForm(t);toast('Folie hinzugefügt!');
+  }
 }
 
 function clearForm(t){
@@ -1137,22 +1143,40 @@ function openEdit(id){
   editId=id;
   document.getElementById('modal-ttl').textContent=(ICONS2[s.type]||'')+' '+LABELS[s.type]+' bearbeiten';
   document.getElementById('modal-body').innerHTML=mkEF(s);
-  if(s.type==='score'){setTimeout(function(){
-  var isHome=true; // im Edit-Modus: Heim=oben
-  buildSFRows('me-sin','E',6,[],s.data.gastTeam||'Gast',isHome,false);
-  buildSFRows('me-dbl','D',3,[],s.data.gastTeam||'Gast',isHome,true);
-  var meTotH=document.getElementById('sf-total-heim-name');if(meTotH)meTotH.textContent=s.data.heimTeam||'Heim';
-  var meTotG=document.getElementById('sf-total-gast-name');if(meTotG)meTotG.textContent=s.data.gastTeam||'Gast';
-  setTimeout(function(){
-    fillMatch('sf-E',(s.data.matches||[]).slice(0,6));
-    fillMatch('sf-D',(s.data.matches||[]).slice(6,9));
-    updateTotalScore();
-  },30);
-},0);}
+  if(s.type==='score'){
+    // Speichern-Button ausblenden - Score wird automatisch live übertragen
+    var saveBtn=document.getElementById('modal-save-btn');
+    var abbrBtn=document.querySelector('#modal-footer .btn.bo2');
+    if(saveBtn)saveBtn.style.display='none';
+    if(abbrBtn)abbrBtn.textContent='Schließen';
+    // _activeScoreId setzen damit pushScoreNow weiß welche Folie
+    _activeScoreId=s.id;
+    setTimeout(function(){
+      var isHome=true;
+      buildSFRows('me-sin','E',6,[],s.data.gastTeam||'Gast',isHome,false);
+      buildSFRows('me-dbl','D',3,[],s.data.gastTeam||'Gast',isHome,true);
+      var meTotH=document.getElementById('sf-total-heim-name');if(meTotH)meTotH.textContent=s.data.heimTeam||'Heim';
+      var meTotG=document.getElementById('sf-total-gast-name');if(meTotG)meTotG.textContent=s.data.gastTeam||'Gast';
+      setTimeout(function(){
+        fillMatch('sf-E',(s.data.matches||[]).slice(0,6));
+        fillMatch('sf-D',(s.data.matches||[]).slice(6,9));
+        updateTotalScore();
+      },30);
+    },0);
+  }
   if(s.type==='menu'){setTimeout(function(){fillMenuCats('eme-cats',s.data.categories||[]);},0);}
   document.getElementById('modal').classList.add('on');
 }
-function closeModal(){document.getElementById('modal').classList.remove('on');editId=null;}
+function closeModal(){
+  document.getElementById('modal').classList.remove('on');
+  editId=null;
+  _activeScoreId=null;
+  // Buttons zurücksetzen für nächste Verwendung
+  var saveBtn=document.getElementById('modal-save-btn');
+  var abbrBtn=document.querySelector('#modal-footer .btn.bo2');
+  if(saveBtn)saveBtn.style.display='';
+  if(abbrBtn)abbrBtn.textContent='Abbrechen';
+}
 
 function mkEF(s){
   var d=s.data||{},dv=s.duration||'';
@@ -1220,9 +1244,7 @@ function saveEdit(){
   closeModal();renderList();
   // Score-Folie sofort live übertragen
   if(s&&s.type==='score'){
-    toast('⚡ Übertrage...');
-    _activeScoreId=s.id;
-    pushScoreNow(true);
+    doSave();
   } else {
     toast('Gespeichert!');
   }
