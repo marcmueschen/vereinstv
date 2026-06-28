@@ -1565,10 +1565,12 @@ function autoSaveScore(){
   _autoSaveTimer=setTimeout(doSaveScore,600);
 }
 
-function doSaveScore(){
+async function doSaveScore(){
   if(!_activeScoreId)return;
+  var wurl=getWurl();
+  if(!wurl){toast('Keine Worker-URL','err');return;}
 
-  // Aktuelle Werte aus dem Formular in slides[] schreiben
+  // 1. Aktuelle Formular-Werte lesen
   var sin2=readSFMatches('E',6);
   var dbl2=readSFMatches('D',3);
   var gh=0,gg=0;
@@ -1577,14 +1579,14 @@ function doSaveScore(){
     else if(m.winner==='gast')gg++;
   });
 
+  // 2. Lokales slides[] patchen
   var slideIdx=slides.findIndex(function(s){return s.id===_activeScoreId;});
   if(slideIdx===-1)return;
-  var sl=slides[slideIdx];
-  sl.data.matches=sin2.concat(dbl2);
-  sl.data.gesamtHeim=String(gh);
-  sl.data.gesamtGast=String(gg);
+  slides[slideIdx].data.matches=sin2.concat(dbl2);
+  slides[slideIdx].data.gesamtHeim=String(gh);
+  slides[slideIdx].data.gesamtGast=String(gg);
 
-  // Anzeige aktualisieren
+  // 3. Anzeige aktualisieren
   var hEl=document.getElementById('sf-total-heim-score');
   var gEl=document.getElementById('sf-total-gast-score');
   if(hEl)hEl.textContent=gh;
@@ -1592,8 +1594,59 @@ function doSaveScore(){
   document.getElementById('s-gh').value=gh;
   document.getElementById('s-gg').value=gg;
 
-  // Direkt über doSave() übertragen (nutzt bestehende Auth-Logik)
-  doSave();
+  // 4. Aktuellen Config vom Worker laden, Score-Folie patchen, zurückschicken
+  setSt('busy','⚡ Live...');
+  try{
+    // GET aktuellen Config
+    var rGet=await fetch(wurl+'/config');
+    var dGet=await rGet.json();
+    var fullConfig=dGet.ok?dGet.config:{slides:[]};
+    var allSlides=fullConfig.slides||[];
+
+    // Score-Folie im Gesamt-Config patchen (nach ID suchen oder anhängen)
+    var patchedSlide=slides[slideIdx];
+    var existIdx=allSlides.findIndex(function(s){return s.id===patchedSlide.id;});
+    if(existIdx!==-1){
+      allSlides[existIdx]=patchedSlide;
+    } else {
+      allSlides.push(patchedSlide);
+    }
+    fullConfig.slides=allSlides;
+
+    // POST zurück
+    var role=SESSION?SESSION.role:'admin';
+    var resp,data;
+    if(role==='admin'){
+      var pw=localStorage.getItem('vtv_admin_pw')||'';
+      if(!pw){pw=prompt('Admin-Passwort:','');if(!pw){setSt('err','Abgebrochen');return;}localStorage.setItem('vtv_admin_pw',pw);}
+      resp=await fetch(wurl+'/config',{method:'POST',
+        headers:{'Content-Type':'application/json','X-Admin-Password':pw},
+        body:JSON.stringify(fullConfig)});
+      data=await resp.json();
+      if(data.error&&data.error.includes('Passwort'))localStorage.removeItem('vtv_admin_pw');
+    } else {
+      // Teamleader: nur die eigene Folie im Token-basierten Patch schicken
+      resp=await fetch(wurl+'/config',{method:'POST',
+        headers:{'Content-Type':'application/json','X-Role-Token':SESSION.token},
+        body:JSON.stringify({slides:[patchedSlide]})});
+      data=await resp.json();
+    }
+
+    if(data&&data.ok){
+      setSt('ok','✓ Live');
+      // Toast nur alle 3s zeigen damit es nicht nervt
+      if(!doSaveScore._lastToast||Date.now()-doSaveScore._lastToast>3000){
+        toast('⚡ Spielstand live!');
+        doSaveScore._lastToast=Date.now();
+      }
+    } else {
+      setSt('err','Fehler');
+      toast((data&&data.error)||'Übertragung fehlgeschlagen','err');
+    }
+  }catch(e){
+    setSt('err','Offline');
+    toast('Netzwerkfehler: '+e.message,'err');
+  }
 }
 
 function updateTotalScore(){
