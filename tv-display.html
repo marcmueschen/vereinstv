@@ -134,7 +134,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a3a2a;font-family:
 .wp .wp-err{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px;gap:14px;background:#1a2e22}
 .wp .wp-err h2{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:2rem;letter-spacing:.1em;color:#f5c842}
 /* NEWS TICKER */
-.news-sl{flex-direction:column;align-items:stretch;justify-content:flex-end}
+.news-sl,.rss-sl{flex-direction:column;align-items:stretch;justify-content:flex-end}
 .news-bg{position:absolute;inset:0}
 .news-ticker-bar{position:absolute;bottom:0;left:0;right:0;height:72px;display:flex;align-items:center;overflow:hidden;gap:0;z-index:5}
 .news-logo{height:52px;width:auto;max-width:80px;object-fit:contain;flex-shrink:0;margin:0 16px 0 14px;border-radius:4px}
@@ -591,6 +591,25 @@ function buildNews(s,div){
     +'</div></div></div>';
 }
 
+// ── RSS-FEED TICKER
+function buildRss(s,div){
+  var d=s.data||{};
+  div.style.background=d.slideBg||'#0f2a1c';
+  var ac=d.fg||'#f5c842',bg=d.bg||'#1a3a2a';
+  div.dataset.rssUrl=d.url||'';
+  div.dataset.rssCount=String(d.count||10);
+  div.dataset.rssSpeed=String(d.speed||'120');
+  div.dataset.rssFg=ac;
+  var logoHtml=d.logo?'<img class="news-logo" src="'+es(d.logo)+'" alt="Logo">':'';
+  var label=d.label||'NEWS';
+  div.innerHTML='<div class="news-bg" style="background:'+es(d.slideBg||'#0f2a1c')+'"></div>'
+    +'<div class="news-ticker-bar" style="background:'+es(bg)+'">'
+    +logoHtml
+    +'<span class="news-label" style="color:'+es(ac)+'">'+es(label)+'</span>'
+    +'<div class="news-scroll-wrap"><div class="news-scroll-inner" style="color:'+es(ac)+'">RSS-Feed wird geladen &hellip;</div></div>'
+    +'</div>';
+}
+
 // ── SPEISEKARTE
 function buildMenu(s,div){
   var d=s.data||{},ac=d.accent||'#f5c842';
@@ -657,6 +676,8 @@ function bs(s){
       +'<iframe data-src="'+es(d.url||'')+'" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" style="position:absolute;inset:0;width:100%;height:100%;border:none;z-index:2;display:none"></iframe>';
   } else if(s.type==='news'){
     div.className='sl news-sl';buildNews(s,div);
+  } else if(s.type==='rss'){
+    div.className='sl news-sl rss-sl';buildRss(s,div);
   } else if(s.type==='menu'){
     div.className='sl mn-sl';buildMenu(s,div);
   } else if(s.type==='weather'){
@@ -1301,6 +1322,46 @@ function renderBooking(el, resp) {
 }
 // ─── END PLATZBELEGUNG ───────────────────────────────────────
 
+// ─── RSS-FEED ────────────────────────────────────────────────
+var _rssInits={}, _rssRefresh={};
+function initRss(el,key){
+  if(_rssInits[key])return;
+  _rssInits[key]=true;
+  fetchRss(el,key);
+  _rssRefresh[key]=setInterval(function(){fetchRss(el,key);},600000); // alle 10 Min.
+}
+function fetchRss(el,key){
+  var feedUrl=el.dataset.rssUrl||'';
+  var wurl=getWurl();
+  var scrollWrap=el.querySelector('.news-scroll-wrap');
+  function setMsg(msg){
+    if(scrollWrap)scrollWrap.innerHTML='<div class="news-scroll-inner" style="color:'+es(el.dataset.rssFg||'#f5c842')+'">'+es(msg)+'</div>';
+  }
+  if(!feedUrl){setMsg('Keine Feed-URL konfiguriert.');return;}
+  if(!wurl){setMsg('Worker-URL fehlt.');return;}
+  wtXHR(wurl+'/rss?url='+encodeURIComponent(feedUrl),
+    function(resp){
+      if(!resp.ok||!resp.items||!resp.items.length){setMsg('Keine Meldungen verf\u00fcgbar.');return;}
+      renderRss(el,resp.items);
+    },
+    function(msg){setMsg('RSS-Feed nicht erreichbar.');}
+  );
+}
+function renderRss(el,items){
+  var scrollWrap=el.querySelector('.news-scroll-wrap');
+  if(!scrollWrap)return;
+  var count=parseInt(el.dataset.rssCount)||10;
+  var spd=parseInt(el.dataset.rssSpeed)||120;
+  var ac=el.dataset.rssFg||'#f5c842';
+  var picked=items.slice(0,count).map(function(it){return it.title;}).filter(Boolean);
+  if(!picked.length){scrollWrap.innerHTML='<div class="news-scroll-inner" style="color:'+es(ac)+'">Keine Meldungen verf\u00fcgbar.</div>';return;}
+  var txt=picked.join('\u00a0\u00a0\u00a0\u25cf\u00a0\u00a0\u00a0');
+  var doubled=txt+'\u00a0\u00a0\u00a0\u00a0\u00a0\u25c6\u00a0\u00a0\u00a0\u00a0\u00a0'+txt+'\u00a0\u00a0\u00a0\u00a0\u00a0\u25c6\u00a0\u00a0\u00a0\u00a0\u00a0';
+  var animDur=Math.max(12,Math.round(txt.length*14/spd))+'s';
+  scrollWrap.innerHTML='<div class="news-scroll-inner" style="color:'+es(ac)+';animation-duration:'+animDur+'">'+es(doubled)+'</div>';
+}
+// ─── END RSS-FEED ────────────────────────────────────────────
+
 function triggerSlideInit(){
   if(!slides[cur])return;
   var activeEl=stage.querySelector('.sl.on');
@@ -1322,6 +1383,7 @@ function triggerSlideInit(){
     },600);
   }
   if(slides[cur].type==='booking') initBooking(activeEl,slides[cur].id);
+  if(slides[cur].type==='rss') initRss(activeEl,String(slides[cur].id));
   // Webpage: alle inaktiven iframes leeren, aktiven laden
   stage.querySelectorAll('.sl.wp iframe').forEach(function(fr){
     var parentOn=fr.closest('.sl').classList.contains('on');
@@ -1367,6 +1429,7 @@ function rebuildSlides(){
   // Reset ALL init guards + cache so fresh render happens
   _wInits={};
   _bkInits={};
+  _rssInits={};
   _slideCache={};
   // Stop radar animations (map instances are gone)
   Object.keys(_wRadarAnims).forEach(function(k){clearInterval(_wRadarAnims[k]);});

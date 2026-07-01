@@ -86,6 +86,7 @@ main{max-width:920px;margin:0 auto;padding:24px 16px 80px}
 .sico.announce{background:#fff3cd}.sico.table{background:#d4edda}.sico.score{background:#d1f0e0}
 .sico.image{background:#d1ecf1}.sico.youtube{background:#f8d7da}.sico.webpage{background:#dce8ff}
 .sico.news{background:#ffe8d0}.sico.menu{background:#f0e6ff}.sico.html{background:#e2d9f3}
+.sico.rss{background:#ffe0dc}
 .sico.booking{background:#d4f0d4}.sico.weather{background:#c8e6f5}.sico.radar{background:#b8d4f0}.sico.upload{background:#e8d5f0}
 .sinf{flex:1;min-width:0}
 .sna{font-weight:600;font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -452,6 +453,20 @@ main{max-width:920px;margin:0 auto;padding:24px 16px 80px}
         <div class="fl"><label>Dauer Sek.</label><input type="number" id="nw-dur" min="3" placeholder="30"></div>
       </div>
     </div>
+    <div class="tf" id="tf-rss">
+      <div class="g2">
+        <div class="fl s2"><label>Feed-URL</label><input type="url" id="rss-url" placeholder="https://www.beispiel.de/rss.xml"></div>
+        <div class="fl s2"><label>Ticker-Beschriftung</label><input type="text" id="rss-label" placeholder="NEWS"></div>
+        <div class="fl"><label>Anzahl Meldungen</label><input type="number" id="rss-count" min="1" max="30" value="10"></div>
+        <div class="fl s2"><label>Logo/Bild-URL links im Ticker (opt.)</label><input type="url" id="rss-logo" placeholder="https://...png"></div>
+        <div class="fl"><label>Ticker-Hintergrundfarbe</label><div class="cr"><input type="color" id="rss-bg" value="#1a3a2a" oninput="cct('rss-bg','rss-bgt')"><input type="text" id="rss-bgt" value="#1a3a2a" oninput="ctc('rss-bg','rss-bgt')"></div></div>
+        <div class="fl"><label>Textfarbe</label><div class="cr"><input type="color" id="rss-fg" value="#f5c842" oninput="cct('rss-fg','rss-fgt')"><input type="text" id="rss-fgt" value="#f5c842" oninput="ctc('rss-fg','rss-fgt')"></div></div>
+        <div class="fl"><label>Folienhintergrund</label><div class="cr"><input type="color" id="rss-slide-bg" value="#0f2a1c" oninput="cct('rss-slide-bg','rss-sbgt')"><input type="text" id="rss-sbgt" value="#0f2a1c" oninput="ctc('rss-slide-bg','rss-sbgt')"></div></div>
+        <div class="fl"><label>Geschwindigkeit</label><select id="rss-speed"><option value="80">Langsam</option><option value="120" selected>Normal</option><option value="180">Schnell</option></select></div>
+        <div class="fl"><label>Dauer Sek.</label><input type="number" id="rss-dur" min="10" placeholder="30"></div>
+        <div style="font-size:.75rem;color:var(--di)" class="s2">Der Feed wird über den Server abgerufen und alle 10 Minuten automatisch aktualisiert.</div>
+      </div>
+    </div>
     <div class="tf" id="tf-menu">
       <div class="g2">
         <div class="fl s2"><label>Titel der Karte</label><input type="text" id="mn-title" placeholder="Unsere Speise- &amp; Getränkekarte"></div>
@@ -582,14 +597,14 @@ var PRESETS10 = ['10:0','10:1','10:2','10:3','10:4','10:5','10:6','10:7','10:8',
 
 var ICONS2 = {booking:'&#127931;',weather:'&#127780;',radar:'&#127782;',upload:'&#128444;',
   announce:'&#128226;',table:'&#128202;',score:'&#127934;',image:'&#128247;',
-  youtube:'&#9654;',webpage:'&#127760;',news:'&#128241;',menu:'&#127869;',html:'&#128187;'};
+  youtube:'&#9654;',webpage:'&#127760;',news:'&#128241;',menu:'&#127869;',html:'&#128187;',rss:'&#128225;'};
 var LABELS = {booking:'Platzbelegung',weather:'Wettervorhersage',radar:'Regenradar',upload:'Bild-Upload',
   announce:'Ankündigung',table:'Tabelle',score:'Spielstand',image:'Bild',
-  youtube:'YouTube',webpage:'Webseite',news:'News-Ticker',menu:'Speisekarte',html:'HTML'};
+  youtube:'YouTube',webpage:'Webseite',news:'News-Ticker',menu:'Speisekarte',html:'HTML',rss:'RSS-Feed'};
 
 // Which types each role can create
 var ROLE_TABS = {
-  admin: ['announce','table','score','image','upload','youtube','webpage','news','menu','booking','weather','radar','html'],
+  admin: ['announce','table','score','image','upload','youtube','webpage','news','rss','menu','booking','weather','radar','html'],
   wirtin: ['menu'],
   teamleader: ['score']
 };
@@ -704,7 +719,7 @@ function showApp(){
 var TAB_LABELS = {
   booking:'&#127931; Platzbelegung',announce:'&#128226; Ankündigung', table:'&#128202; Tabelle', score:'&#127934; Spielstand',
   image:'&#128247; Bild', upload:'&#128444; Bild-Upload', youtube:'&#9654; YouTube',
-  webpage:'&#127760; Webseite', news:'&#128241; News-Ticker', menu:'&#127869; Speisekarte',
+  webpage:'&#127760; Webseite', news:'&#128241; News-Ticker', rss:'&#128225; RSS-Feed', menu:'&#127869; Speisekarte',
   weather:'&#127780; Wettervorhersage', radar:'&#127782; Regenradar', html:'&#128187; HTML'
 };
 
@@ -1036,7 +1051,7 @@ function fillMenuCats(contId,cats){
 // ══════════════════════════════════════════════════════════════
 function addSlide(){
   var t=curTab;
-  var dm={announce:'a-dur',table:'t-dur',score:'s-dur',image:'i-dur',upload:'up-dur',youtube:'y-dur',webpage:'wp-dur',news:'nw-dur',menu:'mn-dur',booking:'bk-dur',weather:'wt-dur',radar:'rd-dur',html:'h-dur'};
+  var dm={announce:'a-dur',table:'t-dur',score:'s-dur',image:'i-dur',upload:'up-dur',youtube:'y-dur',webpage:'wp-dur',news:'nw-dur',rss:'rss-dur',menu:'mn-dur',booking:'bk-dur',weather:'wt-dur',radar:'rd-dur',html:'h-dur'};
   var dur=gv(dm[t]);var s=null;
   if(t==='announce'){var ti=gv('a-title');if(!ti){toast('Bitte Titel.','err');return;}s={id:Date.now(),type:t,name:ti,enabled:true,duration:dur?parseInt(dur):null,data:{title:ti,body:gv('a-body'),bg:gv('a-bg'),fg:gv('a-fg'),accent:gv('a-ac'),img:gv('a-img')}};}
   else if(t==='table'){var csv=gv('t-csv');if(!csv){toast('Bitte CSV.','err');return;}s={id:Date.now(),type:t,name:gv('t-title')||'Tabelle',enabled:true,duration:dur?parseInt(dur):null,data:{title:gv('t-title'),csv:csv,bg:gv('t-bg'),accent:gv('t-ac')}};}
@@ -1058,6 +1073,7 @@ function addSlide(){
   else if(t==='youtube'){var vid=ytId(gv('y-url'));if(!vid){toast('Keine gültige YouTube-URL.','err');return;}s={id:Date.now(),type:t,name:gv('y-title')||'YouTube',enabled:true,duration:dur?parseInt(dur):null,data:{title:gv('y-title'),vid:vid,autoplay:gv('y-auto'),mute:gv('y-mute')}};}
   else if(t==='webpage'){var wu=gv('wp-url');if(!wu){toast('Bitte URL.','err');return;}s={id:Date.now(),type:t,name:gv('wp-title')||wu,enabled:true,duration:dur?parseInt(dur)||30:30,data:{title:gv('wp-title'),url:wu}};}
   else if(t==='news'){var nwtxt=gv('nw-text');if(!nwtxt){toast('Bitte Text.','err');return;}s={id:Date.now(),type:t,name:'Ticker: '+nwtxt.substring(0,30),enabled:true,duration:dur?parseInt(dur)||30:30,data:{text:nwtxt,logo:gv('nw-logo'),bg:gv('nw-bg'),fg:gv('nw-fg'),slideBg:gv('nw-slide-bg'),speed:gv('nw-speed')||'120'}};}
+  else if(t==='rss'){var rssUrl=gv('rss-url');if(!rssUrl){toast('Bitte Feed-URL.','err');return;}s={id:Date.now(),type:t,name:'RSS: '+(gv('rss-label')||rssUrl).substring(0,30),enabled:true,duration:dur?parseInt(dur)||30:30,data:{url:rssUrl,label:gv('rss-label')||'NEWS',logo:gv('rss-logo'),count:parseInt(gv('rss-count'))||10,bg:gv('rss-bg'),fg:gv('rss-fg'),slideBg:gv('rss-slide-bg'),speed:gv('rss-speed')||'120'}};}
   else if(t==='menu'){var mnt=gv('mn-title');if(!mnt){toast('Bitte Kartentitel.','err');return;}s={id:Date.now(),type:t,name:mnt,enabled:true,duration:dur?parseInt(dur)||20:20,data:{title:mnt,bg:gv('mn-bg'),accent:gv('mn-ac'),categories:readMenuCats('mn-cats')}};}
   else if(t==='booking'){var bkurl=gv('bk-url');if(!bkurl){toast('Bitte URL eingeben.','err');return;}s={id:Date.now(),type:t,name:gv('bk-title')||'Platzbelegung',enabled:true,duration:gv('bk-dur')?parseInt(gv('bk-dur'))||30:30,data:{title:gv('bk-title')||'Platzbelegung heute',url:bkurl,courts:parseInt(gv('bk-courts'))||10,bg:gv('bk-bg'),accent:gv('bk-ac')}};}
   else if(t==='weather'){var wlat=gv('wt-lat'),wlon=gv('wt-lon'),wloc=gv('wt-loc');if(!wlat||!wlon){toast('Bitte Ort suchen.','err');return;}s={id:Date.now(),type:t,name:'Wetter '+wloc,enabled:true,duration:dur?parseInt(dur)||30:30,data:{location:wloc,lat:parseFloat(wlat),lon:parseFloat(wlon),bg:gv('wt-bg')}};}
@@ -1074,7 +1090,7 @@ function addSlide(){
 }
 
 function clearForm(t){
-  var m={announce:['a-title','a-body','a-img','a-dur'],table:['t-title','t-csv','t-dur'],score:['s-gh','s-gg','s-dur'],image:['i-title','i-url','i-cap','i-dur'],upload:['up-title','up-caption','up-dur'],youtube:['y-url','y-title','y-dur'],webpage:['wp-title','wp-url','wp-dur'],news:['nw-text','nw-logo','nw-dur'],menu:['mn-title','mn-dur'],booking:['bk-title','bk-dur'],weather:['wt-loc','wt-dur'],radar:['rd-loc','rd-dur'],html:['h-title','h-code','h-dur']};
+  var m={announce:['a-title','a-body','a-img','a-dur'],table:['t-title','t-csv','t-dur'],score:['s-gh','s-gg','s-dur'],image:['i-title','i-url','i-cap','i-dur'],upload:['up-title','up-caption','up-dur'],youtube:['y-url','y-title','y-dur'],webpage:['wp-title','wp-url','wp-dur'],news:['nw-text','nw-logo','nw-dur'],rss:['rss-url','rss-label','rss-logo','rss-count','rss-dur'],menu:['mn-title','mn-dur'],booking:['bk-title','bk-dur'],weather:['wt-loc','wt-dur'],radar:['rd-loc','rd-dur'],html:['h-title','h-code','h-dur']};
   (m[t]||[]).forEach(function(id){sv(id,'');});
   if(t==='score'){initScoreForm();}
   if(t==='menu'){var mc=document.getElementById('mn-cats');if(mc){mc.innerHTML='';addMenuCat('mn-cats');}}
@@ -1188,6 +1204,7 @@ function mkEF(s){
   if(s.type==='youtube')return '<div class="g2"><div class="fl s2"><label>YouTube-URL</label><input type="text" id="ey-url" value="'+esc(d.vid||'')+'"></div><div class="fl s2"><label>Titel</label><input type="text" id="ey-tit" value="'+esc(d.title||'')+'"></div><div class="fl"><label>Autostart</label><select id="ey-auto"><option value="1"'+(d.autoplay==='1'?' selected':'')+'>Ja</option><option value="0"'+(d.autoplay==='0'?' selected':'')+'>Nein</option></select></div><div class="fl"><label>Stummschalten</label><select id="ey-mut"><option value="1"'+(d.mute==='1'?' selected':'')+'>Ja</option><option value="0"'+(d.mute==='0'?' selected':'')+'>Nein</option></select></div><div class="fl"><label>Dauer Sek.</label><input type="number" id="ey-dur" value="'+dv+'"></div></div>';
   if(s.type==='webpage')return '<div class="g2"><div class="fl s2"><label>Name</label><input type="text" id="ewp-tit" value="'+esc(d.title||'')+'"></div><div class="fl s2"><label>URL</label><input type="url" id="ewp-url" value="'+esc(d.url||'')+'"></div><div class="fl"><label>Dauer Sek.</label><input type="number" id="ewp-dur" value="'+dv+'"></div></div>';
   if(s.type==='news')return '<div class="g2"><div class="fl s2"><label>Ticker-Text</label><textarea id="enw-txt" style="font-family:Inter,sans-serif">'+esc(d.text||'')+'</textarea></div><div class="fl s2"><label>Logo-URL</label><input type="url" id="enw-logo" value="'+esc(d.logo||'')+'"></div>'+crH('enw-bg','Ticker-Hintergrund',d.bg||'#1a3a2a')+crH('enw-fg','Textfarbe',d.fg||'#f5c842')+crH('enw-sbg','Folien-Hintergrund',d.slideBg||'#0f2a1c')+'<div class="fl"><label>Geschwindigkeit</label><select id="enw-spd"><option value="80"'+(d.speed==='80'?' selected':'')+'>Langsam</option><option value="120"'+(d.speed==='120'||!d.speed?' selected':'')+'>Normal</option><option value="180"'+(d.speed==='180'?' selected':'')+'>Schnell</option></select></div><div class="fl"><label>Dauer Sek.</label><input type="number" id="enw-dur" value="'+dv+'"></div></div>';
+  if(s.type==='rss')return '<div class="g2"><div class="fl s2"><label>Feed-URL</label><input type="url" id="erss-url" value="'+esc(d.url||'')+'"></div><div class="fl"><label>Ticker-Beschriftung</label><input type="text" id="erss-label" value="'+esc(d.label||'NEWS')+'"></div><div class="fl"><label>Anzahl Meldungen</label><input type="number" id="erss-count" min="1" max="30" value="'+(d.count||10)+'"></div><div class="fl s2"><label>Logo-URL (opt.)</label><input type="url" id="erss-logo" value="'+esc(d.logo||'')+'"></div>'+crH('erss-bg','Ticker-Hintergrund',d.bg||'#1a3a2a')+crH('erss-fg','Textfarbe',d.fg||'#f5c842')+crH('erss-sbg','Folien-Hintergrund',d.slideBg||'#0f2a1c')+'<div class="fl"><label>Geschwindigkeit</label><select id="erss-spd"><option value="80"'+(d.speed==='80'?' selected':'')+'>Langsam</option><option value="120"'+(d.speed==='120'||!d.speed?' selected':'')+'>Normal</option><option value="180"'+(d.speed==='180'?' selected':'')+'>Schnell</option></select></div><div class="fl"><label>Dauer Sek.</label><input type="number" id="erss-dur" value="'+dv+'"></div></div>';
   if(s.type==='menu')return '<div class="g2"><div class="fl s2"><label>Kartentitel</label><input type="text" id="emn-tit" value="'+esc(d.title||'')+'"></div>'+crH('emn-bg','Hintergrundfarbe',d.bg||'#1a2e22')+crH('emn-ac','Akzentfarbe',d.accent||'#f5c842')+'<div class="fl"><label>Dauer Sek.</label><input type="number" id="emn-dur" value="'+dv+'"></div><div class="s2"><div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--di);margin-bottom:6px">Kategorien</div><div id="eme-cats"></div><button type="button" class="btn bo2 sm" style="margin-top:6px" onclick="addMenuCat(\'eme-cats\')">+ Kategorie</button></div></div>';
   if(s.type==='booking'){var d2=s.data||{};return '<div class="g2">'+'<div class="fl s2"><label>Buchungs-URL</label><input type="url" id="ebk-url" value="'+esc(d2.url||'https://booking.tennisclub-geldern.de')+'"></div>'+'<div class="fl s2"><label>Titel</label><input type="text" id="ebk-title" value="'+esc(d2.title||'Platzbelegung heute')+'"></div>'+crH('ebk-bg','Hintergrundfarbe',d2.bg||'#0d2010')+crH('ebk-ac','Akzentfarbe',d2.accent||'#f5c842')+'<div class="fl"><label>Dauer Sek.</label><input type="number" id="ebk-dur" value="'+(s.duration||30)+'"></div>'+'</div>';}
   if(s.type==='weather')return '<div class="g2"><div class="fl s2"><label>Ort</label><div style="display:flex;gap:7px"><input type="text" id="ewt-loc" value="'+esc(d.location||'')+'"><button type="button" class="btn bp sm" onclick="geoSearch2(\'ewt\')">&#128270;</button></div></div><div class="fl s2" id="ewt-res" style="font-size:.82rem;color:var(--gl)">'+esc(d.location||'')+' ('+esc(String(d.lat||''))+', '+esc(String(d.lon||''))+')<input type="hidden" id="ewt-lat" value="'+esc(String(d.lat||''))+'"><input type="hidden" id="ewt-lon" value="'+esc(String(d.lon||''))+'"></div>'+crH('ewt-bg','Hintergrundfarbe',d.bg||'#0d1a2e')+'<div class="fl"><label>Dauer Sek.</label><input type="number" id="ewt-dur" value="'+dv+'"></div></div>';
@@ -1236,6 +1253,7 @@ function saveEdit(){
   else if(s.type==='youtube'){var vid=ytId(g('ey-url'))||g('ey-url');s.name=g('ey-tit')||'YouTube';s.data={title:g('ey-tit'),vid:vid,autoplay:g('ey-auto'),mute:g('ey-mut')};s.duration=g('ey-dur')?parseInt(g('ey-dur')):null;}
   else if(s.type==='webpage'){s.name=g('ewp-tit')||g('ewp-url')||s.name;s.data={title:g('ewp-tit'),url:g('ewp-url')};s.duration=g('ewp-dur')?parseInt(g('ewp-dur')):30;}
   else if(s.type==='news'){s.name='Ticker: '+(g('enw-txt')||'').substring(0,30);s.data={text:g('enw-txt'),logo:g('enw-logo'),bg:g('enw-bg'),fg:g('enw-fg'),slideBg:g('enw-sbg'),speed:g('enw-spd')};s.duration=g('enw-dur')?parseInt(g('enw-dur')):30;}
+  else if(s.type==='rss'){s.name='RSS: '+(g('erss-label')||g('erss-url')||'').substring(0,30);s.data={url:g('erss-url'),label:g('erss-label')||'NEWS',logo:g('erss-logo'),count:parseInt(g('erss-count'))||10,bg:g('erss-bg'),fg:g('erss-fg'),slideBg:g('erss-sbg'),speed:g('erss-spd')};s.duration=g('erss-dur')?parseInt(g('erss-dur')):30;}
   else if(s.type==='menu'){s.name=g('emn-tit')||s.name;s.data={title:g('emn-tit'),bg:g('emn-bg'),accent:g('emn-ac'),categories:readMenuCats('eme-cats')};s.duration=g('emn-dur')?parseInt(g('emn-dur')):20;}
   else if(s.type==='booking'){s.name=g('ebk-title')||s.name;s.data={title:g('ebk-title'),url:g('ebk-url'),courts:s.data.courts||10,bg:g('ebk-bg'),accent:g('ebk-ac')};s.duration=g('ebk-dur')?parseInt(g('ebk-dur')):30;}
   else if(s.type==='weather'){var ewlat=g('ewt-lat')||String(s.data.lat||'');var ewlon=g('ewt-lon')||String(s.data.lon||'');s.name='Wetter '+(g('ewt-loc')||s.data.location||'');s.data={location:g('ewt-loc')||s.data.location,lat:parseFloat(ewlat)||s.data.lat,lon:parseFloat(ewlon)||s.data.lon,bg:g('ewt-bg')};s.duration=g('ewt-dur')?parseInt(g('ewt-dur')):30;}
