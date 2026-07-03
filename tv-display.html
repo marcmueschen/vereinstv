@@ -1424,7 +1424,7 @@ function rebuildSlides(){
   var w=document.getElementById('wipe');
   if(w)w.classList.remove('go');
   var wns=document.getElementById('wipe-new-slide');
-  if(wns){wns.innerHTML='';wns.style.backgroundImage='';wns.style.backgroundSize='';wns.style.backgroundPosition='';}
+  if(wns){wns.innerHTML='';wns.className='';wns.style.background='';wns.style.backgroundImage='';wns.style.backgroundSize='';wns.style.backgroundPosition='';}
   stage.querySelectorAll('.sl').forEach(function(e){e.remove();});
   // Reset ALL init guards + cache so fresh render happens
   _wInits={};
@@ -1471,6 +1471,10 @@ function show(idx,an){
       wns.style.backgroundImage=newSlideEl.style.backgroundImage||'';
       wns.style.backgroundSize=newSlideEl.style.backgroundSize||'';
       wns.style.backgroundPosition=newSlideEl.style.backgroundPosition||'';
+      // Layout-Klassen der Folie mit übernehmen (z.B. "sl ann", "sl mn-sl" …),
+      // sonst fehlt beim Spiegeln die Flex-Zentrierung/Positionierung und der
+      // Inhalt blitzt kurz oben links auf, bevor die echte Folie übernimmt.
+      wns.className=(newSlideEl.className+' on').trim();
       wns.innerHTML=newSlideEl.innerHTML;
     }
     // Animation starten
@@ -1482,7 +1486,7 @@ function show(idx,an){
       var freshAll=stage.querySelectorAll('.sl');
       freshAll.forEach(function(el,i){el.classList.toggle('on',i===targetIdx);});
       w.classList.remove('go');
-      if(wns){wns.innerHTML='';wns.style.backgroundImage='';wns.style.backgroundSize='';wns.style.backgroundPosition='';}
+      if(wns){wns.innerHTML='';wns.className='';wns.style.background='';wns.style.backgroundImage='';wns.style.backgroundSize='';wns.style.backgroundPosition='';}
     },2600);
   }
   else{all.forEach(function(el,i){el.classList.toggle('on',i===cur);});}
