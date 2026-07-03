@@ -99,7 +99,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a3a2a;font-family:
 .sc-dv{height:2px;opacity:.2;margin-bottom:10px;border-radius:1px}
 .sc-bd{flex:1;overflow:hidden;display:flex;flex-direction:column;gap:0}
 .sc-hd{font-size:.65rem;font-weight:800;letter-spacing:.2em;text-transform:uppercase;opacity:.38;padding:5px 0 3px;border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:1px}
-.sc-rw{display:grid;grid-template-columns:44px 1fr 1fr 170px;align-items:center;gap:0 12px;padding:7px 8px;border-bottom:1px solid rgba(255,255,255,.06);border-radius:5px}
+.sc-rw{display:grid;grid-template-columns:44px 1fr 1fr 250px;align-items:center;gap:0 10px;padding:7px 8px;border-bottom:1px solid rgba(255,255,255,.06);border-radius:5px}
 .sc-rw:last-child{border-bottom:none}
 .sc-rw.flash{animation:scfl 2s cubic-bezier(.4,0,.2,1) forwards;transition:none}
 @keyframes scfl{
@@ -111,12 +111,21 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a3a2a;font-family:
 .sc-lb{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(.9rem,1.6vw,1.15rem);opacity:.35;text-align:left}
 .sc-pl{font-size:clamp(.95rem,1.75vw,1.2rem);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left}
 .sc-pl.winner{font-weight:800;opacity:1}
-.sc-ss{display:flex;gap:4px;align-items:center;justify-content:flex-start;flex-wrap:nowrap}
-.sc-sp{display:inline-flex;gap:2px;align-items:center;background:rgba(255,255,255,.08);border-radius:4px;padding:2px 6px}
-.sc-sv{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(1rem,1.8vw,1.3rem);min-width:18px;text-align:center;opacity:.55;line-height:1}
+.sc-ss{display:flex;gap:4px;align-items:center;justify-content:flex-start;flex-wrap:nowrap;min-width:0}
+.sc-sp{display:inline-flex;gap:2px;align-items:center;background:rgba(255,255,255,.08);border-radius:4px;padding:2px 6px;flex-shrink:0}
+.sc-sp.mtb{background:rgba(245,200,66,.16);box-shadow:inset 0 0 0 1px rgba(245,200,66,.3)}
+.sc-sv{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(1rem,1.7vw,1.25rem);min-width:20px;text-align:center;opacity:.55;line-height:1}
 .sc-sv.w{opacity:1;color:var(--ac,#f5c842)}
 .sc-se{font-size:.65rem;opacity:.2;padding:0 2px}
-.sc-sdv{width:1px;height:14px;background:rgba(255,255,255,.15);margin:0 5px}
+.sc-sdv{width:1px;height:14px;background:rgba(255,255,255,.15);margin:0 4px;flex-shrink:0}
+/* SCORE: Einzel/Doppel-Seiten */
+.sc-page{display:none;min-height:0;overflow:hidden}
+.sc-page.on{display:flex;flex-direction:column;flex:1;min-height:0}
+.sc-page-dots{display:none;justify-content:center;gap:8px;padding-top:6px;flex-shrink:0}
+.sc-bd.dbl-unlocked .sc-page-dots{display:flex}
+.sc-page-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.25);transition:background .3s,transform .3s}
+.sc-page-dot.on{background:var(--ac,#f5c842);transform:scale(1.25)}
+.sc-locked-msg{font-size:.8rem;opacity:.4;font-style:italic;padding:8px 2px}
 /* IMAGE */
 .img{position:absolute!important;inset:0}
 .sl.img.on{display:block}
@@ -446,18 +455,21 @@ function es(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').r
 function en(s){return es(s).replace(/\n/g,'<br>');}
 
 // ── SCORE
+var _scPageTimers={};
 function bsc(s,div){
   var d=s.data||{},ac=d.accent||'#f5c842';
   div.style.setProperty('--ac',ac);
   div.style.background=d.bg||'#0f2a1c';
+  div.dataset.scoreId=String(s.id);
   var gh=parseInt(d.gesamtHeim)||0,gg=parseInt(d.gesamtGast)||0;
   var hl=gh>gg,gl=gg>gh;
 
   function setHtml(m){
-    var parts=m.sets.map(function(st){
+    var parts=m.sets.map(function(st,si){
       if(!st.h&&!st.g)return '';
       var hw=parseInt(st.h||0)>parseInt(st.g||0),gw=parseInt(st.g||0)>parseInt(st.h||0);
-      return '<div class="sc-sp">'
+      var mtb=si===2?' mtb':'';
+      return '<div class="sc-sp'+mtb+'">'
         +'<span class="sc-sv'+(hw?' w':'')+'">'+es(st.h||'0')+'</span>'
         +'<span class="sc-se">:</span>'
         +'<span class="sc-sv'+(gw?' w':'')+'">'+es(st.g||'0')+'</span>'
@@ -516,10 +528,15 @@ function bsc(s,div){
   if(!div.querySelector('.sc-bd')){
     div.innerHTML=headHtml
       +'<div class="sc-bd">'
-        +'<div class="sc-hd">Einzel</div>'
-        +'<div class="sc-singles"></div>'
-        +'<div class="sc-hd" style="margin-top:6px">Doppel</div>'
-        +'<div class="sc-doubles"></div>'
+        +'<div class="sc-page sc-page-singles on">'
+          +'<div class="sc-hd">Einzel</div>'
+          +'<div class="sc-singles"></div>'
+        +'</div>'
+        +'<div class="sc-page sc-page-doubles">'
+          +'<div class="sc-hd">Doppel</div>'
+          +'<div class="sc-doubles"></div>'
+        +'</div>'
+        +'<div class="sc-page-dots"><span class="sc-page-dot on" data-p="0"></span><span class="sc-page-dot" data-p="1"></span></div>'
       +'</div>';
   } else {
     // Update header
@@ -563,8 +580,49 @@ function bsc(s,div){
   }
 
   var ma=d.matches||[];
-  updateRows('.sc-singles',ma.slice(0,6));
-  updateRows('.sc-doubles',ma.slice(6,9));
+  var singles=ma.slice(0,6),doubles=ma.slice(6,9);
+  updateRows('.sc-singles',singles);
+  updateRows('.sc-doubles',doubles);
+
+  // Doppel erst freischalten, wenn alle gespielten Einzel entschieden sind
+  var usedSingles=singles.filter(function(m){return m.heimPlayer||m.gastPlayer;});
+  var einzelFertig=usedSingles.length>0&&usedSingles.every(function(m){return !!m.winner;});
+  manageScorePaging(s,div,einzelFertig);
+}
+
+// Steuert das automatische Umschalten zwischen Einzel-Seite und Doppel-Seite.
+// Der Gesamtstand-Kopf bleibt davon unberührt, da er außerhalb von .sc-bd liegt.
+function manageScorePaging(s,div,doublesUnlocked){
+  var key=String(s.id);
+  var bdEl=div.querySelector('.sc-bd');
+  if(bdEl)bdEl.classList.toggle('dbl-unlocked',doublesUnlocked);
+
+  if(!doublesUnlocked){
+    if(_scPageTimers[key]){clearInterval(_scPageTimers[key].iv);delete _scPageTimers[key];}
+    setScorePage(div,'singles');
+    return;
+  }
+  if(_scPageTimers[key])return; // Timer läuft bereits
+  setScorePage(div,'singles');
+  var page='singles';
+  var iv=setInterval(function(){
+    page=(page==='singles')?'doubles':'singles';
+    var freshDiv=document.querySelector('.sl[data-score-id="'+key+'"]');
+    if(!freshDiv){clearInterval(iv);delete _scPageTimers[key];return;}
+    setScorePage(freshDiv,page);
+  },8000);
+  _scPageTimers[key]={iv:iv};
+}
+function setScorePage(div,page){
+  var sEl=div.querySelector('.sc-page-singles');
+  var dEl=div.querySelector('.sc-page-doubles');
+  if(sEl)sEl.classList.toggle('on',page==='singles');
+  if(dEl)dEl.classList.toggle('on',page==='doubles');
+  var dots=div.querySelectorAll('.sc-page-dot');
+  dots.forEach(function(dot){
+    var p=dot.dataset.p==='0'?'singles':'doubles';
+    dot.classList.toggle('on',p===page);
+  });
 }
 
 
@@ -1431,6 +1489,9 @@ function rebuildSlides(){
   _bkInits={};
   _rssInits={};
   _slideCache={};
+  // Score-Seitenwechsel-Timer stoppen (Elemente werden gleich entfernt)
+  Object.keys(_scPageTimers).forEach(function(k){clearInterval(_scPageTimers[k].iv);});
+  _scPageTimers={};
   // Stop radar animations (map instances are gone)
   Object.keys(_wRadarAnims).forEach(function(k){clearInterval(_wRadarAnims[k]);});
   _wRadarAnims={};

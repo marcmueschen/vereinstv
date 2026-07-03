@@ -171,6 +171,12 @@ main{max-width:920px;margin:0 auto;padding:24px 16px 80px}
 .sf-tot-vs{font-size:.9rem;color:rgba(255,255,255,.4);padding:0 10px}
 .sf-player-sel{width:100%;padding:7px 9px;border:1.5px solid var(--bo);border-radius:6px;font-size:.85rem;font-family:Inter,sans-serif;color:var(--tx);background:var(--bg);outline:none}
 .sf-player-sel:focus{border-color:var(--gl);background:#fff}
+.sf-set-hdr{display:flex;align-items:center;gap:5px;margin-bottom:2px}
+.sf-set-hdr span{width:102px;flex-shrink:0;text-align:center;font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--di)}
+.sf-set-hdr span.mtb{color:#b8860b}
+.sf-set-hdr .sf-set-hdr-sp{width:38px;flex-shrink:0}
+.sf-match-label.dbl{color:#2a6f97}
+.sf-hint{font-size:.72rem;color:var(--di);margin-top:2px}
 </style>
 </head>
 <body>
@@ -983,15 +989,29 @@ function bldRows(contId,px,count,lblFn){
 function mkFld(lbl,type,id,ph){var d=document.createElement('div');d.className='fl';d.style.margin='0';var l=document.createElement('label');l.textContent=lbl;var inp=document.createElement('input');inp.type=type;inp.id=id;if(ph)inp.placeholder=ph;d.appendChild(l);d.appendChild(inp);return d;}
 function mkSel(lbl,id,opts){var d=document.createElement('div');d.className='fl';d.style.margin='0';var l=document.createElement('label');l.textContent=lbl;var sel=document.createElement('select');sel.id=id;opts.forEach(function(o){var op=document.createElement('option');op.value=o[0];op.textContent=o[1];sel.appendChild(op);});d.appendChild(l);d.appendChild(sel);return d;}
 function rdMatch(px,count){var res=[];for(var i=0;i<count;i++){var sets=[];for(var s=0;s<3;s++){sets.push({h:gv(px+'-'+i+'-s'+s+'h'),g:gv(px+'-'+i+'-s'+s+'g')});}res.push({heimPlayer:gv(px+'-'+i+'-hp'),gastPlayer:gv(px+'-'+i+'-gp'),winner:gv(px+'-'+i+'-win'),sets:sets});}return res;}
-function fillMatch(px,matches){
+function fillMatch(px,matches,isDbl){
   // px = 'sf-E' oder 'sf-D' -> IDs: 'sf-E1-hp', 'sf-E1-s0h', etc.
   _suppressAutoSave=true; // Kein Auto-Save während des Ladens
   matches.forEach(function(m,i){
     var lbl=px+(i+1); // z.B. 'sf-E1'
-    var hpEl=document.getElementById(lbl+'-hp');
-    var gpEl=document.getElementById(lbl+'-gp');
-    if(hpEl){if(hpEl.tagName==='SELECT')hpEl.value=m.heimPlayer||'';else hpEl.value=m.heimPlayer||'';}
-    if(gpEl){if(gpEl.tagName==='SELECT')gpEl.value=m.gastPlayer||'';else gpEl.value=m.gastPlayer||'';}
+    if(isDbl){
+      // Bevorzugt separate Felder nutzen; ältere Folien ohne heimPlayer1/2
+      // werden aus dem kombinierten "Name1 / Name2"-String rekonstruiert.
+      var hp1=m.heimPlayer1,hp2=m.heimPlayer2,gp1=m.gastPlayer1,gp2=m.gastPlayer2;
+      if(hp1===undefined&&m.heimPlayer){var hSplit=m.heimPlayer.split(' / ');hp1=hSplit[0]||'';hp2=hSplit[1]||'';}
+      if(gp1===undefined&&m.gastPlayer){var gSplit=m.gastPlayer.split(' / ');gp1=gSplit[0]||'';gp2=gSplit[1]||'';}
+      var hp1El=document.getElementById(lbl+'-hp1'),hp2El=document.getElementById(lbl+'-hp2');
+      var gp1El=document.getElementById(lbl+'-gp1'),gp2El=document.getElementById(lbl+'-gp2');
+      if(hp1El)hp1El.value=hp1||'';
+      if(hp2El)hp2El.value=hp2||'';
+      if(gp1El)gp1El.value=gp1||'';
+      if(gp2El)gp2El.value=gp2||'';
+    } else {
+      var hpEl=document.getElementById(lbl+'-hp');
+      var gpEl=document.getElementById(lbl+'-gp');
+      if(hpEl){if(hpEl.tagName==='SELECT')hpEl.value=m.heimPlayer||'';else hpEl.value=m.heimPlayer||'';}
+      if(gpEl){if(gpEl.tagName==='SELECT')gpEl.value=m.gastPlayer||'';else gpEl.value=m.gastPlayer||'';}
+    }
     // Gewinner-Button
     var winEl=document.getElementById(lbl+'-win');
     if(winEl){winEl._win=m.winner||'';updateWinBtn(winEl,winEl._win);}
@@ -1058,8 +1078,9 @@ function addSlide(){
   else if(t==='score'){
     var hm=gv('s-heim'),ga=gv('s-gast');
     if(!hm||!ga){toast('Bitte Begegnung auswählen.','err');return;}
+    if(!validateDoubles())return;
     var sin2=readSFMatches('E',6);
-    var dbl2=readSFMatches('D',3);
+    var dbl2=readSFMatches('D',3,true);
     var teamId=gv('s-team-sel');
     s={id:Date.now(),type:t,name:hm+' vs '+ga,enabled:true,
       duration:dur?parseInt(dur):null,
@@ -1174,8 +1195,8 @@ function openEdit(id){
       var meTotH=document.getElementById('sf-total-heim-name');if(meTotH)meTotH.textContent=s.data.heimTeam||'Heim';
       var meTotG=document.getElementById('sf-total-gast-name');if(meTotG)meTotG.textContent=s.data.gastTeam||'Gast';
       setTimeout(function(){
-        fillMatch('sf-E',(s.data.matches||[]).slice(0,6));
-        fillMatch('sf-D',(s.data.matches||[]).slice(6,9));
+        fillMatch('sf-E',(s.data.matches||[]).slice(0,6),false);
+        fillMatch('sf-D',(s.data.matches||[]).slice(6,9),true);
         updateTotalScore();
       },30);
     },0);
@@ -1236,8 +1257,9 @@ function saveEdit(){
     var origS=slides.find(function(x){return x.id===editId;});
     var hm=(origS&&origS.data&&origS.data.heimTeam)||'Heim';
     var ga=(origS&&origS.data&&origS.data.gastTeam)||'Gast';
+    if(!validateDoubles())return;
     var sin2=readSFMatches('E',6);
-    var dbl2=readSFMatches('D',3);
+    var dbl2=readSFMatches('D',3,true);
     // Gesamtstand automatisch berechnen
     var gh=0,gg=0;
     sin2.concat(dbl2).forEach(function(m){if(m.winner==='heim')gh++;else if(m.winner==='gast')gg++;});
@@ -1524,8 +1546,8 @@ function onMatchChange(){
     if(existingSlide.data&&existingSlide.data.matches){
       setTimeout(function(){
         var ms=existingSlide.data.matches||[];
-        fillMatch('sf-E',ms.slice(0,6));
-        fillMatch('sf-D',ms.slice(6,9));
+        fillMatch('sf-E',ms.slice(0,6),false);
+        fillMatch('sf-D',ms.slice(6,9),true);
         // Gesamtstand aus Folie setzen (nicht neu berechnen, erst nach Laden)
         var hs=document.getElementById('sf-total-heim-score');
         var gs=document.getElementById('sf-total-gast-score');
@@ -1643,7 +1665,7 @@ async function pushScoreNow(allowPrompt){
   var formEl=document.getElementById('sf-E1-hp');
   if(formEl){
     var sin2=readSFMatches('E',6);
-    var dbl2=readSFMatches('D',3);
+    var dbl2=readSFMatches('D',3,true);
     var matches=sin2.concat(dbl2);
     var gh=0,gg=0;
     matches.forEach(function(m){if(m.winner==='heim')gh++;else if(m.winner==='gast')gg++;});
@@ -1735,22 +1757,27 @@ function buildSFRows(contId,prefix,count,ownPlayers,opponent,isHome,isDbl){
     var block=document.createElement('div');block.className='sf-match-block';
 
     // Match-Label
-    var mlbl=document.createElement('div');mlbl.className='sf-match-label';mlbl.textContent=lbl;
+    var mlbl=document.createElement('div');mlbl.className='sf-match-label'+(isDbl?' dbl':'');mlbl.textContent=lbl+(isDbl?' · Doppel (2 Spieler pro Team)':'');
     block.appendChild(mlbl);
 
-    // Heim-Spieler-Zeile
-    var heimRow=document.createElement('div');heimRow.className='sf-player-row';
-    var heimName=document.createElement('span');heimName.className='sf-pname';heimName.textContent='Spieler 1';
-    var heimInp=makeSFPlayerInput(ownPlayers,isHome,'sf-'+lbl+'-hp',isDbl);
-    heimRow.appendChild(heimName);heimRow.appendChild(heimInp);
-    block.appendChild(heimRow);
+    if(isDbl){
+      appendSFPlayerRow(block,'Heim 1',ownPlayers,isHome,'sf-'+lbl+'-hp1',isDbl);
+      appendSFPlayerRow(block,'Heim 2',ownPlayers,isHome,'sf-'+lbl+'-hp2',isDbl);
+      appendSFPlayerRow(block,'Gast 1',ownPlayers,!isHome,'sf-'+lbl+'-gp1',isDbl);
+      appendSFPlayerRow(block,'Gast 2',ownPlayers,!isHome,'sf-'+lbl+'-gp2',isDbl);
+    } else {
+      appendSFPlayerRow(block,'Heim',ownPlayers,isHome,'sf-'+lbl+'-hp',isDbl);
+      appendSFPlayerRow(block,'Gast',ownPlayers,!isHome,'sf-'+lbl+'-gp',isDbl);
+    }
 
-    // Gast-Spieler-Zeile
-    var gastRow=document.createElement('div');gastRow.className='sf-player-row';
-    var gastName=document.createElement('span');gastName.className='sf-pname';gastName.textContent='Spieler 2';
-    var gastInp=makeSFPlayerInput(ownPlayers,!isHome,'sf-'+lbl+'-gp',isDbl);
-    gastRow.appendChild(gastName);gastRow.appendChild(gastInp);
-    block.appendChild(gastRow);
+    // Satz-Kopfzeile (Bezeichnung je Spalte, 3. Satz = Match-Tiebreak)
+    var setHdr=document.createElement('div');setHdr.className='sf-set-hdr';
+    var spacer=document.createElement('span');spacer.style.width='60px';setHdr.appendChild(spacer);
+    ['Satz 1','Satz 2','Match-TB (bis 10)'].forEach(function(txt,idx){
+      var sp=document.createElement('span');if(idx===2)sp.className='mtb';sp.textContent=txt;setHdr.appendChild(sp);
+    });
+    var winSpacer=document.createElement('span');winSpacer.className='sf-set-hdr-sp';setHdr.appendChild(winSpacer);
+    block.appendChild(setHdr);
 
     // Satz-Counter-Zeile (Heim)
     var heimSetsRow=document.createElement('div');heimSetsRow.className='sf-player-row';
@@ -1764,7 +1791,7 @@ function buildSFRows(contId,prefix,count,ownPlayers,opponent,isHome,isDbl){
     gastSetsRow.appendChild(gastSetsLbl);
     var gastSets=document.createElement('div');gastSets.className='sf-sets-row';
 
-    // 3 Satz-Counter
+    // 3 Satz-Counter: Satz 1 + Satz 2 bis 6 (klassisch, inkl. Tiebreak bis 7), Satz 3 = Match-Tiebreak bis 10
     for(var s=0;s<3;s++){
       var idh='sf-'+lbl+'-s'+s+'h';
       var idg='sf-'+lbl+'-s'+s+'g';
@@ -1772,6 +1799,7 @@ function buildSFRows(contId,prefix,count,ownPlayers,opponent,isHome,isDbl){
       var cb=(function(ci,cs,cp){return function(){autoDetectWinner(cp,ci);};})(captureI,captureS,capturePrefix);
       var ch=mkCounter(idh,0,cb);
       var cg=mkCounter(idg,0,cb);
+      if(s===2){ch.title='Match-Tiebreak bis 10';cg.title='Match-Tiebreak bis 10';}
       heimSets.appendChild(ch);
       gastSets.appendChild(cg);
     }
@@ -1800,6 +1828,15 @@ function buildSFRows(contId,prefix,count,ownPlayers,opponent,isHome,isDbl){
   }
 }
 
+function appendSFPlayerRow(block,label,ownPlayers,isOwn,id,isDbl){
+  var row=document.createElement('div');row.className='sf-player-row';
+  var nameEl=document.createElement('span');nameEl.className='sf-pname';nameEl.textContent=label;
+  var inp=makeSFPlayerInput(ownPlayers,isOwn,id,isDbl);
+  row.appendChild(nameEl);row.appendChild(inp);
+  block.appendChild(row);
+  return row;
+}
+
 function makeSFPlayerInput(ownPlayers,isOwn,id,isDbl){
   if(isOwn && ownPlayers && ownPlayers.length>0){
     var sel=document.createElement('select');sel.className='sf-player-sel';sel.id=id;
@@ -1813,14 +1850,22 @@ function makeSFPlayerInput(ownPlayers,isOwn,id,isDbl){
   return inp;
 }
 
-function readSFMatches(prefix,count){
+function readSFMatches(prefix,count,isDbl){
   var res=[];
   for(var i=0;i<count;i++){
     var lbl=prefix+(i+1);
-    var hpEl=document.getElementById('sf-'+lbl+'-hp');
-    var gpEl=document.getElementById('sf-'+lbl+'-gp');
-    var hp=hpEl?(hpEl.value||hpEl.textContent||''):'';
-    var gp=gpEl?(gpEl.value||gpEl.textContent||''):'';
+    var hp,gp,hp1,hp2,gp1,gp2;
+    if(isDbl){
+      hp1=gv('sf-'+lbl+'-hp1');hp2=gv('sf-'+lbl+'-hp2');
+      gp1=gv('sf-'+lbl+'-gp1');gp2=gv('sf-'+lbl+'-gp2');
+      hp=[hp1,hp2].filter(Boolean).join(' / ');
+      gp=[gp1,gp2].filter(Boolean).join(' / ');
+    } else {
+      var hpEl=document.getElementById('sf-'+lbl+'-hp');
+      var gpEl=document.getElementById('sf-'+lbl+'-gp');
+      hp=hpEl?(hpEl.value||hpEl.textContent||''):'';
+      gp=gpEl?(gpEl.value||gpEl.textContent||''):'';
+    }
     var sets=[];
     for(var s=0;s<3;s++){
       var shEl=document.getElementById('sf-'+lbl+'-s'+s+'h');
@@ -1832,9 +1877,32 @@ function readSFMatches(prefix,count){
     }
     var winEl=document.getElementById('sf-'+lbl+'-win');
     var win=winEl?(winEl._win||winEl.value||''):'';
-    res.push({type:lbl,heimPlayer:hp,gastPlayer:gp,winner:win,sets:sets});
+    var m={type:lbl,heimPlayer:hp,gastPlayer:gp,winner:win,sets:sets};
+    if(isDbl){m.heimPlayer1=hp1;m.heimPlayer2=hp2;m.gastPlayer1=gp1;m.gastPlayer2=gp2;}
+    res.push(m);
   }
   return res;
+}
+
+// Prüft, ob bei Doppel-Begegnungen (D1–D3) jeweils 2 Spieler pro Team eingetragen sind,
+// sobald für die Begegnung überhaupt Daten (Spieler oder Sätze) erfasst wurden.
+function validateDoubles(){
+  for(var i=0;i<3;i++){
+    var lbl='D'+(i+1);
+    var hp1=gv('sf-'+lbl+'-hp1'),hp2=gv('sf-'+lbl+'-hp2');
+    var gp1=gv('sf-'+lbl+'-gp1'),gp2=gv('sf-'+lbl+'-gp2');
+    var hasSets=false;
+    for(var s=0;s<3;s++){
+      var h=document.getElementById('sf-'+lbl+'-s'+s+'h');
+      var g=document.getElementById('sf-'+lbl+'-s'+s+'g');
+      if((h&&h._v)||(g&&g._v))hasSets=true;
+    }
+    var used=hp1||hp2||gp1||gp2||hasSets;
+    if(!used)continue;
+    if((hp1&&!hp2)||(!hp1&&hp2)){toast('Bitte bei '+lbl+' auf der Heim-Seite 2 Spieler eintragen (Doppel).','err');return false;}
+    if((gp1&&!gp2)||(!gp1&&gp2)){toast('Bitte bei '+lbl+' auf der Gast-Seite 2 Spieler eintragen (Doppel).','err');return false;}
+  }
+  return true;
 }
 // ══════════════════════════════════════════════════════════
 // END SPIELSTAND-FORMULAR
