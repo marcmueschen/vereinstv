@@ -152,23 +152,20 @@ main{max-width:920px;margin:0 auto;padding:24px 16px 80px}
 .sf-pname{font-size:.8rem;font-weight:600;color:var(--tx);width:60px;flex-shrink:0}
 .sf-player-inp{flex:1;padding:10px 10px;border:1.5px solid var(--bo);border-radius:6px;font-size:.95rem;font-family:Inter,sans-serif;color:var(--tx);background:var(--bg);outline:none;min-width:0}
 .sf-player-inp:focus{border-color:var(--gl);background:#fff}
-.sf-set-row{display:flex;align-items:center;gap:8px;margin:4px 0;padding:4px 0}
-.sf-set-lbl{flex:1;font-size:.8rem;font-weight:700;color:var(--tx);min-width:0}
-.sf-set-row.mtb{border-top:1px dashed var(--bo);padding-top:8px;margin-top:6px}
-.sf-set-row.mtb .sf-set-lbl{color:#b8860b}
-.sf-set-vs{font-size:.85rem;opacity:.4;flex-shrink:0}
-.sf-counter{display:flex;align-items:stretch;background:#eaf0f6;border:1.5px solid #b8cfe0;border-radius:9px;overflow:hidden;flex-shrink:0}
-.sf-counter button{width:42px;height:42px;border:none;background:transparent;font-size:1.35rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;-webkit-tap-highlight-color:transparent;user-select:none;touch-action:manipulation}
-.sf-counter .sf-plus{background:#27ae60;color:#fff}
-.sf-counter .sf-plus:active{background:#1e8449}
-.sf-counter .sf-minus{background:#e74c3c;color:#fff}
-.sf-counter .sf-minus:active{background:#c0392b}
-.sf-counter .sf-val{width:44px;height:42px;text-align:center;font-size:1.15rem;font-weight:800;color:var(--tx);background:transparent;border:none;font-family:Inter,sans-serif;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none;touch-action:manipulation;display:flex;align-items:center;justify-content:center}
-.sf-win-row{display:flex;align-items:center;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid var(--bo)}
-.sf-win-btn{width:44px;height:44px;border-radius:9px;border:2px solid #b8cfe0;background:#eaf0f6;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
-.sf-win-btn.win-heim{background:#27ae60;border-color:#1e8449;color:#fff}
-.sf-win-btn.win-gast{background:#e74c3c;border-color:#c0392b;color:#fff}
-.sf-win-btn.no-win{background:#95a5a6;border-color:#7f8c8d;color:#fff;opacity:.6}
+.sf-live-wrap{margin-top:10px;padding-top:10px;border-top:1px solid var(--bo)}
+.sf-sets-summary{font-family:'Bebas Neue',sans-serif;font-size:1.15rem;letter-spacing:.06em;text-align:center;color:var(--tx);margin-bottom:4px}
+.sf-live-label{font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:var(--di);text-align:center;margin-bottom:8px}
+.sf-match-over{font-size:.85rem;font-weight:800;text-align:center;margin-bottom:8px;padding:7px 8px;border-radius:7px;background:#eaf6ee;color:#1e8449}
+.sf-live-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sf-live-col{display:flex;flex-direction:column;align-items:stretch;gap:6px;background:#f6faf7;border:1.5px solid #dcebdc;border-radius:10px;padding:10px}
+.sf-live-plus{width:100%;padding:14px 0;border:none;border-radius:9px;background:#27ae60;color:#fff;font-size:1.15rem;font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.sf-live-plus:active{background:#1e8449}
+.sf-live-plus[disabled]{background:#b7c2c6;cursor:not-allowed;opacity:.7}
+.sf-live-num{text-align:center;font-family:'Bebas Neue',sans-serif;font-size:2.6rem;line-height:1;color:var(--tx);font-weight:900}
+.sf-live-minus{width:100%;padding:9px 0;border:1.5px solid #e74c3c;border-radius:8px;background:#fff;color:#e74c3c;font-size:.78rem;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.sf-live-minus:active{background:#fdeaea}
+.sf-live-ret{width:100%;padding:8px 4px;border:1.5px solid #b8cfe0;border-radius:8px;background:#fff;color:var(--di);font-size:.68rem;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;line-height:1.2}
+.sf-live-ret.active{background:#f5c842;border-color:#b8860b;color:#5a4a00;font-weight:800}
 .sf-total-bar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:linear-gradient(135deg,#1a3a2a,#0f2a1c);border-radius:10px;margin-bottom:14px;color:#f5c842}
 .sf-tot-team{flex:1;text-align:center}
 .sf-tot-name{font-size:.75rem;font-weight:700;color:rgba(255,255,255,.8);margin-bottom:2px}
@@ -176,15 +173,15 @@ main{max-width:920px;margin:0 auto;padding:24px 16px 80px}
 .sf-tot-vs{font-size:.9rem;color:rgba(255,255,255,.4);padding:0 10px}
 .sf-match-label.dbl{color:#2a6f97}
 .sf-hint{font-size:.72rem;color:var(--di);margin-top:2px}
-/* Handy-Optimierung: größere Tipp-Ziele, Sätze bleiben untereinander */
+/* Handy-Optimierung: große Tipp-Ziele für die 3 Tasten pro Spieler */
 @media (max-width:640px){
   .sf-match-block{padding:14px}
   .sf-pname{width:52px;font-size:.76rem}
   .sf-player-inp{padding:12px 10px;font-size:1rem}
-  .sf-counter button{width:46px;height:46px;font-size:1.5rem}
-  .sf-counter .sf-val{width:48px;height:46px;font-size:1.25rem}
-  .sf-win-btn{width:48px;height:48px;font-size:1.3rem}
-  .sf-set-lbl{font-size:.85rem}
+  .sf-live-plus{padding:16px 0;font-size:1.25rem}
+  .sf-live-num{font-size:2.8rem}
+  .sf-live-minus{padding:11px 0;font-size:.82rem}
+  .sf-live-ret{padding:10px 4px;font-size:.72rem}
 }
 </style>
 </head>
@@ -998,46 +995,40 @@ function bldRows(contId,px,count,lblFn){
 function mkFld(lbl,type,id,ph){var d=document.createElement('div');d.className='fl';d.style.margin='0';var l=document.createElement('label');l.textContent=lbl;var inp=document.createElement('input');inp.type=type;inp.id=id;if(ph)inp.placeholder=ph;d.appendChild(l);d.appendChild(inp);return d;}
 function mkSel(lbl,id,opts){var d=document.createElement('div');d.className='fl';d.style.margin='0';var l=document.createElement('label');l.textContent=lbl;var sel=document.createElement('select');sel.id=id;opts.forEach(function(o){var op=document.createElement('option');op.value=o[0];op.textContent=o[1];sel.appendChild(op);});d.appendChild(l);d.appendChild(sel);return d;}
 function rdMatch(px,count){var res=[];for(var i=0;i<count;i++){var sets=[];for(var s=0;s<3;s++){sets.push({h:gv(px+'-'+i+'-s'+s+'h'),g:gv(px+'-'+i+'-s'+s+'g')});}res.push({heimPlayer:gv(px+'-'+i+'-hp'),gastPlayer:gv(px+'-'+i+'-gp'),winner:gv(px+'-'+i+'-win'),sets:sets});}return res;}
-function fillMatch(px,matches,isDbl){
-  // px = 'sf-E' oder 'sf-D' -> IDs: 'sf-E1-hp', 'sf-E1-s0h', etc.
+function fillMatch(prefix,matches,isDbl){
+  // prefix = 'E' oder 'D' -> IDs: 'sf-E1-hp', _sfState-Key 'E1', etc.
   _suppressAutoSave=true; // Kein Auto-Save während des Ladens
   matches.forEach(function(m,i){
-    var lbl=px+(i+1); // z.B. 'sf-E1'
+    var lbl=prefix+(i+1); // z.B. 'E1'
     if(isDbl){
       // Bevorzugt separate Felder nutzen; ältere Folien ohne heimPlayer1/2
       // werden aus dem kombinierten "Name1 / Name2"-String rekonstruiert.
       var hp1=m.heimPlayer1,hp2=m.heimPlayer2,gp1=m.gastPlayer1,gp2=m.gastPlayer2;
       if(hp1===undefined&&m.heimPlayer){var hSplit=m.heimPlayer.split(' / ');hp1=hSplit[0]||'';hp2=hSplit[1]||'';}
       if(gp1===undefined&&m.gastPlayer){var gSplit=m.gastPlayer.split(' / ');gp1=gSplit[0]||'';gp2=gSplit[1]||'';}
-      var hp1El=document.getElementById(lbl+'-hp1'),hp2El=document.getElementById(lbl+'-hp2');
-      var gp1El=document.getElementById(lbl+'-gp1'),gp2El=document.getElementById(lbl+'-gp2');
+      var hp1El=document.getElementById('sf-'+lbl+'-hp1'),hp2El=document.getElementById('sf-'+lbl+'-hp2');
+      var gp1El=document.getElementById('sf-'+lbl+'-gp1'),gp2El=document.getElementById('sf-'+lbl+'-gp2');
       if(hp1El)hp1El.value=hp1||'';
       if(hp2El)hp2El.value=hp2||'';
       if(gp1El)gp1El.value=gp1||'';
       if(gp2El)gp2El.value=gp2||'';
     } else {
-      var hpEl=document.getElementById(lbl+'-hp');
-      var gpEl=document.getElementById(lbl+'-gp');
-      if(hpEl){if(hpEl.tagName==='SELECT')hpEl.value=m.heimPlayer||'';else hpEl.value=m.heimPlayer||'';}
-      if(gpEl){if(gpEl.tagName==='SELECT')gpEl.value=m.gastPlayer||'';else gpEl.value=m.gastPlayer||'';}
+      var hpEl=document.getElementById('sf-'+lbl+'-hp');
+      var gpEl=document.getElementById('sf-'+lbl+'-gp');
+      if(hpEl)hpEl.value=m.heimPlayer||'';
+      if(gpEl)gpEl.value=m.gastPlayer||'';
     }
-    // Gewinner-Button
-    var winEl=document.getElementById(lbl+'-win');
-    if(winEl){
-      winEl._win=m.winner||'';
-      // Weicht der gespeicherte Sieger von dem ab, was die Satzstände allein ergeben
-      // würden, wurde er manuell gesetzt (z.B. w.o./Aufgabe) — das bleibt erhalten.
-      var autoWin=computeAutoWinner(m.sets||[]);
-      winEl._manual=!!(m.winner&&m.winner!==autoWin);
-      updateWinBtn(winEl,winEl._win);
+    // Live-Zähler-Status aus den gespeicherten Satzständen wiederherstellen
+    var sets=[];
+    for(var s=0;s<3;s++){
+      var src=(m.sets||[])[s]||{h:0,g:0};
+      sets.push({h:parseInt(src.h)||0,g:parseInt(src.g)||0});
     }
-    // Satz-Counter
-    (m.sets||[]).forEach(function(s,si){
-      var shEl=document.getElementById(lbl+'-s'+si+'h');
-      var sgEl=document.getElementById(lbl+'-s'+si+'g');
-      if(shEl){shEl._v=parseInt(s.h)||0;shEl.textContent=shEl._v;}
-      if(sgEl){sgEl._v=parseInt(s.g)||0;sgEl.textContent=sgEl._v;}
-    });
+    var retiredBy=m.retiredBy||null;
+    var st={sets:sets,winner:m.winner||'',retiredBy:retiredBy,currentSet:0};
+    st.currentSet=retiredBy?sfLastActiveSetIdx(sets):sfDeriveCurrentSet(sets);
+    _sfState[lbl]=st;
+    renderMatchCounter(lbl);
   });
   updateTotalScore();
   _suppressAutoSave=false; // Wieder aktivieren
@@ -1206,13 +1197,14 @@ function openEdit(id){
     _activeScoreId=s.id;
     setTimeout(function(){
       var isHome=true;
+      _sfState={}; // frischer Zustand, sonst könnten Werte der zuletzt bearbeiteten Begegnung durchsickern
       buildSFRows('me-sin','E',6,[],s.data.gastTeam||'Gast',isHome,false);
       buildSFRows('me-dbl','D',3,[],s.data.gastTeam||'Gast',isHome,true);
       var meTotH=document.getElementById('sf-total-heim-name');if(meTotH)meTotH.textContent=s.data.heimTeam||'Heim';
       var meTotG=document.getElementById('sf-total-gast-name');if(meTotG)meTotG.textContent=s.data.gastTeam||'Gast';
       setTimeout(function(){
-        fillMatch('sf-E',(s.data.matches||[]).slice(0,6),false);
-        fillMatch('sf-D',(s.data.matches||[]).slice(6,9),true);
+        fillMatch('E',(s.data.matches||[]).slice(0,6),false);
+        fillMatch('D',(s.data.matches||[]).slice(6,9),true);
         updateTotalScore();
       },30);
     },0);
@@ -1552,6 +1544,7 @@ function onMatchChange(){
 
   // Spieler-Selects aufbauen
   var ownPlayers=team.ownPlayers||[];
+  _sfState={}; // frischer Zustand für die neu gewählte Begegnung
   buildSFRows('sf-sin','E',6,ownPlayers,match.opponent,isHome);
   buildSFRows('sf-dbl','D',3,ownPlayers,match.opponent,isHome,true);
   wrap.style.display='block';
@@ -1562,8 +1555,8 @@ function onMatchChange(){
     if(existingSlide.data&&existingSlide.data.matches){
       setTimeout(function(){
         var ms=existingSlide.data.matches||[];
-        fillMatch('sf-E',ms.slice(0,6),false);
-        fillMatch('sf-D',ms.slice(6,9),true);
+        fillMatch('E',ms.slice(0,6),false);
+        fillMatch('D',ms.slice(6,9),true);
         // Gesamtstand aus Folie setzen (nicht neu berechnen, erst nach Laden)
         var hs=document.getElementById('sf-total-heim-score');
         var gs=document.getElementById('sf-total-gast-score');
@@ -1604,31 +1597,8 @@ function onMatchChange(){
 // Neues mobil-optimiertes Spielstand-UI mit +/- Countern
 // ══════════════════════════════════════════════════════════
 
-function mkCounter(id, initVal, onChange, maxVal){
-  maxVal=maxVal||99;
-  var wrap=document.createElement('div');wrap.className='sf-counter';
-  var bm=document.createElement('button');bm.type='button';bm.className='sf-minus';bm.textContent='−';bm.setAttribute('aria-label','minus');
-  var val=document.createElement('span');val.className='sf-val';val.id=id;val.textContent=initVal||'0';val._v=parseInt(initVal)||0;
-  var bp=document.createElement('button');bp.type='button';bp.className='sf-plus';bp.textContent='+';bp.setAttribute('aria-label','plus');
-  bm.addEventListener('click',function(){
-    val._v=Math.max(0,val._v-1);val.textContent=val._v;
-    if(onChange)onChange();
-    scheduleScorePush();
-  });
-  function inc(){
-    val._v=Math.min(maxVal,val._v+1);val.textContent=val._v;
-    if(onChange)onChange();
-    scheduleScorePush();
-  }
-  bp.addEventListener('click',inc);
-  // Direkt auf die Zahl tippen erhöht sie ebenfalls — schnellste Eingabe per Handy
-  val.addEventListener('click',inc);
-  wrap.appendChild(bm);wrap.appendChild(val);wrap.appendChild(bp);
-  return wrap;
-}
-
 // Prüft, ob ein regulärer Satz (1 oder 2) nach Tennis-Regeln entschieden ist:
-// mind. 6 Spiele + 2 Vorsprung, oder 7:5, oder 7:6 (Tiebreak).
+// mind. 6 Spiele + 2 Vorsprung, oder 7:5, oder 7:6 (Satz-Tiebreak).
 function isSetWon(hv,gv){
   var hi=Math.max(hv,gv),lo=Math.min(hv,gv);
   if(hi<6)return false;
@@ -1636,7 +1606,7 @@ function isSetWon(hv,gv){
   if(hi===7&&(lo===5||lo===6))return true;
   return false;
 }
-// Prüft, ob der Match-Tiebreak (3. Satz) entschieden ist: mind. 10 Punkte + 2 Vorsprung.
+// Prüft, ob der Champions-/Match-Tiebreak (3. Satz) entschieden ist: mind. 10 Punkte + 2 Vorsprung.
 function isMtbWon(hv,gv){
   var hi=Math.max(hv,gv),lo=Math.min(hv,gv);
   return hi>=10&&hi-lo>=2;
@@ -1656,33 +1626,112 @@ function computeAutoWinner(sets){
   if(gw>=2)return 'gast';
   return '';
 }
-function autoDetectWinner(prefix,idx){
-  var winId='sf-'+prefix+(idx+1)+'-win';
-  var winEl=document.getElementById(winId);
-  if(!winEl)return;
-  // Manuelle Wertung (z.B. w.o./Aufgabe) bleibt unangetastet, bis der Button
-  // wieder auf "kein Sieger" zurückgeschaltet wird.
-  if(winEl._manual)return;
-  var sets=[];
-  for(var s=0;s<3;s++){
-    var hEl=document.getElementById('sf-'+prefix+(idx+1)+'-s'+s+'h');
-    var gEl=document.getElementById('sf-'+prefix+(idx+1)+'-s'+s+'g');
-    sets.push({
-      h:hEl?(hEl._v!==undefined?hEl._v:parseInt(hEl.textContent||hEl.value)||0):0,
-      g:gEl?(gEl._v!==undefined?gEl._v:parseInt(gEl.textContent||gEl.value)||0):0
-    });
+// Findet den ersten noch nicht entschiedenen Satz (= der gerade "laufende" Satz).
+function sfDeriveCurrentSet(sets){
+  for(var i=0;i<3;i++){
+    var hv=parseInt(sets[i].h)||0,gv=parseInt(sets[i].g)||0;
+    var done=i===2?isMtbWon(hv,gv):isSetWon(hv,gv);
+    if(!done)return i;
   }
-  var newWin=computeAutoWinner(sets);
-  winEl._win=newWin;
-  updateWinBtn(winEl,newWin);
-  updateTotalScore();
+  return 2;
+}
+// Findet den zuletzt "angefassten" Satz (für die Korrektur-Taste, auch nachdem
+// bereits zum nächsten Satz weitergezählt wurde).
+function sfLastActiveSetIdx(sets){
+  for(var i=2;i>=0;i--){
+    if((sets[i].h||0)>0||(sets[i].g||0)>0)return i;
+  }
+  return 0;
+}
+function sfDefaultState(){
+  return {sets:[{h:0,g:0},{h:0,g:0},{h:0,g:0}],currentSet:0,winner:'',retiredBy:null};
 }
 
-function updateWinBtn(btnEl,win){
-  btnEl.classList.remove('win-heim','win-gast','no-win');
-  if(win==='heim'){btnEl.textContent='✓';btnEl.classList.add('win-heim');}
-  else if(win==='gast'){btnEl.textContent='✓';btnEl.classList.add('win-gast');}
-  else{btnEl.textContent='×';btnEl.classList.add('no-win');}
+// ══════════════════════════════════════════════════════════
+// LIVE-ZÄHLER: 3 Tasten pro Spieler (Hochzählen · Korrektur · Sieg durch Aufgabe)
+// Es werden nur gewonnene Spiele gezählt, nicht einzelne Ballwechsel. Nach Gewinn
+// eines Satzes wird automatisch zum nächsten Satz weitergezählt (Satz 3 = Champions-/
+// Match-Tiebreak bis 10). Das Match endet erst nach 2 gewonnenen Sätzen — oder sofort,
+// wenn eine Seite über die Aufgabe-Taste als Sieger markiert wird.
+// ══════════════════════════════════════════════════════════
+var _sfState={};
+
+function sfIncGame(lbl,side){
+  var st=_sfState[lbl];if(!st||st.winner)return; // Match bereits entschieden -> keine weitere Zählung
+  var cs=st.currentSet;
+  var key=side==='heim'?'h':'g';
+  st.sets[cs][key]=(st.sets[cs][key]||0)+1;
+  var hv=st.sets[cs].h,gv=st.sets[cs].g;
+  var done=cs===2?isMtbWon(hv,gv):isSetWon(hv,gv);
+  if(done){
+    var autoWin=computeAutoWinner(st.sets);
+    if(autoWin)st.winner=autoWin;
+    else if(cs<2)st.currentSet=cs+1;
+  }
+  renderMatchCounter(lbl);
+  updateTotalScore();
+  scheduleScorePush();
+}
+function sfDecGame(lbl,side){
+  var st=_sfState[lbl];if(!st)return;
+  var cs=sfLastActiveSetIdx(st.sets);
+  var key=side==='heim'?'h':'g';
+  st.sets[cs][key]=Math.max(0,(st.sets[cs][key]||0)-1);
+  if(!st.retiredBy){
+    st.currentSet=sfDeriveCurrentSet(st.sets);
+    st.winner=computeAutoWinner(st.sets);
+  }
+  renderMatchCounter(lbl);
+  updateTotalScore();
+  scheduleScorePush();
+}
+function sfRetire(lbl,side){
+  var st=_sfState[lbl];if(!st)return;
+  if(st.retiredBy===side){
+    // Erneutes Tippen hebt die Aufgabe-Wertung wieder auf (zurück zu automatisch)
+    st.retiredBy=null;
+    st.winner=computeAutoWinner(st.sets);
+    st.currentSet=sfDeriveCurrentSet(st.sets);
+  } else {
+    st.retiredBy=side;
+    st.winner=side; // Gegner hat aufgegeben -> diese Seite gewinnt
+  }
+  renderMatchCounter(lbl);
+  updateTotalScore();
+  scheduleScorePush();
+}
+function renderMatchCounter(lbl){
+  var wrap=document.getElementById('sf-live-'+lbl);
+  if(!wrap)return;
+  var st=_sfState[lbl];if(!st)return;
+  var setsSummary=st.sets.map(function(s){
+    if((s.h||0)===0&&(s.g||0)===0)return null;
+    return s.h+':'+s.g;
+  }).filter(Boolean).join('   ');
+  var over=!!st.winner;
+  var csLabel=st.currentSet===2?'Champions-Tiebreak':'Satz '+(st.currentSet+1);
+  var html='';
+  if(setsSummary)html+='<div class="sf-sets-summary">'+esc(setsSummary)+'</div>';
+  if(over){
+    html+='<div class="sf-match-over">'+(st.retiredBy?'Sieg durch Aufgabe – ':'Match beendet – Sieger: ')+(st.winner==='heim'?'Heim':'Gast')+'</div>';
+  } else {
+    html+='<div class="sf-live-label">'+csLabel+' läuft</div>';
+  }
+  html+='<div class="sf-live-row">'
+    +sfLiveCol(lbl,'heim',st,over)
+    +sfLiveCol(lbl,'gast',st,over)
+  +'</div>';
+  wrap.innerHTML=html;
+}
+function sfLiveCol(lbl,side,st,over){
+  var val=side==='heim'?st.sets[st.currentSet].h:st.sets[st.currentSet].g;
+  var retActive=st.retiredBy===side;
+  return '<div class="sf-live-col">'
+    +'<button type="button" class="sf-live-plus" onclick="sfIncGame(\''+lbl+'\',\''+side+'\')"'+(over?' disabled':'')+'>+1 Spiel</button>'
+    +'<div class="sf-live-num">'+(val||0)+'</div>'
+    +'<button type="button" class="sf-live-minus" onclick="sfDecGame(\''+lbl+'\',\''+side+'\')">Korrektur</button>'
+    +'<button type="button" class="sf-live-ret'+(retActive?' active':'')+'" onclick="sfRetire(\''+lbl+'\',\''+side+'\')">Sieg (Gegner gibt auf)</button>'
+  +'</div>';
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1776,11 +1825,10 @@ function updateTotalScore(){
   ['E','D'].forEach(function(px){
     var cnt=px==='E'?6:3;
     for(var i=0;i<cnt;i++){
-      var winEl=document.getElementById('sf-'+px+(i+1)+'-win');
-      if(!winEl)continue;
-      var w=winEl._win||'';
-      if(w==='heim')heimTotal++;
-      else if(w==='gast')gastTotal++;
+      var st=_sfState[px+(i+1)];
+      if(!st)continue;
+      if(st.winner==='heim')heimTotal++;
+      else if(st.winner==='gast')gastTotal++;
     }
   });
   // Hidden fields aktualisieren
@@ -1817,46 +1865,13 @@ function buildSFRows(contId,prefix,count,ownPlayers,opponent,isHome,isDbl){
       appendSFPlayerRow(block,'Gast',ownPlayers,!isHome,'sf-'+lbl+'-gp');
     }
 
-    // Je Satz eine eigene Zeile (Label + Heim-Counter + Gast-Counter) — untereinander,
-    // damit auf dem Handy nichts abgeschnitten wird oder umbrechen muss.
-    var setLabels=['Satz 1','Satz 2','Match-Tiebreak (bis 10)'];
-    for(var s=0;s<3;s++){
-      var isMtb=s===2;
-      var setRow=document.createElement('div');setRow.className='sf-set-row'+(isMtb?' mtb':'');
-      var setLbl=document.createElement('span');setLbl.className='sf-set-lbl';setLbl.textContent=setLabels[s];
-      setRow.appendChild(setLbl);
+    if(!_sfState[lbl])_sfState[lbl]=sfDefaultState();
 
-      var idh='sf-'+lbl+'-s'+s+'h', idg='sf-'+lbl+'-s'+s+'g';
-      var captureI=i,captureS=s,capturePrefix=prefix;
-      var cb=(function(ci,cs,cp){return function(){autoDetectWinner(cp,ci);};})(captureI,captureS,capturePrefix);
-      var maxVal=isMtb?20:7;
-      var ch=mkCounter(idh,0,cb,maxVal);
-      var cg=mkCounter(idg,0,cb,maxVal);
-      var vs=document.createElement('span');vs.className='sf-set-vs';vs.textContent=':';
-      setRow.appendChild(ch);setRow.appendChild(vs);setRow.appendChild(cg);
-      block.appendChild(setRow);
-    }
-
-    // Gewinner-Zeile (automatisch anhand der Sätze, manuell für w.o./Aufgabe umschaltbar)
-    var winRow=document.createElement('div');winRow.className='sf-win-row';
-    var winLbl=document.createElement('span');winLbl.className='sf-set-lbl';winLbl.textContent='Sieger';
-    var winId='sf-'+lbl+'-win';
-    var winBtn=document.createElement('button');winBtn.type='button';winBtn.className='sf-win-btn no-win';
-    winBtn.id=winId;winBtn.title='Gewinner manuell umschalten (z.B. bei w.o.)';winBtn.textContent='×';winBtn._win='';winBtn._manual=false;
-    winBtn.addEventListener('click',function(){
-      var btn=this;
-      if(!btn._win||btn._win==='')btn._win='heim';
-      else if(btn._win==='heim')btn._win='gast';
-      else btn._win='';
-      btn._manual=!!btn._win; // Sobald manuell heim/gast gewählt: nicht mehr automatisch überschreiben
-      updateWinBtn(btn,btn._win);
-      updateTotalScore();
-      scheduleScorePush();
-    });
-    winRow.appendChild(winLbl);winRow.appendChild(winBtn);
-    block.appendChild(winRow);
+    var liveWrap=document.createElement('div');liveWrap.className='sf-live-wrap';liveWrap.id='sf-live-'+lbl;
+    block.appendChild(liveWrap);
 
     cont.appendChild(block);
+    renderMatchCounter(lbl);
   }
 }
 
@@ -1905,18 +1920,11 @@ function readSFMatches(prefix,count,isDbl){
       hp=hpEl?(hpEl.value||hpEl.textContent||''):'';
       gp=gpEl?(gpEl.value||gpEl.textContent||''):'';
     }
-    var sets=[];
-    for(var s=0;s<3;s++){
-      var shEl=document.getElementById('sf-'+lbl+'-s'+s+'h');
-      var sgEl=document.getElementById('sf-'+lbl+'-s'+s+'g');
-      sets.push({
-        h:shEl?(shEl._v!==undefined?String(shEl._v):shEl.textContent||''):'',
-        g:sgEl?(sgEl._v!==undefined?String(sgEl._v):sgEl.textContent||''):''
-      });
-    }
-    var winEl=document.getElementById('sf-'+lbl+'-win');
-    var win=winEl?(winEl._win||winEl.value||''):'';
+    var st=_sfState[lbl]||sfDefaultState();
+    var sets=st.sets.map(function(s){return{h:String(s.h||0),g:String(s.g||0)};});
+    var win=st.winner||'';
     var m={type:lbl,heimPlayer:hp,gastPlayer:gp,winner:win,sets:sets};
+    if(st.retiredBy)m.retiredBy=st.retiredBy;
     if(isDbl){m.heimPlayer1=hp1;m.heimPlayer2=hp2;m.gastPlayer1=gp1;m.gastPlayer2=gp2;}
     res.push(m);
   }
@@ -1930,12 +1938,8 @@ function validateDoubles(){
     var lbl='D'+(i+1);
     var hp1=gv('sf-'+lbl+'-hp1'),hp2=gv('sf-'+lbl+'-hp2');
     var gp1=gv('sf-'+lbl+'-gp1'),gp2=gv('sf-'+lbl+'-gp2');
-    var hasSets=false;
-    for(var s=0;s<3;s++){
-      var h=document.getElementById('sf-'+lbl+'-s'+s+'h');
-      var g=document.getElementById('sf-'+lbl+'-s'+s+'g');
-      if((h&&h._v)||(g&&g._v))hasSets=true;
-    }
+    var st=_sfState[lbl];
+    var hasSets=st?st.sets.some(function(s){return(s.h||0)>0||(s.g||0)>0;}):false;
     var used=hp1||hp2||gp1||gp2||hasSets;
     if(!used)continue;
     if((hp1&&!hp2)||(!hp1&&hp2)){toast('Bitte bei '+lbl+' auf der Heim-Seite 2 Spieler eintragen (Doppel).','err');return false;}

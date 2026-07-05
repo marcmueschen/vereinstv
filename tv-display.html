@@ -89,43 +89,40 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a3a2a;font-family:
 .tw td:first-child,.tw th:first-child{opacity:.5;font-weight:800;width:44px}
 /* SCORE */
 .sc{flex-direction:column;padding:22px 44px 14px}
-.sc-sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:12px}
+.sc-sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:12px;flex-shrink:0}
 .sc-te{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(1.5rem,3.2vw,2.8rem);letter-spacing:.08em;flex:1;line-height:1.05}
 .sc-te.h{text-align:left}.sc-te.g{text-align:right}
 .sc-sb{display:flex;align-items:center;flex-shrink:0}
 .sc-sn{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(3.5rem,8vw,6.5rem);line-height:1;padding:0 18px;min-width:80px;text-align:center}
 .sc-sn.ld{color:var(--ac,#f5c842)}
 .sc-cl{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(2.5rem,5.5vw,4.5rem);opacity:.28;line-height:1}
-.sc-dv{height:2px;opacity:.2;margin-bottom:10px;border-radius:1px}
-.sc-bd{flex:1;overflow:hidden;display:flex;flex-direction:column;gap:0}
-.sc-hd{font-size:.65rem;font-weight:800;letter-spacing:.2em;text-transform:uppercase;opacity:.38;padding:5px 0 3px;border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:1px}
-.sc-rw{display:grid;grid-template-columns:44px 1fr 1fr 250px;align-items:center;gap:0 10px;padding:7px 8px;border-bottom:1px solid rgba(255,255,255,.06);border-radius:5px}
-.sc-rw:last-child{border-bottom:none}
-.sc-rw.flash{animation:scfl 2s cubic-bezier(.4,0,.2,1) forwards;transition:none}
+.sc-dv{height:2px;opacity:.2;margin-bottom:10px;border-radius:1px;flex-shrink:0}
+.sc-bd{flex:1;position:relative;overflow:hidden}
+/* Jede Seite liegt exakt übereinander -> weiches Ineinander-Überblenden statt Hart-Schnitt */
+.sc-page{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;gap:3%;opacity:0;pointer-events:none;transition:opacity 1.8s ease-in-out}
+.sc-page.on{opacity:1;pointer-events:auto}
+.sc-page-hd{font-size:.68rem;font-weight:800;letter-spacing:.22em;text-transform:uppercase;opacity:.38;text-align:center;flex-shrink:0}
+/* Grand-Slam-artige Anzeigekarte: 3 Begegnungen gleichzeitig, groß und klar */
+.sc-card{background:rgba(255,255,255,.05);border-radius:16px;padding:2.2% 3%;flex:1;display:flex;flex-direction:column;justify-content:center;gap:4%;min-height:0}
+.sc-card-lbl{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(.9rem,1.7vw,1.2rem);letter-spacing:.14em;text-transform:uppercase;opacity:.4}
+.sc-card-row{display:flex;align-items:center;justify-content:space-between;gap:18px}
+.sc-card-name{font-size:clamp(1.35rem,2.7vw,2.3rem);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;opacity:.75}
+.sc-card-row.winner .sc-card-name{font-weight:800;opacity:1;color:var(--ac,#f5c842)}
+.sc-card-sets{display:flex;gap:.8%;flex-shrink:0}
+.sc-box{display:inline-flex;align-items:center;justify-content:center;min-width:56px;height:56px;border-radius:9px;background:rgba(255,255,255,.08);font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(1.4rem,2.9vw,2.15rem);opacity:.5}
+.sc-box.w{opacity:1;background:rgba(245,200,66,.2);box-shadow:inset 0 0 0 2px var(--ac,#f5c842);color:var(--ac,#f5c842)}
+.sc-box.mtb{box-shadow:inset 0 0 0 1px rgba(245,200,66,.35)}
+.sc-box.mtb.w{box-shadow:inset 0 0 0 2px var(--ac,#f5c842)}
+.sc-card.flash{animation:scfl 2.2s cubic-bezier(.4,0,.2,1) forwards}
 @keyframes scfl{
-  0%  {background:rgba(245,200,66,.18);box-shadow:inset 0 0 0 1px rgba(245,200,66,.4)}
-  30% {background:rgba(245,200,66,.12);box-shadow:inset 0 0 0 1px rgba(245,200,66,.25)}
-  70% {background:rgba(245,200,66,.05);box-shadow:inset 0 0 0 1px rgba(245,200,66,.1)}
-  100%{background:transparent;box-shadow:none}
+  0%  {background:rgba(245,200,66,.22)}
+  100%{background:rgba(255,255,255,.05)}
 }
-.sc-lb{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(.9rem,1.6vw,1.15rem);opacity:.35;text-align:left}
-.sc-pl{font-size:clamp(.95rem,1.75vw,1.2rem);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left}
-.sc-pl.winner{font-weight:800;opacity:1}
-.sc-ss{display:flex;gap:4px;align-items:center;justify-content:flex-start;flex-wrap:nowrap;min-width:0}
-.sc-sp{display:inline-flex;gap:2px;align-items:center;background:rgba(255,255,255,.08);border-radius:4px;padding:2px 6px;flex-shrink:0}
-.sc-sp.mtb{background:rgba(245,200,66,.16);box-shadow:inset 0 0 0 1px rgba(245,200,66,.3)}
-.sc-sv{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(1rem,1.7vw,1.25rem);min-width:20px;text-align:center;opacity:.55;line-height:1}
-.sc-sv.w{opacity:1;color:var(--ac,#f5c842)}
-.sc-se{font-size:.65rem;opacity:.2;padding:0 2px}
-.sc-sdv{width:1px;height:14px;background:rgba(255,255,255,.15);margin:0 4px;flex-shrink:0}
-/* SCORE: Einzel/Doppel-Seiten */
-.sc-page{display:none;min-height:0;overflow:hidden}
-.sc-page.on{display:flex;flex-direction:column;flex:1;min-height:0}
-.sc-page-dots{display:none;justify-content:center;gap:8px;padding-top:6px;flex-shrink:0}
-.sc-bd.dbl-unlocked .sc-page-dots{display:flex}
+.sc-empty{opacity:.3;font-size:clamp(1rem,1.8vw,1.3rem);text-align:center;padding:2% 0}
+.sc-page-dots{position:absolute;left:0;right:0;bottom:6px;display:none;justify-content:center;gap:8px;z-index:2}
+.sc-bd.multi-page .sc-page-dots{display:flex}
 .sc-page-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.25);transition:background .3s,transform .3s}
 .sc-page-dot.on{background:var(--ac,#f5c842);transform:scale(1.25)}
-.sc-locked-msg{font-size:.8rem;opacity:.4;font-style:italic;padding:8px 2px}
 /* IMAGE */
 .img{position:absolute!important;inset:0}
 .sl.img.on{display:block}
@@ -188,7 +185,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a3a2a;font-family:
 #ev.on{display:flex}
 #sync-dot{position:absolute;top:8px;right:10px;width:7px;height:7px;border-radius:50%;background:#27ae60;opacity:0;transition:opacity .4s;z-index:20}
 #sync-dot.flash{opacity:1}
-.sl .sc-pl,.sl .mn-item-name,.sl .mn-item-price,.sl .ann p,.sl .tw td,.sl .tw th,.sl .news-scroll-inner{font-size:calc(var(--fscale,1) * 1em)}
+.sl .sc-card-name,.sl .sc-box,.sl .mn-item-name,.sl .mn-item-price,.sl .ann p,.sl .tw td,.sl .tw th,.sl .news-scroll-inner{font-size:calc(var(--fscale,1) * 1em)}
 
 
 /* ── WEATHER FORECAST SLIDE */
@@ -464,55 +461,55 @@ function bsc(s,div){
   var gh=parseInt(d.gesamtHeim)||0,gg=parseInt(d.gesamtGast)||0;
   var hl=gh>gg,gl=gg>gh;
 
-  function setHtml(m){
-    var parts=m.sets.map(function(st,si){
+  // Grand-Slam-artige Satzanzeige: je Satz eine eigene Box, Gewinner-Satz hervorgehoben
+  function setBoxes(sets,side){
+    return sets.map(function(st,si){
       if(!st.h&&!st.g)return '';
-      var hw=parseInt(st.h||0)>parseInt(st.g||0),gw=parseInt(st.g||0)>parseInt(st.h||0);
+      var hv=parseInt(st.h||0),gv=parseInt(st.g||0);
+      var val=side==='h'?hv:gv,other=side==='h'?gv:hv;
       var mtb=si===2?' mtb':'';
-      return '<div class="sc-sp'+mtb+'">'
-        +'<span class="sc-sv'+(hw?' w':'')+'">'+es(st.h||'0')+'</span>'
-        +'<span class="sc-se">:</span>'
-        +'<span class="sc-sv'+(gw?' w':'')+'">'+es(st.g||'0')+'</span>'
-        +'</div>';
-    }).filter(Boolean);
-    return parts.join('<div class="sc-sdv"></div>');
+      return '<span class="sc-box'+(val>other?' w':'')+mtb+'">'+es(String(val))+'</span>';
+    }).filter(Boolean).join('');
+  }
+  function cardHtml(m){
+    var hw=m.winner==='heim',gw=m.winner==='gast';
+    return '<div class="sc-card-lbl">'+es(m.type)+(m.retiredBy?' · Sieg durch Aufgabe':'')+'</div>'
+      +'<div class="sc-card-row'+(hw?' winner':'')+'">'
+        +'<span class="sc-card-name">'+es(m.heimPlayer||'–')+'</span>'
+        +'<div class="sc-card-sets">'+setBoxes(m.sets,'h')+'</div>'
+      +'</div>'
+      +'<div class="sc-card-row'+(gw?' winner':'')+'">'
+        +'<span class="sc-card-name">'+es(m.gastPlayer||'–')+'</span>'
+        +'<div class="sc-card-sets">'+setBoxes(m.sets,'g')+'</div>'
+      +'</div>';
   }
 
-  function flashRow(row, rowKey){
-    // Clear any existing repeating flash for this row
+  function flashCard(card, rowKey){
     if(_flashTimers[rowKey]){
       clearInterval(_flashTimers[rowKey].iv);
       delete _flashTimers[rowKey];
     }
-    // Reset show counter for this slide
     _slideShowCounts[s.id] = 0;
-
-    // Single flash trigger
     function doFlash(){
-      row.classList.remove('flash');
-      void row.offsetWidth;
-      row.classList.add('flash');
+      card.classList.remove('flash');
+      void card.offsetWidth;
+      card.classList.add('flash');
     }
-
     doFlash();
-
-    // Repeat every 1.5s (slightly longer than animation duration 1.4s)
     var iv = setInterval(function(){
-      // Stop if slide has been shown 5 times
       var shown = _slideShowCounts[s.id] || 0;
       if(shown >= 5){
         clearInterval(iv);
         delete _flashTimers[rowKey];
-        row.classList.remove('flash');
+        card.classList.remove('flash');
         return;
       }
       doFlash();
     }, 1500);
-
-    _flashTimers[rowKey] = {iv: iv, el: row};
+    _flashTimers[rowKey] = {iv: iv, el: card};
   }
 
-  // Build score header
+  // Build score header (Gesamtstand — bleibt unabhängig von der Bild-Umschaltung immer sichtbar)
   var headHtml='<div class="sc-sh">'
     +'<div class="sc-te h">'+es(d.heimTeam||'Heim')+'</div>'
     +'<div class="sc-sb">'
@@ -524,65 +521,62 @@ function bsc(s,div){
     +'</div>'
     +'<div class="sc-dv" style="background:'+ac+'"></div>';
 
-  // First render
+  // First render: 3 Bilder anlegen (Einzel 1-3, Einzel 4-6, Doppel), je 3 Karten
   if(!div.querySelector('.sc-bd')){
+    var pageDefs=[
+      {n:'0',hd:'Einzel 1–3'},
+      {n:'1',hd:'Einzel 4–6'},
+      {n:'2',hd:'Doppel'}
+    ];
+    var pagesHtml=pageDefs.map(function(pd){
+      var cards='';
+      for(var c=0;c<3;c++)cards+='<div class="sc-card" data-slot="'+c+'"></div>';
+      return '<div class="sc-page'+(pd.n==='0'?' on':'')+'" data-page="'+pd.n+'">'
+        +'<div class="sc-page-hd">'+pd.hd+'</div>'+cards+'</div>';
+    }).join('');
     div.innerHTML=headHtml
       +'<div class="sc-bd">'
-        +'<div class="sc-page sc-page-singles on">'
-          +'<div class="sc-hd">Einzel</div>'
-          +'<div class="sc-singles"></div>'
-        +'</div>'
-        +'<div class="sc-page sc-page-doubles">'
-          +'<div class="sc-hd">Doppel</div>'
-          +'<div class="sc-doubles"></div>'
-        +'</div>'
-        +'<div class="sc-page-dots"><span class="sc-page-dot on" data-p="0"></span><span class="sc-page-dot" data-p="1"></span></div>'
+        +pagesHtml
+        +'<div class="sc-page-dots"><span class="sc-page-dot on" data-p="0"></span><span class="sc-page-dot" data-p="1"></span><span class="sc-page-dot" data-p="2"></span></div>'
       +'</div>';
   } else {
-    // Update header
     var hEl=div.querySelector('.sc-sh');
     if(hEl){var t=document.createElement('div');t.innerHTML=headHtml;if(hEl.outerHTML!==t.querySelector('.sc-sh').outerHTML)hEl.outerHTML=t.querySelector('.sc-sh').outerHTML;}
   }
 
-  function updateRows(containerSel, matches){
-    var container=div.querySelector(containerSel);
-    if(!container)return;
-    var visible=matches.filter(function(m){
-      return m.heimPlayer||m.gastPlayer||m.sets.some(function(x){return x.h||x.g;});
-    });
-    visible.forEach(function(m,i){
+  // Karten je Bild befüllen (immer genau 3 Slots pro Bild, damit die Größe konstant bleibt)
+  function updateSlots(pageNum, matches){
+    var page=div.querySelector('.sc-page[data-page="'+pageNum+'"]');
+    if(!page)return;
+    for(var c=0;c<3;c++){
+      var m=matches[c];
+      var card=page.querySelector('.sc-card[data-slot="'+c+'"]');
+      if(!card)continue;
+      if(!m||!(m.heimPlayer||m.gastPlayer||m.sets.some(function(x){return x.h||x.g;}))){
+        if(card.dataset.filled||!card.childNodes.length){
+          card.innerHTML='<div class="sc-empty">–</div>';
+          delete card.dataset.filled;
+        }
+        continue;
+      }
       var k=s.id+'_'+m.type;
       var prev=PD[k]||null;
       var mStr=JSON.stringify(m);
       var changed=!prev||(JSON.stringify(prev)!==mStr);
       PD[k]=JSON.parse(mStr);
-      var hw=m.winner==='heim',gw=m.winner==='gast';
-      var rowHtml='<span class="sc-lb">'+es(m.type)+'</span>'
-        +'<span class="sc-pl'+(hw?' winner':'')+'">'+es(m.heimPlayer||'–')+'</span>'
-        +'<span class="sc-pl'+(gw?' winner':'')+'">'+es(m.gastPlayer||'–')+'</span>'
-        +'<div class="sc-ss">'+setHtml(m)+'</div>';
-      var existing=container.children[i];
-      if(!existing){
-        var row=document.createElement('div');
-        row.className='sc-rw';
-        row.innerHTML=rowHtml;
-        container.appendChild(row);
-        // Flash new rows that appear after initial load (prev was null but PD had no entry)
-        if(prev!==null&&changed) flashRow(row,k);
-      } else if(changed){
-        existing.innerHTML=rowHtml;
-        if(prev!==null) flashRow(existing,k);
+      if(changed||!card.dataset.filled){
+        card.innerHTML=cardHtml(m);
+        card.dataset.filled='1';
+        if(prev!==null&&changed) flashCard(card,k);
       }
-    });
-    while(container.children.length>visible.length){
-      container.removeChild(container.lastChild);
     }
   }
 
   var ma=d.matches||[];
   var singles=ma.slice(0,6),doubles=ma.slice(6,9);
-  updateRows('.sc-singles',singles);
-  updateRows('.sc-doubles',doubles);
+  updateSlots('0',singles.slice(0,3));
+  updateSlots('1',singles.slice(3,6));
+  updateSlots('2',doubles);
 
   // Doppel erst freischalten, wenn alle gespielten Einzel entschieden sind
   var usedSingles=singles.filter(function(m){return m.heimPlayer||m.gastPlayer;});
@@ -590,38 +584,44 @@ function bsc(s,div){
   manageScorePaging(s,div,einzelFertig);
 }
 
-// Steuert das automatische Umschalten zwischen Einzel-Seite und Doppel-Seite.
-// Der Gesamtstand-Kopf bleibt davon unberührt, da er außerhalb von .sc-bd liegt.
+// Steuert das automatische, langsam überblendende Umschalten zwischen den 3 Bildern
+// (Einzel 1-3 / Einzel 4-6 / Doppel). Die eingestellte Foliendauer wird gleichmäßig auf
+// die aktuell aktiven Bilder verteilt. Der Gesamtstand-Kopf bleibt davon unberührt,
+// da er außerhalb von .sc-bd liegt.
 function manageScorePaging(s,div,doublesUnlocked){
   var key=String(s.id);
   var bdEl=div.querySelector('.sc-bd');
-  if(bdEl)bdEl.classList.toggle('dbl-unlocked',doublesUnlocked);
+  var pageCount=doublesUnlocked?3:2;
+  if(bdEl)bdEl.classList.toggle('multi-page',pageCount>1);
 
-  if(!doublesUnlocked){
-    if(_scPageTimers[key]){clearInterval(_scPageTimers[key].iv);delete _scPageTimers[key];}
-    setScorePage(div,'singles');
+  var totalSec=s.duration||DD||10;
+  var perPageMs=Math.max(3000,Math.round(totalSec*1000/pageCount));
+
+  var existing=_scPageTimers[key];
+  if(existing && existing.pageCount===pageCount && existing.perPageMs===perPageMs){
+    setScorePage(div,existing.pageIdx,pageCount);
     return;
   }
-  if(_scPageTimers[key])return; // Timer läuft bereits
-  setScorePage(div,'singles');
-  var page='singles';
-  var iv=setInterval(function(){
-    page=(page==='singles')?'doubles':'singles';
+  if(existing) clearInterval(existing.iv);
+
+  var rec={pageCount:pageCount,perPageMs:perPageMs,pageIdx:0,iv:null};
+  setScorePage(div,0,pageCount);
+  rec.iv=setInterval(function(){
+    rec.pageIdx=(rec.pageIdx+1)%pageCount;
     var freshDiv=document.querySelector('.sl[data-score-id="'+key+'"]');
-    if(!freshDiv){clearInterval(iv);delete _scPageTimers[key];return;}
-    setScorePage(freshDiv,page);
-  },8000);
-  _scPageTimers[key]={iv:iv};
+    if(!freshDiv){clearInterval(rec.iv);delete _scPageTimers[key];return;}
+    setScorePage(freshDiv,rec.pageIdx,pageCount);
+  },perPageMs);
+  _scPageTimers[key]=rec;
 }
-function setScorePage(div,page){
-  var sEl=div.querySelector('.sc-page-singles');
-  var dEl=div.querySelector('.sc-page-doubles');
-  if(sEl)sEl.classList.toggle('on',page==='singles');
-  if(dEl)dEl.classList.toggle('on',page==='doubles');
-  var dots=div.querySelectorAll('.sc-page-dot');
-  dots.forEach(function(dot){
-    var p=dot.dataset.p==='0'?'singles':'doubles';
-    dot.classList.toggle('on',p===page);
+function setScorePage(div,pageIdx,pageCount){
+  div.querySelectorAll('.sc-page').forEach(function(p){
+    p.classList.toggle('on',parseInt(p.dataset.page)===pageIdx);
+  });
+  div.querySelectorAll('.sc-page-dot').forEach(function(dot){
+    var i=parseInt(dot.dataset.p);
+    dot.style.display=i<pageCount?'':'none';
+    dot.classList.toggle('on',i===pageIdx);
   });
 }
 
