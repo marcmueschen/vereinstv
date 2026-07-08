@@ -88,6 +88,7 @@ main{max-width:920px;margin:0 auto;padding:24px 16px 80px}
 .sico.news{background:#ffe8d0}.sico.menu{background:#f0e6ff}.sico.html{background:#e2d9f3}
 .sico.rss{background:#ffe0dc}
 .sico.booking{background:#d4f0d4}.sico.weather{background:#c8e6f5}.sico.radar{background:#b8d4f0}.sico.upload{background:#e8d5f0}
+.sico.bracket{background:#e6f0c9}
 .sinf{flex:1;min-width:0}
 .sna{font-weight:600;font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sme{font-size:.73rem;color:var(--di);margin-top:1px}
@@ -173,6 +174,21 @@ main{max-width:920px;margin:0 auto;padding:24px 16px 80px}
 .sf-tot-vs{font-size:.9rem;color:rgba(255,255,255,.4);padding:0 10px}
 .sf-match-label.dbl{color:#2a6f97}
 .sf-hint{font-size:.72rem;color:var(--di);margin-top:2px}
+/* TURNIERBAUM-EDITOR */
+.br-edit-wrap{display:flex;gap:14px;overflow-x:auto;padding-bottom:6px}
+.br-edit-col{flex:1;min-width:190px;display:flex;flex-direction:column;gap:10px;justify-content:space-around}
+.br-edit-hd{font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#5a8a5a;text-align:center;margin-bottom:2px}
+.br-edit-match{display:flex;flex-direction:column;gap:4px;background:#fff;border:1.5px solid #c8dfc8;border-radius:8px;padding:6px}
+.br-edit-row{display:flex;align-items:center;gap:5px;padding:3px 4px;border-radius:5px}
+.br-edit-row.win{background:rgba(201,219,77,.25)}
+.br-edit-row.empty{opacity:.4}
+.br-edit-inp{flex:1;min-width:0;padding:6px 7px;border:1.5px solid var(--bo);border-radius:5px;font-size:.8rem;font-family:Inter,sans-serif;color:var(--tx);background:var(--bg)}
+.br-edit-seed{width:28px;padding:6px 3px;border:1.5px solid var(--bo);border-radius:5px;font-size:.78rem;text-align:center;font-family:Inter,sans-serif;color:var(--tx);background:var(--bg)}
+.br-edit-name{flex:1;min-width:0;font-size:.82rem;font-weight:600;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:4px 2px}
+.br-edit-row.win .br-edit-name{font-weight:800;color:#5a7a1a}
+.br-edit-pickbtn{width:26px;height:26px;flex-shrink:0;border-radius:6px;border:1.5px solid #b8cfe0;background:#eaf0f6;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.br-edit-pickbtn.active{background:#8fae2a;border-color:#6f8a1f;color:#fff}
+.br-edit-pickbtn-sp{width:26px;flex-shrink:0}
 /* Handy-Optimierung: große Tipp-Ziele für die 3 Tasten pro Spieler */
 @media (max-width:640px){
   .sf-match-block{padding:14px}
@@ -534,6 +550,24 @@ main{max-width:920px;margin:0 auto;padding:24px 16px 80px}
       </div>
     </div>
 
+    <div class="tf" id="tf-bracket">
+      <div class="g2">
+        <div class="fl s2"><label>Titel</label><input type="text" id="br-title" placeholder="Herren"></div>
+        <div class="fl"><label>Anzahl Teilnehmer</label>
+          <select id="br-size" onchange="buildBracketEditor('br')">
+            <option value="4">4</option>
+            <option value="8" selected>8</option>
+            <option value="16">16</option>
+          </select>
+        </div>
+        <div class="fl"><label>Dauer Sek.</label><input type="number" id="br-dur" min="10" placeholder="30"></div>
+        <div class="fl"><label>Hintergrundfarbe</label><div class="cr"><input type="color" id="br-bg" value="#0d2b1a" oninput="cct('br-bg','br-bgt')"><input type="text" id="br-bgt" value="#0d2b1a" oninput="ctc('br-bg','br-bgt')"></div></div>
+        <div class="fl"><label>Akzentfarbe</label><div class="cr"><input type="color" id="br-ac" value="#c9db4d" oninput="cct('br-ac','br-act')"><input type="text" id="br-act" value="#c9db4d" oninput="ctc('br-ac','br-act')"></div></div>
+        <div class="s2" style="font-size:.72rem;color:var(--di)">Namen eintragen (leer lassen = Freilos/„Rast"). Sobald beide Seiten einer Begegnung feststehen, per Klick auf den Namen den Sieger markieren — die nächste Runde füllt sich automatisch.</div>
+      </div>
+      <div id="br-editor" style="margin-top:10px"></div>
+    </div>
+
     <div style="display:flex;justify-content:flex-end;margin-top:12px" id="add-slide-bar">
       <button class="btn bp" onclick="addSlide()">+ Folie hinzufügen</button>
     </div>
@@ -609,14 +643,14 @@ var PRESETS10 = ['10:0','10:1','10:2','10:3','10:4','10:5','10:6','10:7','10:8',
 
 var ICONS2 = {booking:'&#127931;',weather:'&#127780;',radar:'&#127782;',upload:'&#128444;',
   announce:'&#128226;',table:'&#128202;',score:'&#127934;',image:'&#128247;',
-  youtube:'&#9654;',webpage:'&#127760;',news:'&#128241;',menu:'&#127869;',html:'&#128187;',rss:'&#128225;'};
+  youtube:'&#9654;',webpage:'&#127760;',news:'&#128241;',menu:'&#127869;',html:'&#128187;',rss:'&#128225;',bracket:'&#127942;'};
 var LABELS = {booking:'Platzbelegung',weather:'Wettervorhersage',radar:'Regenradar',upload:'Bild-Upload',
   announce:'Ankündigung',table:'Tabelle',score:'Spielstand',image:'Bild',
-  youtube:'YouTube',webpage:'Webseite',news:'News-Ticker',menu:'Speisekarte',html:'HTML',rss:'RSS-Feed'};
+  youtube:'YouTube',webpage:'Webseite',news:'News-Ticker',menu:'Speisekarte',html:'HTML',rss:'RSS-Feed',bracket:'Turnierbaum'};
 
 // Which types each role can create
 var ROLE_TABS = {
-  admin: ['announce','table','score','image','upload','youtube','webpage','news','rss','menu','booking','weather','radar','html'],
+  admin: ['announce','table','score','image','upload','youtube','webpage','news','rss','menu','booking','weather','radar','html','bracket'],
   wirtin: ['menu'],
   teamleader: ['score']
 };
@@ -732,7 +766,7 @@ var TAB_LABELS = {
   booking:'&#127931; Platzbelegung',announce:'&#128226; Ankündigung', table:'&#128202; Tabelle', score:'&#127934; Spielstand',
   image:'&#128247; Bild', upload:'&#128444; Bild-Upload', youtube:'&#9654; YouTube',
   webpage:'&#127760; Webseite', news:'&#128241; News-Ticker', rss:'&#128225; RSS-Feed', menu:'&#127869; Speisekarte',
-  weather:'&#127780; Wettervorhersage', radar:'&#127782; Regenradar', html:'&#128187; HTML'
+  weather:'&#127780; Wettervorhersage', radar:'&#127782; Regenradar', html:'&#128187; HTML', bracket:'&#127942; Turnierbaum'
 };
 
 function buildTypeTabs(){
@@ -760,6 +794,7 @@ function selTab(el,t){
   if(addBar)addBar.style.display=t==='score'?'none':'flex';
   if(t==='score'){initScoreForm();}
   if(t==='menu'&&!document.getElementById('mn-cats').children.length)addMenuCat('mn-cats');
+  if(t==='bracket'&&!_brState)buildBracketEditor('br');
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1078,7 +1113,7 @@ function fillMenuCats(contId,cats){
 // ══════════════════════════════════════════════════════════════
 function addSlide(){
   var t=curTab;
-  var dm={announce:'a-dur',table:'t-dur',score:'s-dur',image:'i-dur',upload:'up-dur',youtube:'y-dur',webpage:'wp-dur',news:'nw-dur',rss:'rss-dur',menu:'mn-dur',booking:'bk-dur',weather:'wt-dur',radar:'rd-dur',html:'h-dur'};
+  var dm={announce:'a-dur',table:'t-dur',score:'s-dur',image:'i-dur',upload:'up-dur',youtube:'y-dur',webpage:'wp-dur',news:'nw-dur',rss:'rss-dur',menu:'mn-dur',booking:'bk-dur',weather:'wt-dur',radar:'rd-dur',html:'h-dur',bracket:'br-dur'};
   var dur=gv(dm[t]);var s=null;
   if(t==='announce'){var ti=gv('a-title');if(!ti){toast('Bitte Titel.','err');return;}s={id:Date.now(),type:t,name:ti,enabled:true,duration:dur?parseInt(dur):null,data:{title:ti,body:gv('a-body'),bg:gv('a-bg'),fg:gv('a-fg'),accent:gv('a-ac'),img:gv('a-img')}};}
   else if(t==='table'){var csv=gv('t-csv');if(!csv){toast('Bitte CSV.','err');return;}s={id:Date.now(),type:t,name:gv('t-title')||'Tabelle',enabled:true,duration:dur?parseInt(dur):null,data:{title:gv('t-title'),csv:csv,bg:gv('t-bg'),accent:gv('t-ac')}};}
@@ -1107,6 +1142,7 @@ function addSlide(){
   else if(t==='weather'){var wlat=gv('wt-lat'),wlon=gv('wt-lon'),wloc=gv('wt-loc');if(!wlat||!wlon){toast('Bitte Ort suchen.','err');return;}s={id:Date.now(),type:t,name:'Wetter '+wloc,enabled:true,duration:dur?parseInt(dur)||30:30,data:{location:wloc,lat:parseFloat(wlat),lon:parseFloat(wlon),bg:gv('wt-bg')}};}
   else if(t==='radar'){var rdlat=gv('rd-lat'),rdlon=gv('rd-lon'),rdloc=gv('rd-loc');if(!rdlat||!rdlon){toast('Bitte Ort suchen.','err');return;}s={id:Date.now(),type:t,name:'Radar '+rdloc,enabled:true,duration:dur?parseInt(dur)||30:30,data:{location:rdloc,lat:parseFloat(rdlat),lon:parseFloat(rdlon),zoom:parseInt(gv('rd-zoom'))||5,radius:parseInt(gv('rd-radius'))||0,bg:gv('rd-bg')}};}
   else if(t==='html'){var code=gv('h-code');if(!code){toast('Bitte HTML-Code.','err');return;}s={id:Date.now(),type:t,name:gv('h-title')||'HTML',enabled:true,duration:dur?parseInt(dur):null,data:{title:gv('h-title'),code:code}};}
+  else if(t==='bracket'){var brd=readBracketData();if(!brd){toast('Bitte Teilnehmer eintragen.','err');return;}s={id:Date.now(),type:t,name:'Turnierbaum: '+(gv('br-title')||'Turnier'),enabled:true,duration:dur?parseInt(dur)||30:30,data:Object.assign({title:gv('br-title')||'Turnier',bg:gv('br-bg'),accent:gv('br-ac')},brd)};}
   if(!s)return;
   slides.push(s);renderList();
   if(t==='score'){
@@ -1118,13 +1154,14 @@ function addSlide(){
 }
 
 function clearForm(t){
-  var m={announce:['a-title','a-body','a-img','a-dur'],table:['t-title','t-csv','t-dur'],score:['s-gh','s-gg','s-dur'],image:['i-title','i-url','i-cap','i-dur'],upload:['up-title','up-caption','up-dur'],youtube:['y-url','y-title','y-dur'],webpage:['wp-title','wp-url','wp-dur'],news:['nw-text','nw-logo','nw-dur'],rss:['rss-url','rss-label','rss-logo','rss-count','rss-dur'],menu:['mn-title','mn-dur'],booking:['bk-title','bk-dur'],weather:['wt-loc','wt-dur'],radar:['rd-loc','rd-dur'],html:['h-title','h-code','h-dur']};
+  var m={announce:['a-title','a-body','a-img','a-dur'],table:['t-title','t-csv','t-dur'],score:['s-gh','s-gg','s-dur'],image:['i-title','i-url','i-cap','i-dur'],upload:['up-title','up-caption','up-dur'],youtube:['y-url','y-title','y-dur'],webpage:['wp-title','wp-url','wp-dur'],news:['nw-text','nw-logo','nw-dur'],rss:['rss-url','rss-label','rss-logo','rss-count','rss-dur'],menu:['mn-title','mn-dur'],booking:['bk-title','bk-dur'],weather:['wt-loc','wt-dur'],radar:['rd-loc','rd-dur'],html:['h-title','h-code','h-dur'],bracket:['br-title','br-dur']};
   (m[t]||[]).forEach(function(id){sv(id,'');});
   if(t==='score'){initScoreForm();}
   if(t==='menu'){var mc=document.getElementById('mn-cats');if(mc){mc.innerHTML='';addMenuCat('mn-cats');}}
   if(t==='upload'){sv('up-data','');document.getElementById('up-preview-wrap').style.display='none';}
   if(t==='weather')document.getElementById('wt-result').style.display='none';
   if(t==='radar')document.getElementById('rd-result').style.display='none';
+  if(t==='bracket'){_brState=null;buildBracketEditor('br');}
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1210,6 +1247,7 @@ function openEdit(id){
     },0);
   }
   if(s.type==='menu'){setTimeout(function(){fillMenuCats('eme-cats',s.data.categories||[]);},0);}
+  if(s.type==='bracket'){setTimeout(function(){buildBracketEditor('ebr',s.data);},0);}
   document.getElementById('modal').classList.add('on');
 }
 function closeModal(){
@@ -1239,6 +1277,7 @@ function mkEF(s){
   if(s.type==='weather')return '<div class="g2"><div class="fl s2"><label>Ort</label><div style="display:flex;gap:7px"><input type="text" id="ewt-loc" value="'+esc(d.location||'')+'"><button type="button" class="btn bp sm" onclick="geoSearch2(\'ewt\')">&#128270;</button></div></div><div class="fl s2" id="ewt-res" style="font-size:.82rem;color:var(--gl)">'+esc(d.location||'')+' ('+esc(String(d.lat||''))+', '+esc(String(d.lon||''))+')<input type="hidden" id="ewt-lat" value="'+esc(String(d.lat||''))+'"><input type="hidden" id="ewt-lon" value="'+esc(String(d.lon||''))+'"></div>'+crH('ewt-bg','Hintergrundfarbe',d.bg||'#0d1a2e')+'<div class="fl"><label>Dauer Sek.</label><input type="number" id="ewt-dur" value="'+dv+'"></div></div>';
   if(s.type==='radar'){var rzoom=d.zoom||5;return '<div class="g2"><div class="fl s2"><label>Ort</label><div style="display:flex;gap:7px"><input type="text" id="erd-loc" value="'+esc(d.location||'')+'"><button type="button" class="btn bp sm" onclick="geoSearch2(\'erd\')">&#128270;</button></div></div><div class="fl s2" id="erd-res" style="font-size:.82rem;color:var(--gl)">'+esc(d.location||'')+' ('+esc(String(d.lat||''))+', '+esc(String(d.lon||''))+')<input type="hidden" id="erd-lat" value="'+esc(String(d.lat||''))+'"><input type="hidden" id="erd-lon" value="'+esc(String(d.lon||''))+'"></div><div class="fl"><label>Zoom</label><select id="erd-zoom"><option value="3"'+(rzoom===3?' selected':'')+'>3 – Kontinent</option><option value="4"'+(rzoom===4?' selected':'')+'>4 – Region</option><option value="5"'+(rzoom===5?' selected':'')+'>5 – Bundesland</option><option value="6"'+(rzoom===6?' selected':'')+'>6 – Landkreis</option><option value="7"'+(rzoom===7?' selected':'')+'>7 – Stadt</option><option value="8"'+(rzoom===8?' selected':'')+'>8 – Stadtgebiet</option><option value="9"'+(rzoom===9?' selected':'')+'>9 – Stadtteil</option><option value="10"'+(rzoom===10?' selected':'')+'>10 – Straße</option></select></div>'+crH('erd-bg','Hintergrundfarbe',d.bg||'#0d1a2e')+'<div class="fl"><label>Umkreis km</label><input type="number" id="erd-radius" value="'+(d.radius||0)+'"></div><div class="fl"><label>Dauer Sek.</label><input type="number" id="erd-dur" value="'+dv+'"></div></div>';}
   if(s.type==='html')return '<div class="g2"><div class="fl s2"><label>Titel</label><input type="text" id="eh-tit" value="'+esc(d.title||'')+'"></div><div class="fl s2"><label>HTML-Code</label><textarea id="eh-cod" style="min-height:120px">'+esc(d.code||'')+'</textarea></div><div class="fl"><label>Dauer Sek.</label><input type="number" id="eh-dur" value="'+dv+'"></div></div>';
+  if(s.type==='bracket')return '<div class="g2"><div class="fl s2"><label>Titel</label><input type="text" id="ebr-title" value="'+esc(d.title||'')+'"></div><div class="fl"><label>Anzahl Teilnehmer</label><select id="ebr-size" onchange="buildBracketEditor(&quot;ebr&quot;)"><option value="4"'+(d.size===4?' selected':'')+'>4</option><option value="8"'+(!d.size||d.size===8?' selected':'')+'>8</option><option value="16"'+(d.size===16?' selected':'')+'>16</option></select></div><div class="fl"><label>Dauer Sek.</label><input type="number" id="ebr-dur" value="'+dv+'"></div>'+crH('ebr-bg','Hintergrundfarbe',d.bg||'#0d2b1a')+crH('ebr-ac','Akzentfarbe',d.accent||'#c9db4d')+'<div class="s2" style="font-size:.72rem;color:var(--di)">Namen eintragen (leer lassen = Freilos/„Rast"). Sobald beide Seiten einer Begegnung feststehen, per Klick auf den Namen den Sieger markieren.</div></div><div id="ebr-editor" style="margin-top:10px"></div>';
   return '<p>Unbekannter Typ</p>';
 }
 
@@ -1289,6 +1328,7 @@ function saveEdit(){
   else if(s.type==='weather'){var ewlat=g('ewt-lat')||String(s.data.lat||'');var ewlon=g('ewt-lon')||String(s.data.lon||'');s.name='Wetter '+(g('ewt-loc')||s.data.location||'');s.data={location:g('ewt-loc')||s.data.location,lat:parseFloat(ewlat)||s.data.lat,lon:parseFloat(ewlon)||s.data.lon,bg:g('ewt-bg')};s.duration=g('ewt-dur')?parseInt(g('ewt-dur')):30;}
   else if(s.type==='radar'){var erlat=g('erd-lat')||String(s.data.lat||'');var erlon=g('erd-lon')||String(s.data.lon||'');s.name='Radar '+(g('erd-loc')||s.data.location||'');s.data={location:g('erd-loc')||s.data.location,lat:parseFloat(erlat)||s.data.lat,lon:parseFloat(erlon)||s.data.lon,zoom:parseInt(g('erd-zoom'))||5,radius:parseInt(g('erd-radius'))||0,bg:g('erd-bg')};s.duration=g('erd-dur')?parseInt(g('erd-dur')):30;}
   else if(s.type==='html'){s.name=g('eh-tit')||s.name;s.data={title:g('eh-tit'),code:g('eh-cod')};s.duration=g('eh-dur')?parseInt(g('eh-dur')):null;}
+  else if(s.type==='bracket'){var ebrd=readBracketData();s.name='Turnierbaum: '+(g('ebr-title')||'Turnier');s.data=Object.assign({title:g('ebr-title')||'Turnier',bg:g('ebr-bg'),accent:g('ebr-ac')},ebrd||s.data);s.duration=g('ebr-dur')?parseInt(g('ebr-dur')):30;}
   closeModal();renderList();
   // Score-Folie sofort live übertragen
   if(s&&s.type==='score'){
@@ -1950,6 +1990,140 @@ function validateDoubles(){
 // ══════════════════════════════════════════════════════════
 // END SPIELSTAND-FORMULAR
 // ══════════════════════════════════════════════════════════
+
+// ══════════════════════════════════════════════════════════
+// TURNIERBAUM
+// ══════════════════════════════════════════════════════════
+var _brState=null; // {size, names:[], seeds:{}, picks:[[...]]}
+var _brPrefix='br'; // 'br' = Erstellen-Tab, 'ebr' = Bearbeiten-Modal
+
+function brDefaultState(size){
+  var totalRounds=Math.log2(size);
+  var picks=[];
+  for(var r=0;r<totalRounds;r++){
+    picks.push(new Array(size/Math.pow(2,r+1)).fill(null));
+  }
+  return {size:size,names:new Array(size).fill(''),seeds:{},picks:picks};
+}
+
+// Rundenbezeichnung wie im Verein üblich: nur die letzten 3 Runden bekommen
+// eigene Namen, alles davor heißt schlicht "Erste Runde".
+function brRoundLabel(idx,total){
+  var remaining=total-idx;
+  if(remaining===1)return 'Finale';
+  if(remaining===2)return 'Halbfinale';
+  if(remaining===3)return 'Viertelfinale';
+  return 'Erste Runde';
+}
+
+// Berechnet aus den Runde-1-Namen und den bisherigen Sieger-Klicks den kompletten
+// Baum. picks[r][matchIdx] = 0 (oben gewinnt) | 1 (unten gewinnt) | null (offen).
+// Bei einem Freilos (eine Seite leer) rückt die andere Seite automatisch nach.
+function brComputeRounds(state){
+  var totalRounds=Math.log2(state.size);
+  var rounds=[];
+  var current=state.names.slice();
+  for(var r=0;r<totalRounds;r++){
+    var matches=[];
+    var next=[];
+    for(var i=0;i<current.length;i+=2){
+      var a=current[i]||'',b=current[i+1]||'';
+      var mi=i/2;
+      var pick=(state.picks[r]&&state.picks[r][mi]!=null)?state.picks[r][mi]:null;
+      if(pick===null){
+        if(a&&!b)pick=0;
+        else if(b&&!a)pick=1;
+      }
+      matches.push({a:a,b:b,pick:pick,seedA:r===0?state.seeds[i]:null,seedB:r===0?state.seeds[i+1]:null});
+      next.push(pick===0?a:(pick===1?b:''));
+    }
+    rounds.push(matches);
+    current=next;
+  }
+  return rounds;
+}
+
+function brPick(r,mi,side){
+  if(!_brState)return;
+  if(!_brState.picks[r])return;
+  var cur=_brState.picks[r][mi];
+  _brState.picks[r][mi]=(cur===side)?null:side; // erneutes Antippen hebt die Wahl wieder auf
+  renderBracketEditor();
+}
+function brNameChange(idx,val){
+  if(!_brState)return;
+  _brState.names[idx]=val;
+  renderBracketEditor();
+}
+function brSeedChange(idx,val){
+  if(!_brState)return;
+  if(val){_brState.seeds[idx]=val;}else{delete _brState.seeds[idx];}
+}
+
+// Baut (bzw. übernimmt bei Größenänderung möglichst viel aus) den Editor-Zustand
+// neu auf. existingData wird beim Bearbeiten einer vorhandenen Folie übergeben.
+// prefix: 'br' (Erstellen-Tab) oder 'ebr' (Bearbeiten-Modal) — steuert, welche
+// DOM-Elemente gelesen/befüllt werden.
+function buildBracketEditor(prefix,existingData){
+  _brPrefix=prefix||_brPrefix||'br';
+  var sizeSel=document.getElementById(_brPrefix+'-size');
+  var size=parseInt((existingData&&existingData.size)||(sizeSel&&sizeSel.value)||8);
+  if(sizeSel)sizeSel.value=String(size);
+  if(existingData&&existingData.size===size){
+    _brState={
+      size:size,
+      names:(existingData.names||[]).slice(0,size),
+      seeds:Object.assign({},existingData.seeds||{}),
+      picks:(existingData.picks||brDefaultState(size).picks).map(function(a){return a.slice();})
+    };
+    while(_brState.names.length<size)_brState.names.push('');
+  } else {
+    _brState=brDefaultState(size);
+  }
+  renderBracketEditor();
+}
+
+function renderBracketEditor(){
+  var cont=document.getElementById(_brPrefix+'-editor');
+  if(!cont||!_brState)return;
+  var totalRounds=Math.log2(_brState.size);
+  var rounds=brComputeRounds(_brState);
+  var html='<div class="br-edit-wrap">';
+  rounds.forEach(function(matches,r){
+    html+='<div class="br-edit-col"><div class="br-edit-hd">'+esc(brRoundLabel(r,totalRounds))+'</div>';
+    matches.forEach(function(m,mi){
+      html+='<div class="br-edit-match">';
+      ['a','b'].forEach(function(side,si){
+        var name=m[side];
+        var seed=si===0?m.seedA:m.seedB;
+        var isWinner=m.pick===si;
+        if(r===0){
+          // Runde 1: Namen direkt eintippbar
+          var origIdx=mi*2+si;
+          html+='<div class="br-edit-row'+(isWinner?' win':'')+'">'
+            +'<input type="text" class="br-edit-inp" placeholder="Freilos / Rast" value="'+esc(name)+'" oninput="brNameChange('+origIdx+',this.value)">'
+            +'<input type="text" class="br-edit-seed" placeholder="#" maxlength="2" value="'+esc(seed||'')+'" oninput="brSeedChange('+origIdx+',this.value)" title="Setzliste (optional)">'
+            +(name?'<button type="button" class="br-edit-pickbtn'+(isWinner?' active':'')+'" onclick="brPick('+r+','+mi+','+si+')" title="Als Sieger markieren">&#10003;</button>':'<span class="br-edit-pickbtn-sp"></span>')
+            +'</div>';
+        } else {
+          html+='<div class="br-edit-row'+(isWinner?' win':'')+(name?'':' empty')+'">'
+            +'<span class="br-edit-name">'+(name?esc(name):'–')+'</span>'
+            +(name?'<button type="button" class="br-edit-pickbtn'+(isWinner?' active':'')+'" onclick="brPick('+r+','+mi+','+si+')" title="Als Sieger markieren">&#10003;</button>':'<span class="br-edit-pickbtn-sp"></span>')
+            +'</div>';
+        }
+      });
+      html+='</div>';
+    });
+    html+='</div>';
+  });
+  html+='</div>';
+  cont.innerHTML=html;
+}
+
+function readBracketData(){
+  if(!_brState)return null;
+  return {size:_brState.size,names:_brState.names.slice(),seeds:Object.assign({},_brState.seeds),picks:_brState.picks.map(function(a){return a.slice();})};
+}
 
 (function(){
   var saved=localStorage.getItem('vtv_session');

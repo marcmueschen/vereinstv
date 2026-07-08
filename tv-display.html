@@ -123,6 +123,31 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a3a2a;font-family:
 .sc-bd.multi-page .sc-page-dots{display:flex}
 .sc-page-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.25);transition:background .3s,transform .3s}
 .sc-page-dot.on{background:var(--ac,#f5c842);transform:scale(1.25)}
+/* TURNIERBAUM */
+.br{flex-direction:column;padding:30px 46px 22px;color:#f2f5ea}
+.br-hd{text-align:center;flex-shrink:0;margin-bottom:8px}
+.br-title{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(2rem,5vw,4rem);letter-spacing:.06em;text-transform:uppercase;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.4)}
+.br-stand{font-size:clamp(.75rem,1.3vw,1rem);letter-spacing:.1em;text-transform:uppercase;color:var(--ac,#c9db4d);font-weight:700;margin-top:2px}
+.br-dv{height:2px;background:linear-gradient(90deg,transparent,var(--ac,#c9db4d),transparent);opacity:.6;margin-bottom:4%;flex-shrink:0}
+.br-tree{flex:1;display:flex;min-height:0;gap:2.2%}
+.br-round{display:flex;flex-direction:column;flex:1;min-width:0}
+.br-round-hd{text-align:center;font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(.85rem,1.5vw,1.25rem);letter-spacing:.12em;text-transform:uppercase;color:var(--ac,#c9db4d);opacity:.85;margin-bottom:3%;flex-shrink:0}
+.br-round-body{flex:1;display:flex;flex-direction:column;justify-content:space-around;min-height:0}
+.br-pair{position:relative;flex:1;display:flex;flex-direction:column;justify-content:space-around;min-height:0}
+.br-match-wrap{position:relative;flex:1;display:flex;align-items:center;min-height:0;padding:2% 0}
+.br-match{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;overflow:hidden}
+.br-row{display:flex;align-items:center;gap:6px;padding:6% 8%;font-size:clamp(.72rem,1.35vw,1.05rem);white-space:nowrap;overflow:hidden}
+.br-row:first-child{border-bottom:1px solid rgba(255,255,255,.1)}
+.br-row.win{background:rgba(201,219,77,.22)}
+.br-row.win .br-name{font-weight:800;color:var(--ac,#c9db4d)}
+.br-row.empty{opacity:.4;font-style:italic}
+.br-name{overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
+.br-bye{opacity:.7}
+.br-seed{opacity:.55;font-size:.85em;flex-shrink:0}
+/* Verbindungslinien zwischen den Runden (nicht bei der letzten Runde/Finale) */
+.br-match-wrap::after{content:'';position:absolute;right:-2.2%;top:50%;width:2.2%;height:2px;background:var(--ac,#c9db4d);opacity:.4}
+.br-pair::before{content:'';position:absolute;right:-2.2%;top:25%;bottom:25%;width:2px;background:var(--ac,#c9db4d);opacity:.4}
+.br-round-last .br-match-wrap::after,.br-round-last .br-pair::before{display:none}
 /* IMAGE */
 .img{position:absolute!important;inset:0}
 .sl.img.on{display:block}
@@ -423,11 +448,12 @@ function applyCfg(cfg){
   });
 
   if(sameStructure&&!was){
-    // Only update changed score slides in-place — animation will work!
+    // Only update changed score/bracket slides in-place — animation will work!
     slides.forEach(function(s,i){
-      if(s.type!=='score')return;
+      if(s.type!=='score'&&s.type!=='bracket')return;
       var el=stage.querySelector('.sl[data-i="'+i+'"]');
-      if(el){
+      if(!el)return;
+      if(s.type==='score'){
         // Clear existing flash timers for this slide before updating
         // (new change = restart counter)
         Object.keys(_flashTimers).forEach(function(k){
@@ -438,6 +464,8 @@ function applyCfg(cfg){
         });
         _slideShowCounts[s.id]=0;
         bsc(s,el);
+      } else if(s.type==='bracket'){
+        buildBracket(s,el);
       }
     });
     bd();
@@ -450,6 +478,91 @@ function applyCfg(cfg){
 function pc(t){return(t||'').trim().split('\n').map(function(l){return l.split(',').map(function(c){return c.trim().replace(/^"|"$/g,'');});}).filter(function(r){return r.some(function(c){return c;});});}
 function es(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function en(s){return es(s).replace(/\n/g,'<br>');}
+
+// ── TURNIERBAUM
+// Rundenbezeichnung: nur die letzten 3 Runden bekommen eigene Namen,
+// alles davor heißt schlicht "Erste Runde" (Vereins-Konvention).
+function brRoundLabel(idx,total){
+  var remaining=total-idx;
+  if(remaining===1)return 'Finale';
+  if(remaining===2)return 'Halbfinale';
+  if(remaining===3)return 'Viertelfinale';
+  return 'Erste Runde';
+}
+// Berechnet aus den Runde-1-Namen und den gespeicherten Sieger-Klicks (picks)
+// den kompletten Baum. Bei einem Freilos (eine Seite leer) rückt die andere
+// Seite automatisch nach.
+function brComputeRounds(d,size,totalRounds){
+  var names=(d.names||[]).slice(0,size);
+  while(names.length<size)names.push('');
+  var seeds=d.seeds||{};
+  var picks=d.picks||[];
+  var rounds=[];
+  var current=names.slice();
+  for(var r=0;r<totalRounds;r++){
+    var matches=[];
+    var next=[];
+    for(var i=0;i<current.length;i+=2){
+      var a=current[i]||'',b=current[i+1]||'';
+      var mi=i/2;
+      var pick=(picks[r]&&picks[r][mi]!=null)?picks[r][mi]:null;
+      if(pick===null){
+        if(a&&!b)pick=0;
+        else if(b&&!a)pick=1;
+      }
+      matches.push({a:a,b:b,pick:pick,seedA:r===0?seeds[i]:null,seedB:r===0?seeds[i+1]:null});
+      next.push(pick===0?a:(pick===1?b:''));
+    }
+    rounds.push(matches);
+    current=next;
+  }
+  return rounds;
+}
+function brMatchHtml(m){
+  function rowHtml(name,seed,isWin){
+    var seedHtml=seed?'<span class="br-seed">['+es(String(seed))+']</span>':'';
+    var nameHtml=name?es(name):'<span class="br-bye">[Rast]</span>';
+    return '<div class="br-row'+(isWin?' win':'')+(name?'':' empty')+'">'+seedHtml+'<span class="br-name">'+nameHtml+'</span></div>';
+  }
+  return '<div class="br-match-wrap"><div class="br-match">'
+    +rowHtml(m.a,m.seedA,m.pick===0)
+    +rowHtml(m.b,m.seedB,m.pick===1)
+  +'</div></div>';
+}
+function buildBracket(s,div){
+  var d=s.data||{};
+  var ac=d.accent||'#c9db4d',bg=d.bg||'#0d2b1a';
+  div.style.setProperty('--ac',ac);
+  div.style.background='linear-gradient(155deg,'+bg+' 0%,#071510 100%)';
+  var size=parseInt(d.size)||8;
+  var totalRounds=Math.max(1,Math.round(Math.log2(size)));
+  var rounds=brComputeRounds(d,size,totalRounds);
+  var now=new Date();
+  var stand='Stand '+pad2(now.getDate())+'.'+pad2(now.getMonth()+1)+'. '+pad2(now.getHours())+':'+pad2(now.getMinutes());
+
+  var roundsHtml=rounds.map(function(matches,r){
+    var isLast=r===rounds.length-1;
+    var pairsHtml='';
+    if(matches.length===1){
+      pairsHtml='<div class="br-pair">'+brMatchHtml(matches[0])+'</div>';
+    } else {
+      for(var i=0;i<matches.length;i+=2){
+        pairsHtml+='<div class="br-pair">'+brMatchHtml(matches[i])+brMatchHtml(matches[i+1])+'</div>';
+      }
+    }
+    return '<div class="br-round'+(isLast?' br-round-last':'')+'">'
+      +'<div class="br-round-hd">'+es(brRoundLabel(r,totalRounds))+'</div>'
+      +'<div class="br-round-body">'+pairsHtml+'</div>'
+    +'</div>';
+  }).join('');
+
+  div.innerHTML='<div class="br-hd">'
+      +'<div class="br-title">'+es(d.title||'Turnier')+'</div>'
+      +'<div class="br-stand">'+es(stand)+'</div>'
+    +'</div>'
+    +'<div class="br-dv"></div>'
+    +'<div class="br-tree">'+roundsHtml+'</div>';
+}
 
 // ── SCORE
 var _scPageTimers={};
@@ -828,6 +941,9 @@ function bs(s){
     div.className='sl hm';
     var blob=new Blob([d.code||''],{type:'text/html'}),burl=URL.createObjectURL(blob);
     div.innerHTML='<iframe src="'+burl+'" sandbox="allow-scripts allow-same-origin"></iframe>';
+  } else if(s.type==='bracket'){
+    div.className='sl br';
+    buildBracket(s,div);
   }
   return div;
 }
