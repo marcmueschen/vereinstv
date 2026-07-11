@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gelderner Stadtmeisterschaften 2026</title>
+<style>
+  :root{
+    --bg: #0a1c14;
+    --bg-elev: #102b1f;
+    --bg-card: #143528;
+    --line: #24503b;
+    --text: #eef4ee;
+    --text-dim: #9db3a5;
+    --ball: #d4e157;
+    --clay: #c05a2e;
+    --clay-dim: #8a4321;
+    --danger: #e0563f;
+    --radius: 10px;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Roboto Mono", monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--sans);}
+  body{padding-bottom:60px;}
+  ::selection{background:var(--ball); color:#0a1c14;}
+  a{color:var(--ball);}
+
+  /* HERO / LED TICKER */
+  .hero{
+    background: linear-gradient(160deg, #0d2419 0%, #061109 70%);
+    border-bottom: 3px solid var(--ball);
+    padding: 28px 20px 0 20px;
+    position:relative;
+    overflow:hidden;
+  }
+  .hero:before{
+    content:"";
+    position:absolute; inset:0;
+    background: repeating-linear-gradient(0deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 3px);
+    pointer-events:none;
+  }
+  .hero-eyebrow{
+    font-family: var(--mono); font-size:11px; letter-spacing:.22em; text-transform:uppercase;
+    color: var(--ball); opacity:.85; margin:0 0 6px 0;
+  }
+  .hero h1{
+    margin:0; font-size: clamp(28px, 5vw, 46px); font-weight:800; letter-spacing:-0.02em;
+    text-transform:uppercase; line-height:1.02;
+  }
+  .hero .sub{
+    color:var(--text-dim); margin:8px 0 22px 0; font-size:14px; max-width:640px;
+  }
+  .ticker-wrap{
+    background:#040c07; border:1px solid var(--line); border-radius: var(--radius);
+    overflow:hidden; margin-bottom:0; position:relative;
+  }
+  .ticker-label{
+    display:flex; align-items:center; gap:8px;
+    background: var(--ball); color:#08170f; font-family:var(--mono); font-weight:700;
+    font-size:11px; letter-spacing:.15em; text-transform:uppercase;
+    padding:6px 12px;
+  }
+  .dot{width:7px;height:7px;border-radius:50%;background:#08170f; animation:blink 1.4s infinite;}
+  @keyframes blink{0%,100%{opacity:1;}50%{opacity:.25;}}
+  .ticker-track{
+    display:flex; gap:0; padding:10px 0;
+    animation: scroll-x 32s linear infinite;
+    width:max-content;
+  }
+  .ticker-wrap:hover .ticker-track{animation-play-state:paused;}
+  @keyframes scroll-x{ from{transform:translateX(0);} to{transform:translateX(-50%);} }
+  .ticker-item{
+    font-family:var(--mono); font-size:13px; white-space:nowrap; padding:0 26px;
+    border-right:1px solid var(--line); color:#c9f27a; text-shadow:0 0 8px rgba(212,225,87,.35);
+  }
+  .ticker-item b{color:#fff; font-weight:700;}
+  .ticker-item .t-cat{color:var(--text-dim); text-shadow:none;}
+  @media (prefers-reduced-motion: reduce){ .ticker-track{animation:none; overflow-x:auto;} }
+
+  /* TOP BAR */
+  .rolebar{
+    display:flex; flex-wrap:wrap; gap:10px; align-items:center;
+    padding:14px 20px; background:var(--bg-elev); border-bottom:1px solid var(--line);
+    position:sticky; top:0; z-index:20;
+  }
+  .rolebar select, .rolebar button{
+    background:var(--bg-card); color:var(--text); border:1px solid var(--line);
+    border-radius:8px; padding:8px 12px; font-size:13px; font-family:var(--sans); cursor:pointer;
+  }
+  .rolebar select:focus, .rolebar button:focus, button:focus, input:focus, textarea:focus{
+    outline:2px solid var(--ball); outline-offset:1px;
+  }
+  .rolebar .me{
+    font-family:var(--mono); font-size:12px; color:var(--ball); margin-left:auto;
+  }
+  .pill{
+    display:inline-flex; align-items:center; gap:6px; font-family:var(--mono); font-size:11px;
+    padding:4px 9px; border-radius:99px; border:1px solid var(--line); color:var(--text-dim);
+  }
+  .pill.live{border-color:var(--ball); color:var(--ball);}
+
+  /* LAYOUT */
+  .wrap{max-width:1200px; margin:0 auto; padding:0 20px;}
+  .tabs{
+    display:flex; gap:6px; flex-wrap:wrap; padding:18px 20px 0 20px; max-width:1200px; margin:0 auto;
+  }
+  .tab{
+    font-family:var(--mono); font-size:12px; text-transform:uppercase; letter-spacing:.06em;
+    padding:9px 14px; border-radius:8px 8px 0 0; border:1px solid var(--line); border-bottom:none;
+    background:var(--bg-elev); color:var(--text-dim); cursor:pointer;
+  }
+  .tab.active{background:var(--bg-card); color:var(--ball); border-color:var(--ball);}
+  .tab .n{color:var(--text-dim); font-size:10px;}
+
+  .panel{
+    background:var(--bg-card); border:1px solid var(--line); border-radius:0 10px 10px 10px;
+    padding:24px 20px; max-width:1200px; margin:0 auto 30px auto;
+  }
+  .panel h2{margin:0 0 4px 0; font-size:20px; letter-spacing:-0.01em;}
+  .panel .meta{color:var(--text-dim); font-size:12.5px; margin-bottom:20px; font-family:var(--mono);}
+
+  /* BRACKET */
+  .bracket{display:flex; gap:34px; overflow-x:auto; padding-bottom:14px;}
+  .round-col{display:flex; flex-direction:column; min-width:250px; flex:1;}
+  .round-title{
+    font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:.14em;
+    color:var(--ball); margin-bottom:14px; padding-bottom:8px; border-bottom:1px dashed var(--line);
+  }
+  .round-col .matches{display:flex; flex-direction:column; justify-content:space-around; flex:1; gap:16px;}
+  .match{
+    background:var(--bg-elev); border:1px solid var(--line); border-radius:8px; padding:10px 12px;
+    font-size:13px; position:relative;
+  }
+  .match.mine{border-color:var(--ball); box-shadow:0 0 0 1px var(--ball) inset;}
+  .match.done{opacity:.72;}
+  .slot{display:flex; justify-content:space-between; gap:8px; padding:4px 0;}
+  .slot .nm{display:flex; gap:6px; align-items:baseline;}
+  .slot .seed{color:var(--clay); font-family:var(--mono); font-size:10.5px;}
+  .slot.winner .nm{color:var(--ball); font-weight:700;}
+  .slot.bye .nm{color:var(--text-dim); font-style:italic;}
+  .vs-divider{border-top:1px solid var(--line); margin:2px 0;}
+  .m-meta{
+    margin-top:8px; padding-top:8px; border-top:1px dashed var(--line);
+    font-family:var(--mono); font-size:11px; color:var(--text-dim); display:flex; flex-wrap:wrap; gap:6px 10px; align-items:center;
+  }
+  .badge{
+    font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:.06em;
+    padding:2px 7px; border-radius:99px; border:1px solid var(--line); color:var(--text-dim);
+  }
+  .badge.pairing{border-color:var(--clay); color:#f0916c;}
+  .badge.scheduled{border-color:var(--ball); color:var(--ball);}
+  .badge.done{border-color:#5a8a72; color:#8fd6ac;}
+  .badge.wait{color:var(--text-dim);}
+
+  .m-actions{margin-top:8px;}
+  .m-actions button.link{
+    background:none; border:none; color:var(--ball); font-family:var(--mono); font-size:11.5px;
+    cursor:pointer; padding:2px 0; text-decoration:underline;
+  }
+  .m-form{margin-top:10px; padding-top:10px; border-top:1px dashed var(--line); display:grid; gap:8px;}
+  .m-form label{display:block; font-size:11px; color:var(--text-dim); margin-bottom:3px; font-family:var(--mono);}
+  .m-form input[type=text], .m-form input[type=date], .m-form input[type=time]{
+    width:100%; background:var(--bg); border:1px solid var(--line); border-radius:6px; color:var(--text);
+    padding:6px 8px; font-size:12.5px; font-family:var(--sans);
+  }
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+  .m-form .radios{display:flex; flex-direction:column; gap:6px;}
+  .m-form .radios label{display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--text); font-family:var(--sans);}
+  .btn{
+    background:var(--ball); color:#0a1c14; border:none; border-radius:7px; padding:8px 14px;
+    font-weight:700; font-size:12.5px; cursor:pointer; font-family:var(--sans);
+  }
+  .btn.secondary{background:transparent; color:var(--ball); border:1px solid var(--ball);}
+  .btn.danger{background:var(--danger); color:#fff;}
+  .btn:disabled{opacity:.4; cursor:not-allowed;}
+
+  .empty{color:var(--text-dim); font-size:13px; padding:30px 0; text-align:center;}
+
+  /* NOTIFICATIONS / ADMIN */
+  .notif-list{display:flex; flex-direction:column; gap:10px; max-height:520px; overflow-y:auto;}
+  .notif{
+    background:var(--bg-elev); border:1px solid var(--line); border-radius:8px; padding:10px 12px; font-size:12.5px;
+  }
+  .notif .head{display:flex; justify-content:space-between; gap:10px; margin-bottom:4px;}
+  .notif .to{font-family:var(--mono); color:var(--ball); font-size:11.5px;}
+  .notif .time{font-family:var(--mono); color:var(--text-dim); font-size:10.5px; white-space:nowrap;}
+  .notif .subj{font-weight:700; margin-bottom:2px;}
+  .notif .body{color:var(--text-dim);}
+  .notif.admin .to{color:var(--clay);}
+
+  table.reg{width:100%; border-collapse:collapse; font-size:12.5px;}
+  table.reg th, table.reg td{text-align:left; padding:7px 8px; border-bottom:1px solid var(--line);}
+  table.reg th{color:var(--text-dim); font-family:var(--mono); font-weight:400; font-size:11px; text-transform:uppercase;}
+  table.reg input{width:100%; background:var(--bg); border:1px solid var(--line); border-radius:6px; color:var(--text); padding:5px 7px; font-size:12px;}
+
+  .grid2{display:grid; grid-template-columns:1.4fr 1fr; gap:24px;}
+  @media (max-width: 880px){ .grid2{grid-template-columns:1fr;} .bracket{flex-direction:column;} .round-col{min-width:0;} }
+
+  .footer-note{max-width:1200px; margin:0 auto; padding:0 20px 40px 20px; color:var(--text-dim); font-size:11.5px; font-family:var(--mono); line-height:1.6;}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="wrap" style="padding:0;">
+    <p class="hero-eyebrow">TC Geldern · Kapellen · Walbeck · Veert · Hartefeld</p>
+    <h1>Gelderner Stadtmeisterschaften 2026</h1>
+    <p class="sub">Turnierbaum, Terminfindung und Ergebnisse für alle Konkurrenzen — jeder Spieler pflegt seine eigene Partie, der Vorstand behält alles im Blick.</p>
+    <div class="ticker-wrap">
+      <div class="ticker-label"><span class="dot"></span> Anstehende Partien</div>
+      <div class="ticker-track" id="tickerTrack"></div>
+    </div>
+  </div>
+  <div style="height:22px;"></div>
+</div>
+
+<div class="rolebar wrap">
+  <span class="pill live" id="storagePill">● live</span>
+  <label style="font-size:12px; color:var(--text-dim); font-family:monospace;">Rolle</label>
+  <select id="roleSelect">
+    <option value="player">Spieler</option>
+    <option value="admin">Admin</option>
+  </select>
+  <span id="playerSelectWrap" style="display:flex; align-items:center; gap:8px;">
+    <label style="font-size:12px; color:var(--text-dim); font-family:monospace;">Ich bin</label>
+    <select id="playerSelect"><option value="">– auswählen –</option></select>
+  </span>
+  <span id="adminPassWrap" style="display:none; align-items:center; gap:8px;">
+    <input id="adminPass" type="text" placeholder="Admin-Code" style="background:var(--bg-card); border:1px solid var(--line); border-radius:8px; color:var(--text); padding:8px 10px; font-size:12px; width:120px;">
+  </span>
+  <span class="me" id="meLabel"></span>
+</div>
+
+<div class="tabs" id="tabs"></div>
+<div class="panel" id="mainPanel"></div>
+
+<div class="footer-note" id="footerNote"></div>
+
+<script>
+/* ============================= DATEN-MODELL ============================= */
+// Hinweis zur Datenherkunft: Die Startaufstellung (Teilnehmer & Setzungen je Konkurrenz)
+// wurde aus der öffentlichen Übersicht https://cm.tennisclub-geldern.de/ übernommen.
+// Die exakten Baumpositionen in den Folgerunden waren dort nicht maschinenlesbar hinterlegt
+// und wurden daher nach dem Standard-Setzverfahren automatisch erzeugt. Die sechs bereits
+// terminierten Erstrundenpartien (Datum/Uhrzeit/Platz) entsprechen 1:1 der Originalseite.
+// Admins können jede Paarung/jeden Termin jederzeit korrigieren.
+
+const CATS = [
+  {key:'damen', name:'Damen', type:'Einzel', entrants:[
+    {name:'Brosch, Christina', seed:1},{name:'Burkart, Leonie'},{name:'Koblenz, Viola'},
+    {name:'Hommes, Nicole', seed:4},{name:'Hüsges, Meike'},{name:'Baumann, Xenia'},
+    {name:'Deselaers, Anna'},{name:'Diepers, Petra', seed:3},{name:'Greitemeier, Jennifer'},
+    {name:'Frisch, Carolin'},{name:'Stutzinger, Lisa', seed:2}
+  ]},
+  {key:'herren', name:'Herren', type:'Einzel', entrants:[
+    {name:'Diepers, Jan', seed:1},{name:'Küpper, Paul'},{name:'Fischer, Jens', seed:3},
+    {name:'Oerding, Linus'},{name:'Müschen, Max'},{name:'Wittag, Sebastian'},
+    {name:'Hennes, Kevin', seed:4},{name:'van Stephoudt, Lucas'},{name:'Böttcher, Christian', seed:2}
+  ]},
+  {key:'herren40', name:'Herren 40+', type:'Einzel', entrants:[
+    {name:'Elser, Karim', seed:1},{name:'Giavarra, Marc'},{name:'Fischer, Timo', seed:3},
+    {name:'van de Moolen, Klaus'},{name:'Müschen, Marc'},{name:'Görres, Bernd', seed:4},
+    {name:'Wojciechowski, Christoph'},{name:'Klaessen, Markus', seed:2}
+  ]},
+  {key:'damendoppel', name:'Damen Doppel', type:'Doppel', entrants:[
+    {name:'Brosch, Christina / Lörcks', seed:1},{name:'Stutzinger, Lisa / Antoniazzi, C.'},
+    {name:'Diepers, Petra / Mummert'},{name:'Lamers / Brendel'},{name:'Staschok / Naß'},
+    {name:'Teschke, Je. / Deselaers'},{name:'Heisig, Ma. / Hülk', seed:2}
+  ]},
+  {key:'herrendoppel', name:'Herren Doppel', type:'Doppel', entrants:[
+    {name:'Hennes / Teschke, Ja.', seed:1},{name:'Fischer, Jens / Wittag'},{name:'Heisig, Gr. / Heisig, Do.'},
+    {name:'Mandel / Grütter', seed:3},{name:'Van der Moolen / Lenzen, J.'},{name:'van Stephoudt / Jentjens'},
+    {name:'Berns, Christian / Fleuren'},{name:'Appel / Oerding', seed:4},{name:'Müschen, Marc / Müschen, Max'},
+    {name:'Diepers, Jan / Goetzens', seed:2}
+  ]},
+  {key:'herrendoppel40', name:'Herren Doppel 40+', type:'Doppel', entrants:[
+    {name:'Klaessen / Schmidt, C.', seed:1},{name:'Görres / Fischer, Timo'},{name:'Sternke / Stibi'},
+    {name:'Baumann, P. / Wojciechowski', seed:4},{name:'Kaufmann / Becker'},{name:'Tenner / Schmidt, J.'},
+    {name:'Molderings / Boers'},{name:'Lohre, Mi. / Fischer, Ma.'},{name:'Bosse / Burger'},
+    {name:'Elser / Berns, Christoph', seed:3},{name:'Heisig, Gr. / Giavarra'},{name:'Müschen, Marc / Roffia'},
+    {name:'Roosen / Pusnik', seed:2}
+  ]},
+  {key:'mixed', name:'Mixed', type:'Doppel', entrants:[
+    {name:'Teschke, Je. / Teschke, Ja.', seed:1},{name:'Lenzen, V. / Van der Moolen'},
+    {name:'Baumann, X. / Baumann, P.', seed:4},{name:'Hirnich, D. / Hirnich, P.'},
+    {name:'Lohre, Mara / Lohre, Mi.'},{name:'Elspaß, J. / Elspaß, M.'},
+    {name:'Antoniazzi, C. / Antoniazzi, G.', seed:3},{name:'Deselaers / Thomas'},
+    {name:'Heisig, Ma. / Heisig, Gr.', seed:2}
+  ]}
+];
+
+// Bereits bekannte, terminierte Erstrundenpartien (1:1 von der Originalseite, Stand 09.07.)
+const KNOWN_FIXTURES = [
+  {cat:'damen', a:'Hüsges, Meike', b:'Baumann, Xenia', date:'2026-07-12', time:'10:00', court:'Geldern'},
+  {cat:'mixed', a:'Elspaß, J. / Elspaß, M.', b:'Antoniazzi, C. / Antoniazzi, G.', date:'2026-07-15', time:'18:45', court:'Geldern'},
+  {cat:'herren', a:'Oerding, Linus', b:'Müschen, Max', date:'2026-07-16', time:'17:00', court:'Geldern'},
+  {cat:'herren40', a:'Müschen, Marc', b:'Görres, Bernd', date:'2026-07-16', time:'19:00', court:'Geldern'},
+  {cat:'damendoppel', a:'Teschke, Je. / Deselaers', b:'Heisig, Ma. / Hülk', date:'2026-07-27', time:'18:30', court:'Geldern'},
+  {cat:'herrendoppel', a:'Fischer, Jens / Wittag', b:'Heisig, Gr. / Heisig, Do.', date:'2026-07-30', time:'18:30', court:'Geldern'}
+];
+
+const STORAGE_KEY = 'sm2026-tournament-db';
+
+/* ============================= HILFSFUNKTIONEN ============================= */
+function nextPow2(n){ let p=1; while(p<n) p*=2; return Math.max(p,2); }
+
+function seedOrder(n){
+  if(n===1) return [1];
+  const prev = seedOrder(n/2);
+  const out=[];
+  prev.forEach(s=>{ out.push(s); out.push(n+1-s); });
+  return out;
+}
+
+function roundLabel(totalRounds, idx){
+  const fromEnd = totalRounds - idx;
+  if(fromEnd===1) return 'Finale';
+  if(fromEnd===2) return 'Halbfinale';
+  if(fromEnd===3) return 'Viertelfinale';
+  if(fromEnd===4) return 'Achtelfinale';
+  return `Runde ${idx+1}`;
+}
+
+function splitPeople(slotName){
+  if(!slotName) return [];
+  return slotName.split(' / ').map(s=>s.trim());
+}
+
+function buildCategoryBracket(cat){
+  const drawSize = nextPow2(cat.entrants.length);
+  const totalRounds = Math.log2(drawSize);
+  const order = seedOrder(drawSize); // array of "seed slot" numbers, length drawSize
+
+  const seeded = {};
+  cat.entrants.forEach(e=>{ if(e.seed) seeded[e.seed]=e; });
+  const unseeded = cat.entrants.filter(e=>!e.seed).slice();
+
+  const slots = new Array(drawSize).fill(null);
+  order.forEach((seedNum, i)=>{
+    if(seeded[seedNum]){ slots[i] = {kind:'player', name:seeded[seedNum].name, seed:seedNum}; }
+  });
+  for(let i=0;i<slots.length;i++){
+    if(slots[i]===null && unseeded.length){
+      const e = unseeded.shift();
+      slots[i] = {kind:'player', name:e.name, seed:null};
+    }
+  }
+  for(let i=0;i<slots.length;i++){
+    if(slots[i]===null) slots[i] = {kind:'bye', name:'Freilos', seed:null};
+  }
+
+  const rounds = [];
+  let current = slots;
+  for(let r=0; r<totalRounds; r++){
+    const matches = [];
+    for(let i=0;i<current.length;i+=2){
+      matches.push({
+        id: `${cat.key}-r${r}-m${i/2}`,
+        round: r,
+        slots: [current[i], current[i+1]],
+        date:null, time:null, court:null,
+        result:null,
+        winnerSlot:null,
+        status:'tbd',
+        notifiedPairing:false,
+        nextMatchId: null,
+        nextSlotIndex: (i/2) % 2
+      });
+    }
+    rounds.push(matches);
+    current = matches.map(()=>({kind:'tbd', name:'', seed:null}));
+  }
+  // link matches to their follow-up match
+  for(let r=0;r<rounds.length-1;r++){
+    rounds[r].forEach((m,i)=>{
+      m.nextMatchId = rounds[r+1][Math.floor(i/2)].id;
+      m.nextSlotIndex = i % 2;
+    });
+  }
+  return {drawSize, totalRounds, rounds};
+}
+
+function computeMatchStatus(m){
+  const [s1,s2] = m.slots;
+  if(m.result || m.winnerSlot!==null) return 'done';
+  if(s1.kind==='bye' || s2.kind==='bye') return 'bye';
+  if(s1.kind==='tbd' || s2.kind==='tbd') return 'wait';
+  if(m.date) return 'scheduled';
+  return 'pairing';
+}
+
+function resolveByesAndPropagate(rounds){
+  // auto-advance byes and propagate any already-known winners silently (init pass, no notifications)
+  for(let r=0;r<rounds.length;r++){
+    rounds[r].forEach(m=>{
+      const [s1,s2] = m.slots;
+      if(m.winnerSlot===null && (s1.kind==='bye' || s2.kind==='bye') && (s1.kind==='player'||s2.kind==='player')){
+        m.winnerSlot = s1.kind==='player' ? 0 : 1;
+      }
+      if(m.winnerSlot!==null && m.nextMatchId){
+        const winner = m.slots[m.winnerSlot];
+        const nextMatch = findMatchById(rounds, m.nextMatchId);
+        if(nextMatch){ nextMatch.slots[m.nextSlotIndex] = {kind:'player', name:winner.name, seed:winner.seed}; }
+      }
+    });
+  }
+}
+
+function findMatchById(rounds, id){
+  for(const rnd of rounds) for(const m of rnd) if(m.id===id) return m;
+  return null;
+}
+
+/* ============================= DB INIT / LOAD / SAVE ============================= */
+let DB = null;
+
+function buildFreshDB(){
+  const categories = {};
+  CATS.forEach(cat=>{
+    const b = buildCategoryBracket(cat);
+    categories[cat.key] = {name:cat.name, type:cat.type, drawSize:b.drawSize, totalRounds:b.totalRounds, rounds:b.rounds};
+  });
+  // apply known fixtures: force pairing into same round-1 match + set date/time/court
+  KNOWN_FIXTURES.forEach(fx=>{
+    const cat = categories[fx.cat];
+    const r0 = cat.rounds[0];
+    let matchA = r0.find(m=>m.slots[0].name===fx.a || m.slots[1].name===fx.a);
+    if(!matchA) return;
+    const bIsAlready = matchA.slots.some(s=>s.name===fx.b);
+    if(!bIsAlready){
+      const matchB = r0.find(m=>m.id!==matchA.id && (m.slots[0].name===fx.b || m.slots[1].name===fx.b));
+      if(matchB){
+        const idxAinMatchA = matchA.slots[0].name===fx.a ? 0 : 1;
+        const idxBinMatchB = matchB.slots[0].name===fx.b ? 0 : 1;
+        const otherAIdx = 1-idxAinMatchA, otherBIdx = 1-idxBinMatchB;
+        const tmp = matchA.slots[otherAIdx];
+        matchA.slots[otherAIdx] = matchB.slots[idxBinMatchB];
+        matchB.slots[idxBinMatchB] = tmp;
+      }
+    }
+    matchA.date = fx.date; matchA.time = fx.time; matchA.court = fx.court;
+  });
+  // silent initial propagation (byes), and mark existing complete pairings as already-notified
+  Object.values(categories).forEach(cat=>{
+    resolveByesAndPropagate(cat.rounds);
+    cat.rounds.forEach(rnd=>rnd.forEach(m=>{
+      const st = computeMatchStatus(m);
+      if(st==='pairing' || st==='scheduled') m.notifiedPairing = true;
+    }));
+  });
+
+  return {
+    categories,
+    players: {},
+    notifications: [],
+    createdAt: new Date().toISOString()
+  };
+}
+
+async function loadDB(){
+  try{
+    const res = await window.storage.get(STORAGE_KEY, true);
+    if(res && res.value){ DB = JSON.parse(res.value); return; }
+  }catch(e){ /* not found yet */ }
+  DB = buildFreshDB();
+  await saveDB();
+}
+
+async function saveDB(){
+  try{
+    await window.storage.set(STORAGE_KEY, JSON.stringify(DB), true);
+    setPillState(true);
+  }catch(e){
+    console.error('Speichern fehlgeschlagen', e);
+    setPillState(false);
+  }
+}
+
+function setPillState(ok){
+  const p = document.getElementById('storagePill');
+  if(!p) return;
+  p.textContent = ok ? '● live' : '● Speicherfehler';
+  p.className = 'pill ' + (ok ? 'live' : '');
+}
+
+/* ============================= NOTIFICATIONS ============================= */
+function emailFor(personName){
+  const e = DB.players[personName];
+  return e && e.trim() ? e.trim() : null;
+}
+
+function pushNotification({toPeople, admin, subject, body}){
+  DB.notifications.unshift({
+    id: 'n'+Date.now()+Math.random().toString(36).slice(2,7),
+    time: new Date().toISOString(),
+    toPeople: toPeople || [],
+    admin: !!admin,
+    subject, body
+  });
+}
+
+function notifyPairingComplete(catName, m){
+  const people = [...splitPeople(m.slots[0].name), ...splitPeople(m.slots[1].name)];
+  const label = `${m.slots[0].name} – ${m.slots[1].name}`;
+  pushNotification({
+    toPeople: people,
+    subject: `Ihre Partie steht fest: ${catName}`,
+    body: `Die Paarung ${label} in der Konkurrenz "${catName}" ist komplett. Bitte vereinbaren Sie zeitnah einen Termin und tragen Sie ihn auf der Turnierseite ein.`
+  });
+  pushNotification({
+    admin:true,
+    subject: `Neue Paarung komplett: ${catName}`,
+    body: `${label} — beide Teilnehmer stehen fest, Termin noch offen.`
+  });
+}
+
+function notifyAdmin(subject, body){
+  pushNotification({admin:true, subject, body});
+}
+
+/* ============================= MUTATIONS ============================= */
+async function setMatchDate(catKey, matchId, date, time, court, actor){
+  const cat = DB.categories[catKey];
+  const m = findMatchById(cat.rounds, matchId);
+  m.date = date || null; m.time = time || null; m.court = court || null;
+  notifyAdmin(`Termin geändert: ${cat.name}`, `${m.slots[0].name} – ${m.slots[1].name}: ${date||'–'} ${time||''} ${court?('· '+court):''} (von ${actor}).`);
+  await saveDB();
+}
+
+async function setMatchResult(catKey, matchId, winnerSlot, resultText, actor){
+  const cat = DB.categories[catKey];
+  const m = findMatchById(cat.rounds, matchId);
+  m.winnerSlot = winnerSlot;
+  m.result = resultText || null;
+  const winner = m.slots[winnerSlot];
+  notifyAdmin(`Ergebnis eingetragen: ${cat.name}`, `${m.slots[0].name} – ${m.slots[1].name} → Sieger: ${winner.name}${resultText?(' ('+resultText+')'):''} (von ${actor}).`);
+
+  if(m.nextMatchId){
+    const nextMatch = findMatchById(cat.rounds, m.nextMatchId);
+    nextMatch.slots[m.nextSlotIndex] = {kind:'player', name:winner.name, seed:winner.seed};
+    const st = computeMatchStatus(nextMatch);
+    if((st==='pairing' || st==='scheduled') && !nextMatch.notifiedPairing){
+      nextMatch.notifiedPairing = true;
+      notifyPairingComplete(cat.name, nextMatch);
+    }
+  }
+  await saveDB();
+}
+
+async function setPlayerEmail(name, email){
+  DB.players[name] = email;
+  await saveDB();
+}
+
+async function resetTournament(){
+  DB = buildFreshDB();
+  await saveDB();
+}
+
+/* ============================= STATE ============================= */
+let ui = {
+  role: 'player',
+  me: '',
+  activeCat: CATS[0].key,
+  openForm: null // matchId currently showing inline form
+};
+
+function allPersonNames(){
+  const set = new Set();
+  CATS.forEach(cat=>cat.entrants.forEach(e=>splitPeople(e.name).forEach(p=>set.add(p))));
+  return Array.from(set).sort((a,b)=>a.localeCompare(b,'de'));
+}
+
+function isMyMatch(m){
+  if(!ui.me) return false;
+  const people = [...splitPeople(m.slots[0].name), ...splitPeople(m.slots[1].name)];
+  return people.includes(ui.me);
+}
+
+function fmtDate(iso){
+  if(!iso) return null;
+  const d = new Date(iso+'T00:00:00');
+  const days=['So','Mo','Di','Mi','Do','Fr','Sa'];
+  return `${days[d.getDay()]} ${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
+}
+function timeAgo(iso){
+  const diff = Date.now()-new Date(iso).getTime();
+  const m = Math.floor(diff/60000);
+  if(m<1) return 'gerade eben';
+  if(m<60) return `vor ${m} Min.`;
+  const h = Math.floor(m/60);
+  if(h<24) return `vor ${h} Std.`;
+  return `vor ${Math.floor(h/24)} Tg.`;
+}
+
+/* ============================= RENDER: TICKER ============================= */
+function renderTicker(){
+  const items = [];
+  Object.entries(DB.categories).forEach(([key,cat])=>{
+    cat.rounds.forEach(rnd=>rnd.forEach(m=>{
+      if(m.date){
+        items.push({cat:cat.name, label:`${m.slots[0].name} – ${m.slots[1].name}`, date:m.date, time:m.time, court:m.court});
+      }
+    }));
+  });
+  items.sort((a,b)=> (a.date+a.time).localeCompare(b.date+b.time));
+  const track = document.getElementById('tickerTrack');
+  if(items.length===0){
+    track.innerHTML = `<div class="ticker-item">Noch keine Termine vereinbart.</div>`;
+    return;
+  }
+  const html = items.map(it=>`<span class="ticker-item"><span class="t-cat">${it.cat}</span> · <b>${it.label}</b> · ${fmtDate(it.date)}, ${it.time||''} Uhr${it.court?(' · '+it.court):''}</span>`).join('');
+  track.innerHTML = html + html; // duplicate for seamless loop
+}
+
+/* ============================= RENDER: TABS ============================= */
+function renderTabs(){
+  const tabs = document.getElementById('tabs');
+  tabs.innerHTML = CATS.map(cat=>{
+    const active = cat.key===ui.activeCat ? 'active' : '';
+    return `<div class="tab ${active}" data-cat="${cat.key}">${cat.name} <span class="n">(${cat.entrants.length})</span></div>`;
+  }).join('');
+  tabs.querySelectorAll('.tab').forEach(t=>{
+    t.addEventListener('click', ()=>{ ui.activeCat = t.dataset.cat; ui.openForm=null; renderAll(); });
+  });
+}
+
+/* ============================= RENDER: BRACKET ============================= */
+function statusBadge(m){
+  const st = computeMatchStatus(m);
+  if(st==='done') return `<span class="badge done">Beendet</span>`;
+  if(st==='scheduled') return `<span class="badge scheduled">Termin steht</span>`;
+  if(st==='pairing') return `<span class="badge pairing">Termin offen</span>`;
+  if(st==='bye') return `<span class="badge wait">Freilos</span>`;
+  return `<span class="badge wait">wartet</span>`;
+}
+
+function slotHtml(slot, m, idx){
+  const isWinner = m.winnerSlot===idx;
+  const cls = ['slot'];
+  if(isWinner) cls.push('winner');
+  if(slot.kind==='bye') cls.push('bye');
+  const seed = slot.seed ? `<span class="seed">[${slot.seed}]</span>` : '';
+  const nm = slot.kind==='tbd' ? '<span style="color:var(--text-dim)">— offen —</span>' : slot.name;
+  return `<div class="${cls.join(' ')}"><span class="nm">${seed}${nm}</span></div>`;
+}
+
+function matchFormHtml(catKey, m){
+  const st = computeMatchStatus(m);
+  const canSchedule = st==='pairing' || st==='scheduled';
+  const canResult = st==='pairing' || st==='scheduled';
+  if(!canSchedule && !canResult) return '';
+  return `
+    <div class="m-form" data-match="${m.id}">
+      <div>
+        <label>Termin (Datum, Uhrzeit, Platz)</label>
+        <div class="row2">
+          <input type="date" class="f-date" value="${m.date||''}">
+          <input type="time" class="f-time" value="${m.time||''}">
+        </div>
+        <input type="text" class="f-court" placeholder="Platz / Ort" value="${m.court||''}" style="margin-top:6px;">
+        <button class="btn secondary f-save-date" style="margin-top:8px;">Termin speichern</button>
+      </div>
+      <div>
+        <label>Ergebnis eintragen</label>
+        <div class="radios">
+          <label><input type="radio" name="winner-${m.id}" value="0"> Sieger: ${m.slots[0].name}</label>
+          <label><input type="radio" name="winner-${m.id}" value="1"> Sieger: ${m.slots[1].name}</label>
+        </div>
+        <input type="text" class="f-result" placeholder="Sätze, z. B. 6:3, 4:6, 10:8" style="margin-top:6px;">
+        <button class="btn f-save-result" style="margin-top:8px;">Ergebnis speichern</button>
+      </div>
+    </div>`;
+}
+
+function matchHtml(catKey, m){
+  const mine = isMyMatch(m) ? 'mine' : '';
+  const done = computeMatchStatus(m)==='done' ? 'done' : '';
+  const showForm = ui.openForm===m.id;
+  const canAct = (ui.role==='admin') || (ui.role==='player' && isMyMatch(m));
+  const st = computeMatchStatus(m);
+  const actionable = st==='pairing' || st==='scheduled';
+  return `
+    <div class="match ${mine} ${done}" data-match="${m.id}">
+      ${slotHtml(m.slots[0], m, 0)}
+      <div class="vs-divider"></div>
+      ${slotHtml(m.slots[1], m, 1)}
+      <div class="m-meta">
+        ${statusBadge(m)}
+        ${m.date ? `<span>${fmtDate(m.date)}, ${m.time||''} Uhr${m.court?(' · '+m.court):''}</span>` : ''}
+        ${m.result ? `<span>Ergebnis: ${m.result}</span>` : ''}
+        ${mine ? `<span class="badge" style="border-color:var(--ball); color:var(--ball);">deine Partie</span>` : ''}
+      </div>
+      ${canAct && actionable ? `<div class="m-actions"><button class="link toggle-form" data-match="${m.id}">${showForm?'Formular schließen':'Termin / Ergebnis eintragen'}</button></div>` : ''}
+      ${canAct && actionable && showForm ? matchFormHtml(catKey, m) : ''}
+    </div>`;
+}
+
+function renderBracket(catKey){
+  const cat = DB.categories[catKey];
+  const cols = cat.rounds.map((rnd, idx)=>{
+    return `<div class="round-col">
+      <div class="round-title">${roundLabel(cat.totalRounds, idx)}</div>
+      <div class="matches">${rnd.map(m=>matchHtml(catKey,m)).join('')}</div>
+    </div>`;
+  }).join('');
+  return `
+    <h2>${cat.name}</h2>
+    <p class="meta">${cat.type} · ${cat.drawSize}er-Turnierbaum · ${cat.totalRounds} Runden</p>
+    <div class="bracket">${cols}</div>`;
+}
+
+/* ============================= RENDER: ADMIN VIEWS ============================= */
+function renderNotifications(){
+  if(DB.notifications.length===0) return `<div class="empty">Noch keine Benachrichtigungen.</div>`;
+  return `<div class="notif-list">${DB.notifications.map(n=>{
+    let toLabel;
+    if(n.admin){
+      toLabel = 'Admin';
+    } else {
+      toLabel = n.toPeople.map(p=>{
+        const em = emailFor(p);
+        return em ? `${p} &lt;${em}&gt;` : `${p} (keine E-Mail hinterlegt)`;
+      }).join('; ');
+    }
+    return `<div class="notif ${n.admin?'admin':''}">
+      <div class="head"><span class="to">✉ an ${toLabel}</span><span class="time">${timeAgo(n.time)}</span></div>
+      <div class="subj">${n.subject}</div>
+      <div class="body">${n.body}</div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+function renderPlayerRegistry(){
+  const names = allPersonNames();
+  return `<table class="reg">
+    <thead><tr><th>Spieler / Spielerin</th><th>E-Mail-Adresse</th></tr></thead>
+    <tbody>${names.map(n=>`
+      <tr>
+        <td>${n}</td>
+        <td><input type="text" class="reg-email" data-name="${n}" placeholder="name@example.de" value="${DB.players[n]||''}"></td>
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+function renderAdminExtra(){
+  return `
+    <div style="height:34px;"></div>
+    <div class="grid2">
+      <div>
+        <h2>Benachrichtigungen</h2>
+        <p class="meta">Simulierter Versand — es werden keine echten E-Mails verschickt. Diese Liste zeigt, was verschickt worden wäre.</p>
+        ${renderNotifications()}
+      </div>
+      <div>
+        <h2>Spielerverwaltung</h2>
+        <p class="meta">E-Mail-Adressen für die Benachrichtigungen hinterlegen.</p>
+        ${renderPlayerRegistry()}
+        <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--line);">
+          <button class="btn danger" id="resetBtn">Turnierdaten zurücksetzen</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+/* ============================= MAIN RENDER ============================= */
+function renderAll(){
+  renderTicker();
+  renderTabs();
+  const panel = document.getElementById('mainPanel');
+  panel.innerHTML = renderBracket(ui.activeCat) + (ui.role==='admin' ? renderAdminExtra() : '');
+  wirePanelEvents();
+
+  document.getElementById('meLabel').textContent = ui.role==='admin' ? 'Angemeldet als Admin' : (ui.me ? `Angemeldet als ${ui.me}` : '');
+  document.getElementById('playerSelectWrap').style.display = ui.role==='player' ? 'flex' : 'none';
+  document.getElementById('adminPassWrap').style.display = ui.role==='admin' ? 'flex' : 'none';
+
+  document.getElementById('footerNote').innerHTML =
+    `Startaufstellung je Konkurrenz übernommen von cm.tennisclub-geldern.de (Stand 09.07.2026). Die sechs bereits terminierten Erstrundenpartien entsprechen der Originalseite; alle weiteren Baumpositionen wurden automatisch nach Standard-Setzverfahren erzeugt und können vom Admin jederzeit korrigiert werden.`;
+}
+
+function wirePanelEvents(){
+  document.querySelectorAll('.toggle-form').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const id = btn.dataset.match;
+      ui.openForm = ui.openForm===id ? null : id;
+      renderAll();
+    });
+  });
+  document.querySelectorAll('.f-save-date').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const wrap = btn.closest('.m-form');
+      const matchId = wrap.dataset.match;
+      const date = wrap.querySelector('.f-date').value;
+      const time = wrap.querySelector('.f-time').value;
+      const court = wrap.querySelector('.f-court').value;
+      const actor = ui.role==='admin' ? 'Admin' : (ui.me || 'Spieler');
+      btn.disabled = true;
+      await setMatchDate(ui.activeCat, matchId, date, time, court, actor);
+      renderAll();
+    });
+  });
+  document.querySelectorAll('.f-save-result').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const wrap = btn.closest('.m-form');
+      const matchId = wrap.dataset.match;
+      const checked = wrap.querySelector(`input[name="winner-${matchId}"]:checked`);
+      if(!checked){ alert('Bitte zuerst den Sieger auswählen.'); return; }
+      const resultText = wrap.querySelector('.f-result').value;
+      const actor = ui.role==='admin' ? 'Admin' : (ui.me || 'Spieler');
+      btn.disabled = true;
+      await setMatchResult(ui.activeCat, matchId, parseInt(checked.value,10), resultText, actor);
+      ui.openForm = null;
+      renderAll();
+    });
+  });
+  document.querySelectorAll('.reg-email').forEach(inp=>{
+    inp.addEventListener('change', async ()=>{
+      await setPlayerEmail(inp.dataset.name, inp.value);
+      renderAll();
+    });
+  });
+  const resetBtn = document.getElementById('resetBtn');
+  if(resetBtn){
+    resetBtn.addEventListener('click', async ()=>{
+      if(confirm('Wirklich alle Turnierdaten zurücksetzen? Alle Termine, Ergebnisse und Benachrichtigungen gehen verloren.')){
+        await resetTournament();
+        renderAll();
+      }
+    });
+  }
+}
+
+/* ============================= TOP CONTROLS ============================= */
+function fillPlayerSelect(){
+  const sel = document.getElementById('playerSelect');
+  const names = allPersonNames();
+  sel.innerHTML = `<option value="">– auswählen –</option>` + names.map(n=>`<option value="${n}">${n}</option>`).join('');
+}
+
+document.getElementById('roleSelect').addEventListener('change', (e)=>{
+  ui.role = e.target.value;
+  ui.openForm = null;
+  renderAll();
+});
+document.getElementById('playerSelect').addEventListener('change', (e)=>{
+  ui.me = e.target.value;
+  renderAll();
+});
+
+/* ============================= INIT + POLLING ============================= */
+async function init(){
+  await loadDB();
+  fillPlayerSelect();
+  renderAll();
+  setInterval(async ()=>{
+    try{
+      const res = await window.storage.get(STORAGE_KEY, true);
+      if(res && res.value){
+        const fresh = JSON.parse(res.value);
+        if(JSON.stringify(fresh) !== JSON.stringify(DB)){
+          DB = fresh;
+          renderAll();
+        }
+      }
+    }catch(e){ /* ignore transient errors */ }
+  }, 12000);
+}
+init();
+</script>
+</body>
+</html>
