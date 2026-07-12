@@ -87,36 +87,45 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a3a2a;font-family:
 .tw td{font-size:clamp(.85rem,1.7vw,1.15rem);padding:11px 14px;border-bottom:1px solid rgba(255,255,255,.08)}
 .tw tr.hl td{background:rgba(255,255,255,.06)}
 .tw td:first-child,.tw th:first-child{opacity:.5;font-weight:800;width:44px}
-/* SCORE */
-.sc{flex-direction:column;padding:22px 44px 14px}
-.sc-sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:12px;flex-shrink:0}
-.sc-te{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(1.5rem,3.2vw,2.8rem);letter-spacing:.08em;flex:1;line-height:1.05}
-.sc-te.h{text-align:left}.sc-te.g{text-align:right}
-.sc-sb{display:flex;align-items:center;flex-shrink:0}
-.sc-sn{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(3.5rem,8vw,6.5rem);line-height:1;padding:0 18px;min-width:80px;text-align:center}
-.sc-sn.ld{color:var(--ac,#f5c842)}
-.sc-cl{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(2.5rem,5.5vw,4.5rem);opacity:.28;line-height:1}
-.sc-dv{height:2px;opacity:.2;margin-bottom:10px;border-radius:1px;flex-shrink:0}
+/* SCORE — "ERGEBNISSE"-Stil */
+.sc{flex-direction:column;padding:20px 44px 14px}
+.sc-sh{display:flex;flex-direction:column;align-items:center;margin-bottom:8px;flex-shrink:0}
+.sc-headline{display:flex;align-items:center;justify-content:center;gap:18px}
+.sc-hl-line{flex:0 0 auto;width:9%;max-width:110px;height:3px;background:var(--ac,#8fae2a);opacity:.85;position:relative}
+.sc-hl-line::before{content:'';position:absolute;left:0;top:-6px;width:100%;height:2px;background:var(--ac,#8fae2a);opacity:.5}
+.sc-hl-title{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(2.1rem,5vw,3.6rem);letter-spacing:.04em;color:#fff;font-style:italic;transform:skewX(-6deg);text-shadow:0 2px 10px rgba(0,0,0,.35);white-space:nowrap}
+.sc-hl-cat{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(1rem,2vw,1.5rem);letter-spacing:.06em;color:var(--ac,#8fae2a);font-style:italic;margin-left:6px}
+.sc-sub{margin-top:4px;font-size:clamp(.85rem,1.5vw,1.15rem);opacity:.75;display:flex;align-items:center;gap:10px}
+.sc-sub .nm{max-width:32vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sc-sub .vs{font-weight:800;color:var(--ac,#8fae2a)}
+.sc-dv{height:2px;opacity:.2;margin:8px 0 6px;border-radius:1px;flex-shrink:0}
 .sc-bd{flex:1;position:relative;overflow:hidden}
 /* Jede Seite liegt exakt übereinander -> weiches Ineinander-Überblenden statt Hart-Schnitt */
 .sc-page{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;gap:3%;opacity:0;pointer-events:none;transition:opacity 1.8s ease-in-out}
 .sc-page.on{opacity:1;pointer-events:auto}
 .sc-page-hd{font-size:.68rem;font-weight:800;letter-spacing:.22em;text-transform:uppercase;opacity:.38;text-align:center;flex-shrink:0}
-/* Grand-Slam-artige Anzeigekarte: 3 Begegnungen gleichzeitig, groß und klar */
-.sc-card{background:rgba(255,255,255,.05);border-radius:18px;padding:2.4% 3.2%;flex:1;display:flex;flex-direction:column;justify-content:center;gap:4.5%;min-height:0}
-.sc-card-lbl{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(1.05rem,2.1vw,1.5rem);letter-spacing:.14em;text-transform:uppercase;opacity:.4}
-.sc-card-row{display:flex;align-items:center;justify-content:space-between;gap:22px}
-.sc-card-name{font-size:clamp(1.9rem,4vw,3.4rem);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;opacity:.75}
-.sc-card-row.winner .sc-card-name{font-weight:800;opacity:1;color:var(--ac,#f5c842)}
-.sc-card-sets{display:flex;gap:1%;flex-shrink:0}
-.sc-box{display:inline-flex;align-items:center;justify-content:center;min-width:78px;height:78px;border-radius:11px;background:rgba(255,255,255,.08);font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(2rem,4.2vw,3.1rem);opacity:.5}
-.sc-box.w{opacity:1;background:rgba(245,200,66,.2);box-shadow:inset 0 0 0 2px var(--ac,#f5c842);color:var(--ac,#f5c842)}
-.sc-box.mtb{box-shadow:inset 0 0 0 1px rgba(245,200,66,.35)}
-.sc-box.mtb.w{box-shadow:inset 0 0 0 2px var(--ac,#f5c842)}
-.sc-card.flash{animation:scfl 2.2s cubic-bezier(.4,0,.2,1) forwards}
+/* Ergebniskarte im "Drachen"-Stil: Name — schräge weiße Ergebnis-Box mit grünen Akzent-Balken — Name */
+.sc-card{flex:1;display:flex;flex-direction:column;justify-content:center;gap:2.2%;min-height:0;border-top:1px solid rgba(255,255,255,.08);padding-top:2.2%}
+.sc-card:first-child{border-top:none;padding-top:0}
+.sc-card-lbl{align-self:center;background:var(--ac,#8fae2a);color:#0d2b1a;font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(.78rem,1.5vw,1.05rem);letter-spacing:.12em;text-transform:uppercase;font-weight:700;padding:.3% 3%;border-radius:3px;margin-bottom:.6%}
+.sc-mrow{display:flex;align-items:center;justify-content:center;gap:1.6%}
+.sc-mname{flex:1;min-width:0;font-size:clamp(1.3rem,3vw,2.4rem);font-weight:700;font-style:italic;color:#fff;opacity:.82;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sc-mname.h{text-align:right}
+.sc-mname.g{text-align:left}
+.sc-mname.winner{opacity:1;color:var(--ac,#c9db4d)}
+.sc-mmid{display:flex;align-items:stretch;flex-shrink:0}
+.sc-accent{width:.9%;min-width:8px;background:var(--ac,#8fae2a);transform:skewX(-12deg);margin:0 .3%}
+.sc-scorebox{background:#f2efe4;border-radius:4px;display:flex;align-items:center;gap:2.4%;padding:1.4% 2.6%;transform:skewX(-12deg);box-shadow:0 3px 10px rgba(0,0,0,.25)}
+.sc-set{transform:skewX(12deg);display:inline-flex;align-items:baseline;gap:2px;font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(1.5rem,3.4vw,2.6rem);color:#1a2e12;font-weight:700;line-height:1}
+.sc-set b{font-weight:700}
+.sc-set b.win{color:#3a6b12}
+.sc-set .dv{opacity:.35;font-size:.75em;margin:0 1px}
+.sc-set.mtb{padding-left:2%;border-left:2px solid rgba(26,46,18,.2)}
+.sc-empty-box{transform:skewX(12deg);font-size:clamp(1.1rem,2.4vw,1.7rem);color:#1a2e12;opacity:.4;font-weight:700}
+.sc-card.flash .sc-scorebox{animation:scfl 2.2s cubic-bezier(.4,0,.2,1) forwards}
 @keyframes scfl{
-  0%  {background:rgba(245,200,66,.22)}
-  100%{background:rgba(255,255,255,.05)}
+  0%  {box-shadow:0 0 0 3px var(--ac,#c9db4d),0 3px 10px rgba(0,0,0,.25)}
+  100%{box-shadow:0 3px 10px rgba(0,0,0,.25)}
 }
 .sc-empty{opacity:.3;font-size:clamp(1rem,1.8vw,1.3rem);text-align:center;padding:2% 0}
 .sc-page-dots{position:absolute;left:0;right:0;bottom:6px;display:none;justify-content:center;gap:8px;z-index:2}
@@ -210,7 +219,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a3a2a;font-family:
 #ev.on{display:flex}
 #sync-dot{position:absolute;top:8px;right:10px;width:7px;height:7px;border-radius:50%;background:#27ae60;opacity:0;transition:opacity .4s;z-index:20}
 #sync-dot.flash{opacity:1}
-.sl .sc-card-name,.sl .sc-box,.sl .mn-item-name,.sl .mn-item-price,.sl .ann p,.sl .tw td,.sl .tw th,.sl .news-scroll-inner{font-size:calc(var(--fscale,1) * 1em)}
+.sl .sc-mname,.sl .sc-set,.sl .mn-item-name,.sl .mn-item-price,.sl .ann p,.sl .tw td,.sl .tw th,.sl .news-scroll-inner{font-size:calc(var(--fscale,1) * 1em)}
 
 
 /* ── WEATHER FORECAST SLIDE */
@@ -572,28 +581,25 @@ function bsc(s,div){
   div.style.background=d.bg||'#0f2a1c';
   div.dataset.scoreId=String(s.id);
   var gh=parseInt(d.gesamtHeim)||0,gg=parseInt(d.gesamtGast)||0;
-  var hl=gh>gg,gl=gg>gh;
 
-  // Grand-Slam-artige Satzanzeige: je Satz eine eigene Box, Gewinner-Satz hervorgehoben
-  function setBoxes(sets,side){
-    return sets.map(function(st,si){
-      if(!st.h&&!st.g)return '';
+  // "ERGEBNISSE"-Stil: Name — schräge Ergebnis-Box mit grünen Akzenten — Name
+  function scoreBoxHtml(m){
+    var played=m.sets.filter(function(st){return st.h||st.g;});
+    if(!played.length)return '<div class="sc-mmid"><div class="sc-accent"></div><div class="sc-empty-box">–</div><div class="sc-accent"></div></div>';
+    var setsHtml=played.map(function(st,si){
       var hv=parseInt(st.h||0),gv=parseInt(st.g||0);
-      var val=side==='h'?hv:gv,other=side==='h'?gv:hv;
       var mtb=si===2?' mtb':'';
-      return '<span class="sc-box'+(val>other?' w':'')+mtb+'">'+es(String(val))+'</span>';
-    }).filter(Boolean).join('');
+      return '<span class="sc-set'+mtb+'"><b'+(hv>gv?' class="win"':'')+'>'+es(String(hv))+'</b><span class="dv">:</span><b'+(gv>hv?' class="win"':'')+'>'+es(String(gv))+'</b></span>';
+    }).join('');
+    return '<div class="sc-mmid"><div class="sc-accent"></div><div class="sc-scorebox">'+setsHtml+'</div><div class="sc-accent"></div></div>';
   }
   function cardHtml(m){
     var hw=m.winner==='heim',gw=m.winner==='gast';
-    return '<div class="sc-card-lbl">'+es(m.type)+(m.retiredBy?' · Sieg durch Aufgabe':'')+'</div>'
-      +'<div class="sc-card-row'+(hw?' winner':'')+'">'
-        +'<span class="sc-card-name">'+es(m.heimPlayer||'–')+'</span>'
-        +'<div class="sc-card-sets">'+setBoxes(m.sets,'h')+'</div>'
-      +'</div>'
-      +'<div class="sc-card-row'+(gw?' winner':'')+'">'
-        +'<span class="sc-card-name">'+es(m.gastPlayer||'–')+'</span>'
-        +'<div class="sc-card-sets">'+setBoxes(m.sets,'g')+'</div>'
+    return '<div class="sc-card-lbl">'+es(m.type)+(m.retiredBy?' · Aufgabe':'')+'</div>'
+      +'<div class="sc-mrow">'
+        +'<span class="sc-mname h'+(hw?' winner':'')+'">'+es(m.heimPlayer||'–')+'</span>'
+        +scoreBoxHtml(m)
+        +'<span class="sc-mname g'+(gw?' winner':'')+'">'+es(m.gastPlayer||'–')+'</span>'
       +'</div>';
   }
 
@@ -622,15 +628,15 @@ function bsc(s,div){
     _flashTimers[rowKey] = {iv: iv, el: card};
   }
 
-  // Build score header (Gesamtstand — bleibt unabhängig von der Bild-Umschaltung immer sichtbar)
+  // Kopf: "ERGEBNISSE" + Mannschaft (z.B. "Herren 30") — bleibt unabhängig von der
+  // Bild-Umschaltung immer sichtbar. Gesamtstand als kleinere Unterzeile darunter.
   var headHtml='<div class="sc-sh">'
-    +'<div class="sc-te h">'+es(d.heimTeam||'Heim')+'</div>'
-    +'<div class="sc-sb">'
-      +'<span class="sc-sn'+(hl?' ld':'')+'">'+gh+'</span>'
-      +'<span class="sc-cl">:</span>'
-      +'<span class="sc-sn'+(gl?' ld':'')+'">'+gg+'</span>'
+    +'<div class="sc-headline">'
+      +'<div class="sc-hl-line"></div>'
+      +'<div class="sc-hl-title">ERGEBNISSE'+(d.mannschaft?'<span class="sc-hl-cat"> '+es(d.mannschaft)+'</span>':'')+'</div>'
+      +'<div class="sc-hl-line"></div>'
     +'</div>'
-    +'<div class="sc-te g">'+es(d.gastTeam||'Gast')+'</div>'
+    +'<div class="sc-sub"><span class="nm">'+es(d.heimTeam||'Heim')+'</span><span class="vs">'+gh+' : '+gg+'</span><span class="nm">'+es(d.gastTeam||'Gast')+'</span></div>'
     +'</div>'
     +'<div class="sc-dv" style="background:'+ac+'"></div>';
 

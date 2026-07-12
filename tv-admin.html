@@ -1312,6 +1312,7 @@ function saveEdit(){
     sin2.concat(dbl2).forEach(function(m){if(m.winner==='heim')gh++;else if(m.winner==='gast')gg++;});
     s.name=hm+' vs '+ga;
     s.data={heimTeam:hm,gastTeam:ga,gesamtHeim:String(gh),gesamtGast:String(gg),
+      mannschaft:(origS&&origS.data&&origS.data.mannschaft)||'',
       bg:g('es-bg')||(origS&&origS.data&&origS.data.bg)||'#0f2a1c',
       accent:g('es-ac')||(origS&&origS.data&&origS.data.accent)||'#f5c842',
       matches:sin2.concat(dbl2)};
@@ -1592,6 +1593,8 @@ function onMatchChange(){
   if(existingSlide){
     // Folie gefunden: ID setzen und Daten laden
     _activeScoreId=existingSlide.id;
+    // Ältere Folien ohne "mannschaft"-Feld (Kategorie, z.B. "Herren 30") nachtragen
+    if(!existingSlide.data.mannschaft&&team.name)existingSlide.data.mannschaft=team.name;
     if(existingSlide.data&&existingSlide.data.matches){
       setTimeout(function(){
         var ms=existingSlide.data.matches||[];
@@ -1618,6 +1621,7 @@ function onMatchChange(){
       teamId:gv('s-team-sel')||null,
       data:{
         heimTeam:heim,gastTeam:gast,
+        mannschaft:team.name||'',
         gesamtHeim:'0',gesamtGast:'0',
         bg:gv('s-bg')||'#0f2a1c',
         accent:gv('s-ac')||'#f5c842',
