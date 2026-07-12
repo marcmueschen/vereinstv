@@ -754,7 +754,8 @@ function showApp(){
   if(wurl) {
     document.getElementById('cfg-url').value='https://vereinstv.marc-d55.workers.dev';
     loadFromWorker();
-    if(role==='admin'){ loadUsers(); loadTeams(); }
+    if(role==='admin'){ loadUsers(); loadTeams(); loadMasterMenu(); }
+    else if(role==='wirtin'){ loadMasterMenu(); }
   }
   if(role==='admin') setTimeout(previewFont,100);
 }
@@ -793,7 +794,10 @@ function selTab(el,t){
   var addBar=document.getElementById('add-slide-bar');
   if(addBar)addBar.style.display=t==='score'?'none':'flex';
   if(t==='score'){initScoreForm();}
-  if(t==='menu'&&!document.getElementById('mn-cats').children.length)addMenuCat('mn-cats');
+  if(t==='menu'&&!document.getElementById('mn-cats').children.length){
+    if(masterMenu&&masterMenu.categories&&masterMenu.categories.length)fillMenuCats('mn-cats',masterMenu.categories);
+    else addMenuCat('mn-cats');
+  }
   if(t==='bracket'&&!_brState)buildBracketEditor('br');
 }
 
@@ -1137,7 +1141,7 @@ function addSlide(){
   else if(t==='webpage'){var wu=gv('wp-url');if(!wu){toast('Bitte URL.','err');return;}s={id:Date.now(),type:t,name:gv('wp-title')||wu,enabled:true,duration:dur?parseInt(dur)||30:30,data:{title:gv('wp-title'),url:wu}};}
   else if(t==='news'){var nwtxt=gv('nw-text');if(!nwtxt){toast('Bitte Text.','err');return;}s={id:Date.now(),type:t,name:'Ticker: '+nwtxt.substring(0,30),enabled:true,duration:dur?parseInt(dur)||30:30,data:{text:nwtxt,logo:gv('nw-logo'),bg:gv('nw-bg'),fg:gv('nw-fg'),slideBg:gv('nw-slide-bg'),speed:gv('nw-speed')||'120'}};}
   else if(t==='rss'){var rssUrl=gv('rss-url');if(!rssUrl){toast('Bitte Feed-URL.','err');return;}s={id:Date.now(),type:t,name:'RSS: '+(gv('rss-label')||rssUrl).substring(0,30),enabled:true,duration:dur?parseInt(dur)||30:30,data:{url:rssUrl,label:gv('rss-label')||'NEWS',logo:gv('rss-logo'),count:parseInt(gv('rss-count'))||10,bg:gv('rss-bg'),fg:gv('rss-fg'),slideBg:gv('rss-slide-bg'),speed:gv('rss-speed')||'120'}};}
-  else if(t==='menu'){var mnt=gv('mn-title');if(!mnt){toast('Bitte Kartentitel.','err');return;}s={id:Date.now(),type:t,name:mnt,enabled:true,duration:dur?parseInt(dur)||20:20,data:{title:mnt,bg:gv('mn-bg'),accent:gv('mn-ac'),categories:readMenuCats('mn-cats')}};}
+  else if(t==='menu'){var mnt=gv('mn-title');if(!mnt){toast('Bitte Kartentitel.','err');return;}var mnCats=readMenuCats('mn-cats');s={id:Date.now(),type:t,name:mnt,enabled:true,duration:dur?parseInt(dur)||20:20,data:{title:mnt,bg:gv('mn-bg'),accent:gv('mn-ac'),categories:mnCats}};saveMasterMenu(mnCats);}
   else if(t==='booking'){var bkurl=gv('bk-url');if(!bkurl){toast('Bitte URL eingeben.','err');return;}s={id:Date.now(),type:t,name:gv('bk-title')||'Platzbelegung',enabled:true,duration:gv('bk-dur')?parseInt(gv('bk-dur'))||30:30,data:{title:gv('bk-title')||'Platzbelegung heute',url:bkurl,courts:parseInt(gv('bk-courts'))||10,bg:gv('bk-bg'),accent:gv('bk-ac')}};}
   else if(t==='weather'){var wlat=gv('wt-lat'),wlon=gv('wt-lon'),wloc=gv('wt-loc');if(!wlat||!wlon){toast('Bitte Ort suchen.','err');return;}s={id:Date.now(),type:t,name:'Wetter '+wloc,enabled:true,duration:dur?parseInt(dur)||30:30,data:{location:wloc,lat:parseFloat(wlat),lon:parseFloat(wlon),bg:gv('wt-bg')}};}
   else if(t==='radar'){var rdlat=gv('rd-lat'),rdlon=gv('rd-lon'),rdloc=gv('rd-loc');if(!rdlat||!rdlon){toast('Bitte Ort suchen.','err');return;}s={id:Date.now(),type:t,name:'Radar '+rdloc,enabled:true,duration:dur?parseInt(dur)||30:30,data:{location:rdloc,lat:parseFloat(rdlat),lon:parseFloat(rdlon),zoom:parseInt(gv('rd-zoom'))||5,radius:parseInt(gv('rd-radius'))||0,bg:gv('rd-bg')}};}
@@ -1324,7 +1328,7 @@ function saveEdit(){
   else if(s.type==='webpage'){s.name=g('ewp-tit')||g('ewp-url')||s.name;s.data={title:g('ewp-tit'),url:g('ewp-url')};s.duration=g('ewp-dur')?parseInt(g('ewp-dur')):30;}
   else if(s.type==='news'){s.name='Ticker: '+(g('enw-txt')||'').substring(0,30);s.data={text:g('enw-txt'),logo:g('enw-logo'),bg:g('enw-bg'),fg:g('enw-fg'),slideBg:g('enw-sbg'),speed:g('enw-spd')};s.duration=g('enw-dur')?parseInt(g('enw-dur')):30;}
   else if(s.type==='rss'){s.name='RSS: '+(g('erss-label')||g('erss-url')||'').substring(0,30);s.data={url:g('erss-url'),label:g('erss-label')||'NEWS',logo:g('erss-logo'),count:parseInt(g('erss-count'))||10,bg:g('erss-bg'),fg:g('erss-fg'),slideBg:g('erss-sbg'),speed:g('erss-spd')};s.duration=g('erss-dur')?parseInt(g('erss-dur')):30;}
-  else if(s.type==='menu'){s.name=g('emn-tit')||s.name;s.data={title:g('emn-tit'),bg:g('emn-bg'),accent:g('emn-ac'),categories:readMenuCats('eme-cats')};s.duration=g('emn-dur')?parseInt(g('emn-dur')):20;}
+  else if(s.type==='menu'){var emnCats=readMenuCats('eme-cats');s.name=g('emn-tit')||s.name;s.data={title:g('emn-tit'),bg:g('emn-bg'),accent:g('emn-ac'),categories:emnCats};s.duration=g('emn-dur')?parseInt(g('emn-dur')):20;saveMasterMenu(emnCats);}
   else if(s.type==='booking'){s.name=g('ebk-title')||s.name;s.data={title:g('ebk-title'),url:g('ebk-url'),courts:s.data.courts||10,bg:g('ebk-bg'),accent:g('ebk-ac')};s.duration=g('ebk-dur')?parseInt(g('ebk-dur')):30;}
   else if(s.type==='weather'){var ewlat=g('ewt-lat')||String(s.data.lat||'');var ewlon=g('ewt-lon')||String(s.data.lon||'');s.name='Wetter '+(g('ewt-loc')||s.data.location||'');s.data={location:g('ewt-loc')||s.data.location,lat:parseFloat(ewlat)||s.data.lat,lon:parseFloat(ewlon)||s.data.lon,bg:g('ewt-bg')};s.duration=g('ewt-dur')?parseInt(g('ewt-dur')):30;}
   else if(s.type==='radar'){var erlat=g('erd-lat')||String(s.data.lat||'');var erlon=g('erd-lon')||String(s.data.lon||'');s.name='Radar '+(g('erd-loc')||s.data.location||'');s.data={location:g('erd-loc')||s.data.location,lat:parseFloat(erlat)||s.data.lat,lon:parseFloat(erlon)||s.data.lon,zoom:parseInt(g('erd-zoom'))||5,radius:parseInt(g('erd-radius'))||0,bg:g('erd-bg')};s.duration=g('erd-dur')?parseInt(g('erd-dur')):30;}
@@ -1368,6 +1372,36 @@ async function saveTeams(){
     if(d.ok)toast('Mannschaftsdaten gespeichert!');
     else{toast(d.error||'Fehler.','err');if(d.error&&d.error.includes('Passwort'))localStorage.removeItem('vtv_admin_pw');}
   }catch(e){toast('Fehler: '+e.message,'err');}
+}
+
+// ══════════════════════════════════════════════════════════
+// SPEISEKARTEN-STAMMDATEN
+// Eigenständig vom "menu"-Folientyp gespeichert (KV-Key "menu"), damit die Karte
+// erhalten bleibt, auch wenn die Folie selbst gelöscht oder das Design geändert wird.
+// Die Menü-Folie liest/schreibt beim Öffnen bzw. Speichern automatisch von/zu diesem Stand.
+// ══════════════════════════════════════════════════════════
+var masterMenu={categories:[]};
+
+async function loadMasterMenu(){
+  var wurl=getWurl();if(!wurl)return;
+  try{var r=await fetch(wurl+'/menu');var d=await r.json();if(d.ok)masterMenu=d.menu||{categories:[]};}catch(e){}
+}
+
+// Speichert die aktuellen Kategorien als Stammdaten (fire-and-forget, blockiert das
+// normale Folien-Speichern nicht). Nutzt je nach Rolle Admin-Passwort oder Rollen-Token.
+function saveMasterMenu(categories){
+  var wurl=getWurl();if(!wurl)return;
+  masterMenu={categories:categories||[]};
+  var headers={'Content-Type':'application/json'};
+  var role=SESSION?SESSION.role:'admin';
+  if(role==='admin'){
+    var adminPw=localStorage.getItem('vtv_admin_pw')||'';
+    if(!adminPw)return; // ohne bereits hinterlegtes Passwort kein stiller Hintergrund-Save
+    headers['X-Admin-Password']=adminPw;
+  } else if(SESSION&&SESSION.token){
+    headers['X-Role-Token']=SESSION.token;
+  } else return;
+  fetch(wurl+'/menu',{method:'POST',headers:headers,body:JSON.stringify({categories:categories||[]})}).catch(function(){});
 }
 
 function addTeam(){
