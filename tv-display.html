@@ -104,28 +104,23 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a3a2a;font-family:
 .sc-page{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;gap:3%;opacity:0;pointer-events:none;transition:opacity 1.8s ease-in-out}
 .sc-page.on{opacity:1;pointer-events:auto}
 .sc-page-hd{font-size:.68rem;font-weight:800;letter-spacing:.22em;text-transform:uppercase;opacity:.38;text-align:center;flex-shrink:0}
-/* Ergebniskarte im "Drachen"-Stil: Name — schräge weiße Ergebnis-Box mit grünen Akzent-Balken — Name */
-.sc-card{flex:1;display:flex;flex-direction:column;justify-content:center;gap:2.2%;min-height:0;border-top:1px solid rgba(255,255,255,.08);padding-top:2.2%}
+/* Ergebniskarte im Turnier-Scoreboard-Stil: pro Spieler eine eigene Zeile
+   (Name links, Sätze rechts als exakt bündige Spalten) — direkt vergleichbar
+   wie bei den Anzeigetafeln großer Tennisturniere. */
+.sc-card{flex:1;display:flex;flex-direction:column;justify-content:center;gap:.6%;min-height:0;border-top:1px solid rgba(255,255,255,.08);padding-top:2%}
 .sc-card:first-child{border-top:none;padding-top:0}
-.sc-card-lbl{align-self:center;background:var(--ac,#8fae2a);color:#0d2b1a;font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(.78rem,1.5vw,1.05rem);letter-spacing:.12em;text-transform:uppercase;font-weight:700;padding:.3% 3%;border-radius:3px;margin-bottom:.6%}
-.sc-mrow{display:flex;align-items:center;justify-content:center;gap:1.6%}
-.sc-mname{flex:1;min-width:0;font-size:clamp(1.3rem,3vw,2.4rem);font-weight:700;font-style:italic;color:#fff;opacity:.82;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sc-mname.h{text-align:right}
-.sc-mname.g{text-align:left}
-.sc-mname.winner{opacity:1;color:var(--ac,#c9db4d)}
-.sc-mmid{display:flex;align-items:stretch;flex-shrink:0}
-.sc-accent{width:.9%;min-width:8px;background:var(--ac,#8fae2a);transform:skewX(-12deg);margin:0 .3%}
-.sc-scorebox{background:#f2efe4;border-radius:4px;display:flex;align-items:center;gap:2.4%;padding:1.4% 2.6%;transform:skewX(-12deg);box-shadow:0 3px 10px rgba(0,0,0,.25)}
-.sc-set{transform:skewX(12deg);display:inline-flex;align-items:baseline;gap:2px;font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(1.5rem,3.4vw,2.6rem);color:#1a2e12;font-weight:700;line-height:1}
-.sc-set b{font-weight:700}
-.sc-set b.win{color:#3a6b12}
-.sc-set .dv{opacity:.35;font-size:.75em;margin:0 1px}
-.sc-set.mtb{padding-left:2%;border-left:2px solid rgba(26,46,18,.2)}
-.sc-empty-box{transform:skewX(12deg);font-size:clamp(1.1rem,2.4vw,1.7rem);color:#1a2e12;opacity:.4;font-weight:700}
-.sc-card.flash .sc-scorebox{animation:scfl 2.2s cubic-bezier(.4,0,.2,1) forwards}
+.sc-card-lbl{align-self:flex-start;background:var(--ac,#8fae2a);color:#0d2b1a;font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(.78rem,1.5vw,1.05rem);letter-spacing:.12em;text-transform:uppercase;font-weight:700;padding:.3% 3%;border-radius:3px;margin-bottom:.8%}
+.sc-mplayer{display:flex;align-items:center;gap:2%;padding:.6% 0}
+.sc-mname{flex:1;min-width:0;font-size:clamp(1.5rem,3.4vw,2.7rem);font-weight:700;font-style:italic;color:#fff;opacity:.72;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left}
+.sc-mplayer.winner .sc-mname{opacity:1;color:var(--ac,#c9db4d)}
+.sc-msets{display:flex;gap:.7%;flex-shrink:0}
+.sc-mset{min-width:11%;text-align:center;background:#f2efe4;border-radius:5px;padding:1.2% 0;font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(1.5rem,3.4vw,2.7rem);font-weight:700;color:#1a2e12;opacity:.55;line-height:1;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.sc-mset.win{opacity:1;background:#fff;box-shadow:0 0 0 3px var(--ac,#c9db4d),0 2px 8px rgba(0,0,0,.2);color:#1a2e12}
+.sc-mset.mtb{margin-left:1%}
+.sc-card.flash .sc-mset.win{animation:scfl 2.2s cubic-bezier(.4,0,.2,1) forwards}
 @keyframes scfl{
-  0%  {box-shadow:0 0 0 3px var(--ac,#c9db4d),0 3px 10px rgba(0,0,0,.25)}
-  100%{box-shadow:0 3px 10px rgba(0,0,0,.25)}
+  0%  {box-shadow:0 0 0 6px var(--ac,#c9db4d),0 2px 8px rgba(0,0,0,.2)}
+  100%{box-shadow:0 0 0 3px var(--ac,#c9db4d),0 2px 8px rgba(0,0,0,.2)}
 }
 .sc-empty{opacity:.3;font-size:clamp(1rem,1.8vw,1.3rem);text-align:center;padding:2% 0}
 .sc-page-dots{position:absolute;left:0;right:0;bottom:6px;display:none;justify-content:center;gap:8px;z-index:2}
@@ -219,7 +214,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a3a2a;font-family:
 #ev.on{display:flex}
 #sync-dot{position:absolute;top:8px;right:10px;width:7px;height:7px;border-radius:50%;background:#27ae60;opacity:0;transition:opacity .4s;z-index:20}
 #sync-dot.flash{opacity:1}
-.sl .sc-mname,.sl .sc-set,.sl .mn-item-name,.sl .mn-item-price,.sl .ann p,.sl .tw td,.sl .tw th,.sl .news-scroll-inner{font-size:calc(var(--fscale,1) * 1em)}
+.sl .sc-mname,.sl .sc-mset,.sl .mn-item-name,.sl .mn-item-price,.sl .ann p,.sl .tw td,.sl .tw th,.sl .news-scroll-inner{font-size:calc(var(--fscale,1) * 1em)}
 
 
 /* ── WEATHER FORECAST SLIDE */
@@ -582,25 +577,27 @@ function bsc(s,div){
   div.dataset.scoreId=String(s.id);
   var gh=parseInt(d.gesamtHeim)||0,gg=parseInt(d.gesamtGast)||0;
 
-  // "ERGEBNISSE"-Stil: Name — schräge Ergebnis-Box mit grünen Akzenten — Name
-  function scoreBoxHtml(m){
-    var played=m.sets.filter(function(st){return st.h||st.g;});
-    if(!played.length)return '<div class="sc-mmid"><div class="sc-accent"></div><div class="sc-empty-box">–</div><div class="sc-accent"></div></div>';
-    var setsHtml=played.map(function(st,si){
+  // Klassisches Turnier-Scoreboard: Name + Satz-Spalten je Spieler in einer eigenen
+  // Zeile, untereinander — Spaltenbreiten sind für beide Zeilen identisch, damit die
+  // Sätze exakt bündig untereinanderstehen.
+  function playerRowHtml(name,sets,side,isWin){
+    var setsHtml=sets.map(function(st,si){
       var hv=parseInt(st.h||0),gv=parseInt(st.g||0);
+      var val=side==='h'?hv:gv,other=side==='h'?gv:hv;
       var mtb=si===2?' mtb':'';
-      return '<span class="sc-set'+mtb+'"><b'+(hv>gv?' class="win"':'')+'>'+es(String(hv))+'</b><span class="dv">:</span><b'+(gv>hv?' class="win"':'')+'>'+es(String(gv))+'</b></span>';
+      return '<span class="sc-mset'+(val>other?' win':'')+mtb+'">'+es(String(val))+'</span>';
     }).join('');
-    return '<div class="sc-mmid"><div class="sc-accent"></div><div class="sc-scorebox">'+setsHtml+'</div><div class="sc-accent"></div></div>';
+    return '<div class="sc-mplayer'+(isWin?' winner':'')+'">'
+      +'<span class="sc-mname">'+(name?es(name):'–')+'</span>'
+      +'<div class="sc-msets">'+setsHtml+'</div>'
+      +'</div>';
   }
   function cardHtml(m){
     var hw=m.winner==='heim',gw=m.winner==='gast';
+    var played=m.sets.filter(function(st){return st.h||st.g;});
     return '<div class="sc-card-lbl">'+es(m.type)+(m.retiredBy?' · Aufgabe':'')+'</div>'
-      +'<div class="sc-mrow">'
-        +'<span class="sc-mname h'+(hw?' winner':'')+'">'+es(m.heimPlayer||'–')+'</span>'
-        +scoreBoxHtml(m)
-        +'<span class="sc-mname g'+(gw?' winner':'')+'">'+es(m.gastPlayer||'–')+'</span>'
-      +'</div>';
+      +playerRowHtml(m.heimPlayer,played,'h',hw)
+      +playerRowHtml(m.gastPlayer,played,'g',gw);
   }
 
   function flashCard(card, rowKey){
