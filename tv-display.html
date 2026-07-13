@@ -152,6 +152,34 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a3a2a;font-family:
 .br-match-wrap::after{content:'';position:absolute;right:-2.2%;top:50%;width:2.2%;height:2px;background:var(--ac,#c9db4d);opacity:.4}
 .br-pair::before{content:'';position:absolute;right:-2.2%;top:25%;bottom:25%;width:2px;background:var(--ac,#c9db4d);opacity:.4}
 .br-round-last .br-match-wrap::after,.br-round-last .br-pair::before{display:none}
+/* SPIELPLAN */
+.sp{flex-direction:column;padding:30px 46px 22px;color:#f2f5ea}
+.sp-hd{text-align:center;flex-shrink:0}
+.sp-title{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(2rem,4.5vw,3.4rem);letter-spacing:.05em;text-transform:uppercase;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.4)}
+.sp-dv{height:2px;background:linear-gradient(90deg,transparent,var(--ac,#f5c842),transparent);opacity:.6;margin:10px 0 14px;flex-shrink:0}
+.sp-body{flex:1;display:flex;flex-direction:column;justify-content:center;gap:1.4%;min-height:0;overflow:hidden}
+.sp-row{display:grid;grid-template-columns:1fr 2.4fr auto;align-items:center;gap:18px;background:rgba(255,255,255,.05);border-radius:12px;padding:1.6% 2.4%}
+.sp-row.next{background:rgba(245,200,66,.16);box-shadow:inset 0 0 0 2px var(--ac,#f5c842)}
+.sp-date{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(1.1rem,2.2vw,1.6rem);opacity:.8;letter-spacing:.03em}
+.sp-teams{display:flex;align-items:center;gap:12px;font-size:clamp(1.2rem,2.6vw,1.9rem);font-weight:600;min-width:0}
+.sp-teams span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sp-teams span.own{font-weight:800;color:var(--ac,#f5c842)}
+.sp-vs{opacity:.4;font-size:.8em;flex-shrink:0}
+.sp-badge{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(.8rem,1.5vw,1.05rem);letter-spacing:.08em;text-transform:uppercase;padding:.4% 3%;border-radius:20px;flex-shrink:0}
+.sp-badge.h{background:var(--ac,#f5c842);color:#0f2a1c}
+.sp-badge.a{background:rgba(255,255,255,.12);color:#fff}
+.sp-empty,.sp-loading{opacity:.4;text-align:center;font-size:1.1rem;margin:auto}
+/* KADER */
+.kd{flex-direction:column;padding:30px 46px 22px;color:#f2f5ea}
+.kd-hd{text-align:center;flex-shrink:0}
+.kd-title{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(2rem,4.5vw,3.4rem);letter-spacing:.05em;text-transform:uppercase;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.4)}
+.kd-dv{height:2px;background:linear-gradient(90deg,transparent,var(--ac,#f5c842),transparent);opacity:.6;margin:10px 0 14px;flex-shrink:0}
+.kd-body{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:0;overflow:hidden}
+.kd-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.2%;align-content:center}
+.kd-item{display:flex;align-items:center;gap:14px;background:rgba(255,255,255,.05);border-radius:10px;padding:1.4% 2%}
+.kd-num{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(1.3rem,2.4vw,1.9rem);color:var(--ac,#f5c842);opacity:.8;min-width:2ch;text-align:right}
+.kd-name{font-size:clamp(1.2rem,2.4vw,1.8rem);font-weight:600}
+.kd-empty,.kd-loading{opacity:.4;text-align:center;font-size:1.1rem;margin:auto}
 /* IMAGE */
 .img{position:absolute!important;inset:0}
 .sl.img.on{display:block}
@@ -568,6 +596,100 @@ function buildBracket(s,div){
     +'<div class="br-tree">'+roundsHtml+'</div>';
 }
 
+// ── GEMEINSAMER, GECACHTER ABRUF DER MANNSCHAFTSDATEN (Spielplan/Kader)
+// Live von /teams geladen (Mannschaftsverwaltung), damit Änderungen dort
+// automatisch auf den Folien erscheinen — ohne dass die Folie selbst editiert
+// werden muss. Kurzzeitig gecacht, damit mehrere Folien sich einen Abruf teilen.
+var _teamsCache=null,_teamsCacheAt=0,_teamsFetching=false,_teamsWaiters=[];
+function fetchTeamsShared(cb){
+  var now=Date.now();
+  if(_teamsCache&&(now-_teamsCacheAt)<120000){cb(_teamsCache);return;}
+  _teamsWaiters.push(cb);
+  if(_teamsFetching)return;
+  _teamsFetching=true;
+  var wurl=getWurl();
+  if(!wurl){_teamsFetching=false;var ws=_teamsWaiters;_teamsWaiters=[];ws.forEach(function(w){w(_teamsCache);});return;}
+  wtXHR(wurl+'/teams',
+    function(r){
+      _teamsFetching=false;
+      if(r.ok){_teamsCache=r.teams||[];_teamsCacheAt=Date.now();}
+      var ws=_teamsWaiters;_teamsWaiters=[];
+      ws.forEach(function(w){w(_teamsCache);});
+    },
+    function(){
+      _teamsFetching=false;
+      var ws=_teamsWaiters;_teamsWaiters=[];
+      ws.forEach(function(w){w(_teamsCache);});
+    }
+  );
+}
+
+// ── SPIELPLAN
+function buildSpielplan(s,div){
+  var d=s.data||{},ac=d.accent||'#f5c842';
+  div.style.setProperty('--ac',ac);
+  div.style.background=d.bg||'#0f2a1c';
+  div.dataset.teamId=d.teamId||'';
+  div.innerHTML='<div class="sp-hd"><div class="sp-title">'+es(d.title||'Spielplan')+'</div></div>'
+    +'<div class="sp-dv" style="background:'+es(ac)+'"></div>'
+    +'<div class="sp-body"><div class="sp-loading">Lade Spielplan &hellip;</div></div>';
+}
+function renderSpielplanBody(el,team){
+  var body=el.querySelector('.sp-body');if(!body)return;
+  if(!team){body.innerHTML='<div class="sp-empty">Mannschaft nicht gefunden.</div>';return;}
+  var matches=(team.matches||[]).slice();
+  if(!matches.length){body.innerHTML='<div class="sp-empty">Noch keine Begegnungen eingetragen.</div>';return;}
+  matches.sort(function(a,b){return (a.date||'').localeCompare(b.date||'');});
+  var todayStr=new Date().toISOString().slice(0,10);
+  var nextIdx=-1;
+  matches.forEach(function(m,i){if(nextIdx===-1&&m.date&&m.date>=todayStr)nextIdx=i;});
+  body.innerHTML=matches.map(function(m,i){
+    var dt=m.date?new Date(m.date+'T12:00:00').toLocaleDateString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'}):'Kein Datum';
+    var isHome=m.homeAway==='home';
+    var heim=isHome?team.name:m.opponent;
+    var gast=isHome?m.opponent:team.name;
+    return '<div class="sp-row'+(i===nextIdx?' next':'')+'">'
+      +'<div class="sp-date">'+es(dt)+'</div>'
+      +'<div class="sp-teams"><span class="'+(isHome?'own':'')+'">'+es(heim)+'</span><span class="sp-vs">vs</span><span class="'+(!isHome?'own':'')+'">'+es(gast)+'</span></div>'
+      +'<div class="sp-badge '+(isHome?'h':'a')+'">'+(isHome?'Heim':'Auswärts')+'</div>'
+    +'</div>';
+  }).join('');
+}
+function initSpielplan(el){
+  var teamId=el.dataset.teamId;
+  fetchTeamsShared(function(teams){
+    var team=(teams||[]).find(function(t){return t.id===teamId;});
+    renderSpielplanBody(el,team);
+  });
+}
+
+// ── KADER
+function buildKader(s,div){
+  var d=s.data||{},ac=d.accent||'#f5c842';
+  div.style.setProperty('--ac',ac);
+  div.style.background=d.bg||'#0f2a1c';
+  div.dataset.teamId=d.teamId||'';
+  div.innerHTML='<div class="kd-hd"><div class="kd-title">'+es(d.title||'Kader')+'</div></div>'
+    +'<div class="kd-dv" style="background:'+es(ac)+'"></div>'
+    +'<div class="kd-body"><div class="kd-loading">Lade Kader &hellip;</div></div>';
+}
+function renderKaderBody(el,team){
+  var body=el.querySelector('.kd-body');if(!body)return;
+  if(!team){body.innerHTML='<div class="kd-empty">Mannschaft nicht gefunden.</div>';return;}
+  var players=(team.ownPlayers||[]).filter(function(p){return p.name;});
+  if(!players.length){body.innerHTML='<div class="kd-empty">Noch keine Spieler eingetragen.</div>';return;}
+  body.innerHTML='<div class="kd-grid">'+players.map(function(p,i){
+    return '<div class="kd-item"><span class="kd-num">'+(i+1)+'</span><span class="kd-name">'+es(p.name)+'</span></div>';
+  }).join('')+'</div>';
+}
+function initKader(el){
+  var teamId=el.dataset.teamId;
+  fetchTeamsShared(function(teams){
+    var team=(teams||[]).find(function(t){return t.id===teamId;});
+    renderKaderBody(el,team);
+  });
+}
+
 // ── SCORE
 var _scPageTimers={};
 function bsc(s,div){
@@ -947,6 +1069,12 @@ function bs(s){
   } else if(s.type==='bracket'){
     div.className='sl br';
     buildBracket(s,div);
+  } else if(s.type==='spielplan'){
+    div.className='sl sp';
+    buildSpielplan(s,div);
+  } else if(s.type==='kader'){
+    div.className='sl kd';
+    buildKader(s,div);
   }
   return div;
 }
@@ -1580,6 +1708,8 @@ function triggerSlideInit(){
   }
   if(slides[cur].type==='booking') initBooking(activeEl,slides[cur].id);
   if(slides[cur].type==='rss') initRss(activeEl,String(slides[cur].id));
+  if(slides[cur].type==='spielplan') initSpielplan(activeEl);
+  if(slides[cur].type==='kader') initKader(activeEl);
   if(slides[cur].type==='score'){
     // Zyklus exakt an den Moment koppeln, in dem die Folie sichtbar wird —
     // sonst könnte der interne Bild-Wechsel längst vorher (unsichtbar) gelaufen

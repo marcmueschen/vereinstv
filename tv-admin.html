@@ -89,6 +89,7 @@ main{max-width:920px;margin:0 auto;padding:24px 16px 80px}
 .sico.rss{background:#ffe0dc}
 .sico.booking{background:#d4f0d4}.sico.weather{background:#c8e6f5}.sico.radar{background:#b8d4f0}.sico.upload{background:#e8d5f0}
 .sico.bracket{background:#e6f0c9}
+.sico.spielplan{background:#d0e8f5}.sico.kader{background:#f5dfc9}
 .sinf{flex:1;min-width:0}
 .sna{font-weight:600;font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sme{font-size:.73rem;color:var(--di);margin-top:1px}
@@ -133,6 +134,23 @@ main{max-width:920px;margin:0 auto;padding:24px 16px 80px}
 .player-row input{flex:1;padding:5px 8px;border:1.5px solid var(--bo);border-radius:5px;font-size:.84rem;font-family:Inter,sans-serif;background:var(--bg);outline:none}
 .player-row input:focus{border-color:var(--gl);background:#fff}
 .match-list{display:flex;flex-direction:column;gap:5px;margin-top:8px}
+/* TABELLENVERWALTUNG */
+.tabelle-card{background:#f6faf7;border:1.5px solid var(--bo);border-radius:10px;padding:14px 16px;margin-bottom:12px}
+.tabelle-head{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.tabelle-name-inp{font-size:.95rem;font-weight:700;flex:1;min-width:140px;padding:7px 10px;border:1.5px solid var(--bo);border-radius:6px;font-family:Inter,sans-serif;background:#fff;outline:none}
+.tabelle-name-inp:focus{border-color:var(--gl)}
+.tabelle-import-row{display:flex;gap:6px;margin-bottom:8px}
+.tabelle-url-inp{flex:1;padding:6px 9px;border:1.5px solid var(--bo);border-radius:6px;font-size:.82rem;font-family:Inter,sans-serif;background:var(--bg);outline:none}
+.tabelle-url-inp:focus{border-color:var(--gl);background:#fff}
+.tabelle-preview-wrap:empty{display:none}
+.tab-preview-opt:hover{border-color:var(--gl)!important;background:#fff}
+.tabelle-grid-wrap{overflow-x:auto}
+.tabelle-edit-grid{border-collapse:collapse;width:100%}
+.tabelle-edit-grid th,.tabelle-edit-grid td{padding:2px;border:1px solid var(--bo)}
+.tabelle-edit-grid th input{font-weight:700;font-size:.75rem;text-transform:uppercase;letter-spacing:.04em}
+.tabelle-edit-grid input{width:100%;min-width:56px;padding:5px 6px;border:none;font-size:.82rem;font-family:Inter,sans-serif;background:transparent;outline:none;box-sizing:border-box}
+.tabelle-edit-grid input:focus{background:#fff}
+.tabelle-edit-grid tr:nth-child(even) td{background:rgba(0,0,0,.02)}
 .match-row{display:grid;grid-template-columns:120px 1fr auto 28px;gap:6px;align-items:center;background:#fff;border:1px solid var(--bo);border-radius:6px;padding:6px 8px}
 .match-row input{padding:4px 7px;border:1.5px solid var(--bo);border-radius:5px;font-size:.82rem;font-family:Inter,sans-serif;background:var(--bg);outline:none}
 .match-row input:focus{border-color:var(--gl);background:#fff}
@@ -344,6 +362,20 @@ main{max-width:920px;margin:0 auto;padding:24px 16px 80px}
     <div id="teams-list"></div>
   </div>
 
+  <!-- Tabellen-Verwaltung (Admin only) -->
+  <div class="card" id="tabellen-card" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:.1em;color:var(--gd)">&#128202; Tabellenverwaltung</div>
+      <div style="display:flex;gap:7px">
+        <button class="btn bo2 sm" onclick="loadTabellen()">&#8635; Aktualisieren</button>
+        <button class="btn bp sm" onclick="addTabelle()">+ Tabelle</button>
+        <button class="btn bp sm" onclick="saveTabellen()">&#9729; Speichern</button>
+      </div>
+    </div>
+    <div style="font-size:.78rem;color:var(--di);margin-bottom:10px">Liga-Tabellen manuell pflegen oder direkt von Tennis.de/nuLiga importieren. Diese Tabellen stehen dann bei der Folie „Tabelle" zur Auswahl.</div>
+    <div id="tabellen-list"></div>
+  </div>
+
   <!-- New Slide (filtered by role) -->
   <div class="card">
     <div style="font-size:.95rem;font-weight:600;margin-bottom:13px">Neue Folie</div>
@@ -363,6 +395,11 @@ main{max-width:920px;margin:0 auto;padding:24px 16px 80px}
     </div>
     <div class="tf" id="tf-table">
       <div class="g2">
+        <div class="fl s2"><label>Aus Tabellenverwaltung übernehmen (optional)</label>
+          <select id="t-src" onchange="applyTabelleSrc('t-src','t-title','t-csv')" style="width:100%">
+            <option value="">-- manuell eingeben --</option>
+          </select>
+        </div>
         <div class="fl s2"><label>Titel</label><input type="text" id="t-title" placeholder="Tabellenstand Herren 40"></div>
         <div class="fl s2"><label>CSV (erste Zeile = Spaltenköpfe)</label><textarea id="t-csv" placeholder="Platz,Team,Sp,S,U,N,Punkte&#10;1,TC Muster,8,7,0,1,14"></textarea></div>
         <div class="fl"><label>Hintergrundfarbe</label><div class="cr"><input type="color" id="t-bg" value="#1a3a2a" oninput="cct('t-bg','t-bgt')"><input type="text" id="t-bgt" value="#1a3a2a" oninput="ctc('t-bg','t-bgt')"></div></div>
@@ -568,6 +605,32 @@ main{max-width:920px;margin:0 auto;padding:24px 16px 80px}
       <div id="br-editor" style="margin-top:10px"></div>
     </div>
 
+    <div class="tf" id="tf-spielplan">
+      <div class="g2">
+        <div class="fl s2"><label>Mannschaft</label>
+          <select id="sp-team-sel" style="width:100%"><option value="">-- Mannschaft wählen --</option></select>
+        </div>
+        <div class="fl s2"><label>Titel (optional)</label><input type="text" id="sp-title" placeholder="Spielplan"></div>
+        <div class="fl"><label>Dauer Sek.</label><input type="number" id="sp-dur" min="5" placeholder="30"></div>
+        <div class="fl"><label>Hintergrundfarbe</label><div class="cr"><input type="color" id="sp-bg" value="#0f2a1c" oninput="cct('sp-bg','sp-bgt')"><input type="text" id="sp-bgt" value="#0f2a1c" oninput="ctc('sp-bg','sp-bgt')"></div></div>
+        <div class="fl"><label>Akzentfarbe</label><div class="cr"><input type="color" id="sp-ac" value="#f5c842" oninput="cct('sp-ac','sp-act')"><input type="text" id="sp-act" value="#f5c842" oninput="ctc('sp-ac','sp-act')"></div></div>
+        <div class="s2" style="font-size:.72rem;color:var(--di)">Zeigt den Spielplan der gewählten Mannschaft (aus der Mannschaftsverwaltung) live an — Änderungen dort erscheinen automatisch auf dieser Folie.</div>
+      </div>
+    </div>
+
+    <div class="tf" id="tf-kader">
+      <div class="g2">
+        <div class="fl s2"><label>Mannschaft</label>
+          <select id="kd-team-sel" style="width:100%"><option value="">-- Mannschaft wählen --</option></select>
+        </div>
+        <div class="fl s2"><label>Titel (optional)</label><input type="text" id="kd-title" placeholder="Unsere Mannschaft"></div>
+        <div class="fl"><label>Dauer Sek.</label><input type="number" id="kd-dur" min="5" placeholder="20"></div>
+        <div class="fl"><label>Hintergrundfarbe</label><div class="cr"><input type="color" id="kd-bg" value="#0f2a1c" oninput="cct('kd-bg','kd-bgt')"><input type="text" id="kd-bgt" value="#0f2a1c" oninput="ctc('kd-bg','kd-bgt')"></div></div>
+        <div class="fl"><label>Akzentfarbe</label><div class="cr"><input type="color" id="kd-ac" value="#f5c842" oninput="cct('kd-ac','kd-act')"><input type="text" id="kd-act" value="#f5c842" oninput="ctc('kd-ac','kd-act')"></div></div>
+        <div class="s2" style="font-size:.72rem;color:var(--di)">Zeigt den Kader (eigene Spieler) der gewählten Mannschaft live an.</div>
+      </div>
+    </div>
+
     <div style="display:flex;justify-content:flex-end;margin-top:12px" id="add-slide-bar">
       <button class="btn bp" onclick="addSlide()">+ Folie hinzufügen</button>
     </div>
@@ -643,14 +706,16 @@ var PRESETS10 = ['10:0','10:1','10:2','10:3','10:4','10:5','10:6','10:7','10:8',
 
 var ICONS2 = {booking:'&#127931;',weather:'&#127780;',radar:'&#127782;',upload:'&#128444;',
   announce:'&#128226;',table:'&#128202;',score:'&#127934;',image:'&#128247;',
-  youtube:'&#9654;',webpage:'&#127760;',news:'&#128241;',menu:'&#127869;',html:'&#128187;',rss:'&#128225;',bracket:'&#127942;'};
+  youtube:'&#9654;',webpage:'&#127760;',news:'&#128241;',menu:'&#127869;',html:'&#128187;',rss:'&#128225;',bracket:'&#127942;',
+  spielplan:'&#128197;',kader:'&#128101;'};
 var LABELS = {booking:'Platzbelegung',weather:'Wettervorhersage',radar:'Regenradar',upload:'Bild-Upload',
   announce:'Ankündigung',table:'Tabelle',score:'Spielstand',image:'Bild',
-  youtube:'YouTube',webpage:'Webseite',news:'News-Ticker',menu:'Speisekarte',html:'HTML',rss:'RSS-Feed',bracket:'Turnierbaum'};
+  youtube:'YouTube',webpage:'Webseite',news:'News-Ticker',menu:'Speisekarte',html:'HTML',rss:'RSS-Feed',bracket:'Turnierbaum',
+  spielplan:'Spielplan',kader:'Kader'};
 
 // Which types each role can create
 var ROLE_TABS = {
-  admin: ['announce','table','score','image','upload','youtube','webpage','news','rss','menu','booking','weather','radar','html','bracket'],
+  admin: ['announce','table','score','image','upload','youtube','webpage','news','rss','menu','booking','weather','radar','html','bracket','spielplan','kader'],
   wirtin: ['menu'],
   teamleader: ['score']
 };
@@ -730,6 +795,7 @@ function showApp(){
   document.getElementById('api-bar').style.display = role==='admin'?'block':'none';
   document.getElementById('users-card').style.display = role==='admin'?'block':'none';
   document.getElementById('teams-card').style.display = role==='admin'?'block':'none';
+  document.getElementById('tabellen-card').style.display = role==='admin'?'block':'none';
 
   // Role info for non-admin
   var info=document.getElementById('role-info');
@@ -754,7 +820,7 @@ function showApp(){
   if(wurl) {
     document.getElementById('cfg-url').value='https://vereinstv.marc-d55.workers.dev';
     loadFromWorker();
-    if(role==='admin'){ loadUsers(); loadTeams(); loadMasterMenu(); }
+    if(role==='admin'){ loadUsers(); loadTeams(); loadMasterMenu(); loadTabellen(); }
     else if(role==='wirtin'){ loadMasterMenu(); }
   }
   if(role==='admin') setTimeout(previewFont,100);
@@ -767,7 +833,8 @@ var TAB_LABELS = {
   booking:'&#127931; Platzbelegung',announce:'&#128226; Ankündigung', table:'&#128202; Tabelle', score:'&#127934; Spielstand',
   image:'&#128247; Bild', upload:'&#128444; Bild-Upload', youtube:'&#9654; YouTube',
   webpage:'&#127760; Webseite', news:'&#128241; News-Ticker', rss:'&#128225; RSS-Feed', menu:'&#127869; Speisekarte',
-  weather:'&#127780; Wettervorhersage', radar:'&#127782; Regenradar', html:'&#128187; HTML', bracket:'&#127942; Turnierbaum'
+  weather:'&#127780; Wettervorhersage', radar:'&#127782; Regenradar', html:'&#128187; HTML', bracket:'&#127942; Turnierbaum',
+  spielplan:'&#128197; Spielplan', kader:'&#128101; Kader'
 };
 
 function buildTypeTabs(){
@@ -1117,7 +1184,7 @@ function fillMenuCats(contId,cats){
 // ══════════════════════════════════════════════════════════════
 function addSlide(){
   var t=curTab;
-  var dm={announce:'a-dur',table:'t-dur',score:'s-dur',image:'i-dur',upload:'up-dur',youtube:'y-dur',webpage:'wp-dur',news:'nw-dur',rss:'rss-dur',menu:'mn-dur',booking:'bk-dur',weather:'wt-dur',radar:'rd-dur',html:'h-dur',bracket:'br-dur'};
+  var dm={announce:'a-dur',table:'t-dur',score:'s-dur',image:'i-dur',upload:'up-dur',youtube:'y-dur',webpage:'wp-dur',news:'nw-dur',rss:'rss-dur',menu:'mn-dur',booking:'bk-dur',weather:'wt-dur',radar:'rd-dur',html:'h-dur',bracket:'br-dur',spielplan:'sp-dur',kader:'kd-dur'};
   var dur=gv(dm[t]);var s=null;
   if(t==='announce'){var ti=gv('a-title');if(!ti){toast('Bitte Titel.','err');return;}s={id:Date.now(),type:t,name:ti,enabled:true,duration:dur?parseInt(dur):null,data:{title:ti,body:gv('a-body'),bg:gv('a-bg'),fg:gv('a-fg'),accent:gv('a-ac'),img:gv('a-img')}};}
   else if(t==='table'){var csv=gv('t-csv');if(!csv){toast('Bitte CSV.','err');return;}s={id:Date.now(),type:t,name:gv('t-title')||'Tabelle',enabled:true,duration:dur?parseInt(dur):null,data:{title:gv('t-title'),csv:csv,bg:gv('t-bg'),accent:gv('t-ac')}};}
@@ -1147,6 +1214,8 @@ function addSlide(){
   else if(t==='radar'){var rdlat=gv('rd-lat'),rdlon=gv('rd-lon'),rdloc=gv('rd-loc');if(!rdlat||!rdlon){toast('Bitte Ort suchen.','err');return;}s={id:Date.now(),type:t,name:'Radar '+rdloc,enabled:true,duration:dur?parseInt(dur)||30:30,data:{location:rdloc,lat:parseFloat(rdlat),lon:parseFloat(rdlon),zoom:parseInt(gv('rd-zoom'))||5,radius:parseInt(gv('rd-radius'))||0,bg:gv('rd-bg')}};}
   else if(t==='html'){var code=gv('h-code');if(!code){toast('Bitte HTML-Code.','err');return;}s={id:Date.now(),type:t,name:gv('h-title')||'HTML',enabled:true,duration:dur?parseInt(dur):null,data:{title:gv('h-title'),code:code}};}
   else if(t==='bracket'){var brd=readBracketData();if(!brd){toast('Bitte Teilnehmer eintragen.','err');return;}s={id:Date.now(),type:t,name:'Turnierbaum: '+(gv('br-title')||'Turnier'),enabled:true,duration:dur?parseInt(dur)||30:30,data:Object.assign({title:gv('br-title')||'Turnier',bg:gv('br-bg'),accent:gv('br-ac')},brd)};}
+  else if(t==='spielplan'){var spTeam=gv('sp-team-sel');if(!spTeam){toast('Bitte Mannschaft wählen.','err');return;}var spT=allTeams.find(function(x){return x.id===spTeam;});s={id:Date.now(),type:t,name:'Spielplan: '+(spT?spT.name:''),enabled:true,duration:dur?parseInt(dur)||30:30,data:{teamId:spTeam,title:gv('sp-title')||(spT?spT.name:'Spielplan'),bg:gv('sp-bg'),accent:gv('sp-ac')}};}
+  else if(t==='kader'){var kdTeam=gv('kd-team-sel');if(!kdTeam){toast('Bitte Mannschaft wählen.','err');return;}var kdT=allTeams.find(function(x){return x.id===kdTeam;});s={id:Date.now(),type:t,name:'Kader: '+(kdT?kdT.name:''),enabled:true,duration:dur?parseInt(dur)||20:20,data:{teamId:kdTeam,title:gv('kd-title')||(kdT?kdT.name:'Kader'),bg:gv('kd-bg'),accent:gv('kd-ac')}};}
   if(!s)return;
   slides.push(s);renderList();
   if(t==='score'){
@@ -1158,7 +1227,7 @@ function addSlide(){
 }
 
 function clearForm(t){
-  var m={announce:['a-title','a-body','a-img','a-dur'],table:['t-title','t-csv','t-dur'],score:['s-gh','s-gg','s-dur'],image:['i-title','i-url','i-cap','i-dur'],upload:['up-title','up-caption','up-dur'],youtube:['y-url','y-title','y-dur'],webpage:['wp-title','wp-url','wp-dur'],news:['nw-text','nw-logo','nw-dur'],rss:['rss-url','rss-label','rss-logo','rss-count','rss-dur'],menu:['mn-title','mn-dur'],booking:['bk-title','bk-dur'],weather:['wt-loc','wt-dur'],radar:['rd-loc','rd-dur'],html:['h-title','h-code','h-dur'],bracket:['br-title','br-dur']};
+  var m={announce:['a-title','a-body','a-img','a-dur'],table:['t-title','t-csv','t-dur'],score:['s-gh','s-gg','s-dur'],image:['i-title','i-url','i-cap','i-dur'],upload:['up-title','up-caption','up-dur'],youtube:['y-url','y-title','y-dur'],webpage:['wp-title','wp-url','wp-dur'],news:['nw-text','nw-logo','nw-dur'],rss:['rss-url','rss-label','rss-logo','rss-count','rss-dur'],menu:['mn-title','mn-dur'],booking:['bk-title','bk-dur'],weather:['wt-loc','wt-dur'],radar:['rd-loc','rd-dur'],html:['h-title','h-code','h-dur'],bracket:['br-title','br-dur'],spielplan:['sp-title','sp-dur'],kader:['kd-title','kd-dur']};
   (m[t]||[]).forEach(function(id){sv(id,'');});
   if(t==='score'){initScoreForm();}
   if(t==='menu'){var mc=document.getElementById('mn-cats');if(mc){mc.innerHTML='';addMenuCat('mn-cats');}}
@@ -1228,6 +1297,10 @@ function openEdit(id){
   editId=id;
   document.getElementById('modal-ttl').textContent=(ICONS2[s.type]||'')+' '+LABELS[s.type]+' bearbeiten';
   document.getElementById('modal-body').innerHTML=mkEF(s);
+  populateTabelleSelects();
+  populateTeamSelects();
+  if(s.type==='spielplan'){var espSel=document.getElementById('esp-team-sel');if(espSel&&s.data.teamId)espSel.value=s.data.teamId;}
+  if(s.type==='kader'){var ekdSel=document.getElementById('ekd-team-sel');if(ekdSel&&s.data.teamId)ekdSel.value=s.data.teamId;}
   if(s.type==='score'){
     // Speichern-Button ausblenden - Score wird automatisch live übertragen
     var saveBtn=document.getElementById('modal-save-btn');
@@ -1268,7 +1341,7 @@ function closeModal(){
 function mkEF(s){
   var d=s.data||{},dv=s.duration||'';
   if(s.type==='announce')return '<div class="g2"><div class="fl s2"><label>Titel</label><input type="text" id="ea-tit" value="'+esc(d.title||'')+'"></div><div class="fl s2"><label>Text</label><textarea id="ea-bod" style="font-family:Inter,sans-serif">'+esc(d.body||'')+'</textarea></div>'+crH('ea-bg','Hintergrundfarbe',d.bg||'#1a3a2a')+crH('ea-fg','Textfarbe',d.fg||'#ffffff')+crH('ea-ac','Akzentfarbe',d.accent||'#f5c842')+'<div class="fl"><label>Hintergrundbild-URL</label><input type="url" id="ea-img" value="'+esc(d.img||'')+'"></div><div class="fl"><label>Dauer Sek.</label><input type="number" id="ea-dur" value="'+dv+'"></div></div>';
-  if(s.type==='table')return '<div class="g2"><div class="fl s2"><label>Titel</label><input type="text" id="et-tit" value="'+esc(d.title||'')+'"></div><div class="fl s2"><label>CSV</label><textarea id="et-csv">'+esc(d.csv||'')+'</textarea></div>'+crH('et-bg','Hintergrundfarbe',d.bg||'#1a3a2a')+crH('et-ac','Akzentfarbe',d.accent||'#f5c842')+'<div class="fl"><label>Dauer Sek.</label><input type="number" id="et-dur" value="'+dv+'"></div></div>';
+  if(s.type==='table')return '<div class="g2"><div class="fl s2"><label>Aus Tabellenverwaltung übernehmen (optional)</label><select id="et-src" onchange="applyTabelleSrc(\'et-src\',\'et-tit\',\'et-csv\')" style="width:100%"><option value="">-- manuell eingeben --</option></select></div><div class="fl s2"><label>Titel</label><input type="text" id="et-tit" value="'+esc(d.title||'')+'"></div><div class="fl s2"><label>CSV</label><textarea id="et-csv">'+esc(d.csv||'')+'</textarea></div>'+crH('et-bg','Hintergrundfarbe',d.bg||'#1a3a2a')+crH('et-ac','Akzentfarbe',d.accent||'#f5c842')+'<div class="fl"><label>Dauer Sek.</label><input type="number" id="et-dur" value="'+dv+'"></div></div>';
   if(s.type==='score'){var isAdm=SESSION&&SESSION.role==='admin';var colorHtml=isAdm?(crH('es-bg','Hintergrundfarbe',d.bg||'#0f2a1c')+crH('es-ac','Akzentfarbe',d.accent||'#f5c842')):'<input type="hidden" id="es-bg" value="'+(d.bg||'#0f2a1c')+'"><input type="hidden" id="es-ac" value="'+(d.accent||'#f5c842')+'">';return '<div class="g2">'+colorHtml+'<div class="fl"><label>Dauer Sek. (gilt pro Bild-Rotation gesamt)</label><input type="number" id="es-dur" min="6" value="'+dv+'"></div><div class="fl" style="align-self:flex-end"><button type="button" class="btn bp" style="width:100%" onclick="saveEdit()">Dauer &amp; Design speichern</button></div><div class="sf-total-bar" style="margin-top:8px"><div class="sf-tot-team"><div class="sf-tot-name" id="sf-total-heim-name">'+(d.heimTeam||'Heim')+'</div><div class="sf-tot-score" id="sf-total-heim-score">'+(d.gesamtHeim||0)+'</div></div><div class="sf-tot-vs">:</div><div class="sf-tot-team"><div class="sf-tot-score" id="sf-total-gast-score">'+(d.gesamtGast||0)+'</div><div class="sf-tot-name" id="sf-total-gast-name">'+(d.gastTeam||'Gast')+'</div></div></div><div class="sf-section"><div class="sf-section-title">Einzel E1–E6</div><div id="me-sin"></div></div><div class="sf-section"><div class="sf-section-title">Doppel D1–D3</div><div id="me-dbl"></div></div></div>';}
   if(s.type==='image')return '<div class="g2"><div class="fl s2"><label>Bild-URL</label><input type="url" id="ei-url" value="'+esc(d.url||'')+'"></div><div class="fl s2"><label>Titel</label><input type="text" id="ei-tit" value="'+esc(d.title||'')+'"></div><div class="fl s2"><label>Untertitel</label><input type="text" id="ei-cap" value="'+esc(d.caption||'')+'"></div>'+crH('ei-bg','Hintergrundfarbe',d.bg||'#0d1f15')+'<div class="fl"><label>Dauer Sek.</label><input type="number" id="ei-dur" value="'+dv+'"></div></div>';
   if(s.type==='upload')return '<div class="g2"><div class="fl s2"><label>Aktuelles Bild</label><img src="'+(d.imageData||'')+'" style="max-width:100%;max-height:160px;border-radius:6px;border:1px solid var(--bo)"></div><div class="fl s2"><label>Neues Bild (leer = unverändert)</label><input type="file" id="eup-file" accept="image/*" onchange="eupHandle(this.files[0])"><div id="eup-pw" style="display:none"><img id="eup-preview" src="" style="max-width:100%;max-height:100px;border-radius:5px;margin-top:6px"><div id="eup-info" style="font-size:.75rem;color:var(--di);margin-top:3px"></div></div><input type="hidden" id="eup-data"></div><div class="fl s2"><label>Titel</label><input type="text" id="eup-title" value="'+esc(d.title||'')+'"></div><div class="fl s2"><label>Untertitel</label><input type="text" id="eup-caption" value="'+esc(d.caption||'')+'"></div>'+crH('eup-bg','Hintergrundfarbe',d.bg||'#0d1f15')+'<div class="fl"><label>Dauer Sek.</label><input type="number" id="eup-dur" value="'+dv+'"></div></div>';
@@ -1282,6 +1355,8 @@ function mkEF(s){
   if(s.type==='radar'){var rzoom=d.zoom||5;return '<div class="g2"><div class="fl s2"><label>Ort</label><div style="display:flex;gap:7px"><input type="text" id="erd-loc" value="'+esc(d.location||'')+'"><button type="button" class="btn bp sm" onclick="geoSearch2(\'erd\')">&#128270;</button></div></div><div class="fl s2" id="erd-res" style="font-size:.82rem;color:var(--gl)">'+esc(d.location||'')+' ('+esc(String(d.lat||''))+', '+esc(String(d.lon||''))+')<input type="hidden" id="erd-lat" value="'+esc(String(d.lat||''))+'"><input type="hidden" id="erd-lon" value="'+esc(String(d.lon||''))+'"></div><div class="fl"><label>Zoom</label><select id="erd-zoom"><option value="3"'+(rzoom===3?' selected':'')+'>3 – Kontinent</option><option value="4"'+(rzoom===4?' selected':'')+'>4 – Region</option><option value="5"'+(rzoom===5?' selected':'')+'>5 – Bundesland</option><option value="6"'+(rzoom===6?' selected':'')+'>6 – Landkreis</option><option value="7"'+(rzoom===7?' selected':'')+'>7 – Stadt</option><option value="8"'+(rzoom===8?' selected':'')+'>8 – Stadtgebiet</option><option value="9"'+(rzoom===9?' selected':'')+'>9 – Stadtteil</option><option value="10"'+(rzoom===10?' selected':'')+'>10 – Straße</option></select></div>'+crH('erd-bg','Hintergrundfarbe',d.bg||'#0d1a2e')+'<div class="fl"><label>Umkreis km</label><input type="number" id="erd-radius" value="'+(d.radius||0)+'"></div><div class="fl"><label>Dauer Sek.</label><input type="number" id="erd-dur" value="'+dv+'"></div></div>';}
   if(s.type==='html')return '<div class="g2"><div class="fl s2"><label>Titel</label><input type="text" id="eh-tit" value="'+esc(d.title||'')+'"></div><div class="fl s2"><label>HTML-Code</label><textarea id="eh-cod" style="min-height:120px">'+esc(d.code||'')+'</textarea></div><div class="fl"><label>Dauer Sek.</label><input type="number" id="eh-dur" value="'+dv+'"></div></div>';
   if(s.type==='bracket')return '<div class="g2"><div class="fl s2"><label>Titel</label><input type="text" id="ebr-title" value="'+esc(d.title||'')+'"></div><div class="fl"><label>Anzahl Teilnehmer</label><select id="ebr-size" onchange="buildBracketEditor(&quot;ebr&quot;)"><option value="4"'+(d.size===4?' selected':'')+'>4</option><option value="8"'+(!d.size||d.size===8?' selected':'')+'>8</option><option value="16"'+(d.size===16?' selected':'')+'>16</option></select></div><div class="fl"><label>Dauer Sek.</label><input type="number" id="ebr-dur" value="'+dv+'"></div>'+crH('ebr-bg','Hintergrundfarbe',d.bg||'#0d2b1a')+crH('ebr-ac','Akzentfarbe',d.accent||'#c9db4d')+'<div class="s2" style="font-size:.72rem;color:var(--di)">Namen eintragen (leer lassen = Freilos/„Rast"). Sobald beide Seiten einer Begegnung feststehen, per Klick auf den Namen den Sieger markieren.</div></div><div id="ebr-editor" style="margin-top:10px"></div>';
+  if(s.type==='spielplan')return '<div class="g2"><div class="fl s2"><label>Mannschaft</label><select id="esp-team-sel" style="width:100%"></select></div><div class="fl s2"><label>Titel (optional)</label><input type="text" id="esp-title" value="'+esc(d.title||'')+'"></div><div class="fl"><label>Dauer Sek.</label><input type="number" id="esp-dur" value="'+dv+'"></div>'+crH('esp-bg','Hintergrundfarbe',d.bg||'#0f2a1c')+crH('esp-ac','Akzentfarbe',d.accent||'#f5c842')+'</div>';
+  if(s.type==='kader')return '<div class="g2"><div class="fl s2"><label>Mannschaft</label><select id="ekd-team-sel" style="width:100%"></select></div><div class="fl s2"><label>Titel (optional)</label><input type="text" id="ekd-title" value="'+esc(d.title||'')+'"></div><div class="fl"><label>Dauer Sek.</label><input type="number" id="ekd-dur" value="'+dv+'"></div>'+crH('ekd-bg','Hintergrundfarbe',d.bg||'#0f2a1c')+crH('ekd-ac','Akzentfarbe',d.accent||'#f5c842')+'</div>';
   return '<p>Unbekannter Typ</p>';
 }
 
@@ -1335,6 +1410,8 @@ function saveEdit(){
   else if(s.type==='radar'){var erlat=g('erd-lat')||String(s.data.lat||'');var erlon=g('erd-lon')||String(s.data.lon||'');s.name='Radar '+(g('erd-loc')||s.data.location||'');s.data={location:g('erd-loc')||s.data.location,lat:parseFloat(erlat)||s.data.lat,lon:parseFloat(erlon)||s.data.lon,zoom:parseInt(g('erd-zoom'))||5,radius:parseInt(g('erd-radius'))||0,bg:g('erd-bg')};s.duration=g('erd-dur')?parseInt(g('erd-dur')):30;}
   else if(s.type==='html'){s.name=g('eh-tit')||s.name;s.data={title:g('eh-tit'),code:g('eh-cod')};s.duration=g('eh-dur')?parseInt(g('eh-dur')):null;}
   else if(s.type==='bracket'){var ebrd=readBracketData();s.name='Turnierbaum: '+(g('ebr-title')||'Turnier');s.data=Object.assign({title:g('ebr-title')||'Turnier',bg:g('ebr-bg'),accent:g('ebr-ac')},ebrd||s.data);s.duration=g('ebr-dur')?parseInt(g('ebr-dur')):30;}
+  else if(s.type==='spielplan'){var espTeam=g('esp-team-sel');var espT=allTeams.find(function(x){return x.id===espTeam;});s.name='Spielplan: '+(espT?espT.name:'');s.data={teamId:espTeam,title:g('esp-title')||(espT?espT.name:'Spielplan'),bg:g('esp-bg'),accent:g('esp-ac')};s.duration=g('esp-dur')?parseInt(g('esp-dur')):30;}
+  else if(s.type==='kader'){var ekdTeam=g('ekd-team-sel');var ekdT=allTeams.find(function(x){return x.id===ekdTeam;});s.name='Kader: '+(ekdT?ekdT.name:'');s.data={teamId:ekdTeam,title:g('ekd-title')||(ekdT?ekdT.name:'Kader'),bg:g('ekd-bg'),accent:g('ekd-ac')};s.duration=g('ekd-dur')?parseInt(g('ekd-dur')):20;}
   closeModal();renderList();
   // Score-Folie sofort live übertragen
   if(s&&s.type==='score'){
@@ -1359,7 +1436,22 @@ function toast(m,type){var e=document.getElementById('toast');e.textContent=m;e.
 // ══════════════════════════════════════════════════════════
 async function loadTeams(){
   var wurl=getWurl();if(!wurl)return;
-  try{var r=await fetch(wurl+'/teams');var d=await r.json();if(d.ok){allTeams=d.teams||[];renderTeams();}}catch(e){}
+  try{var r=await fetch(wurl+'/teams');var d=await r.json();if(d.ok){allTeams=d.teams||[];renderTeams();populateTeamSelects();}}catch(e){}
+}
+
+// Befüllt alle einfachen "Mannschaft wählen"-Dropdowns (Spielplan-/Kader-Folie,
+// im Erstellen-Tab und im Bearbeiten-Modal) mit den aktuellen Mannschaften.
+function populateTeamSelects(){
+  ['sp-team-sel','kd-team-sel','esp-team-sel','ekd-team-sel'].forEach(function(id){
+    var sel=document.getElementById(id);if(!sel)return;
+    var cur=sel.value;
+    sel.innerHTML='<option value="">-- Mannschaft wählen --</option>';
+    allTeams.forEach(function(t){
+      var op=document.createElement('option');op.value=t.id;op.textContent=t.name||t.id;
+      sel.appendChild(op);
+    });
+    if(cur)sel.value=cur;
+  });
 }
 
 async function saveTeams(){
@@ -1403,6 +1495,177 @@ function saveMasterMenu(categories){
     headers['X-Role-Token']=SESSION.token;
   } else return;
   fetch(wurl+'/menu',{method:'POST',headers:headers,body:JSON.stringify({categories:categories||[]})}).catch(function(){});
+}
+
+// ══════════════════════════════════════════════════════════
+// TABELLENVERWALTUNG
+// Liga-Tabellen — manuell gepflegt oder von Tennis.de/nuLiga importiert.
+// Eigenständig gespeichert (KV-Key "tabellen"), damit sie bei der Folie "Tabelle"
+// jederzeit wieder ausgewählt werden können.
+// ══════════════════════════════════════════════════════════
+var allTabellen=[];
+
+async function loadTabellen(){
+  var wurl=getWurl();if(!wurl)return;
+  try{var r=await fetch(wurl+'/tabellen');var d=await r.json();if(d.ok){allTabellen=d.tabellen||[];renderTabellen();populateTabelleSelects();}}catch(e){}
+}
+
+async function saveTabellen(){
+  var wurl=getWurl(),adminPw=localStorage.getItem('vtv_admin_pw')||'';
+  if(!wurl){toast('Bitte Worker-URL.','err');return;}
+  if(!adminPw){adminPw=prompt('Admin-Passwort:','');if(!adminPw)return;localStorage.setItem('vtv_admin_pw',adminPw);}
+  // Namen/Quell-URLs aus den Eingabefeldern übernehmen (Zellinhalte sind über
+  // oninput bereits laufend mit allTabellen synchronisiert)
+  document.querySelectorAll('.tabelle-card').forEach(function(card,ti){
+    var nameInp=card.querySelector('.tabelle-name-inp');
+    var urlInp=card.querySelector('.tabelle-url-inp');
+    if(nameInp&&allTabellen[ti])allTabellen[ti].name=nameInp.value.trim();
+    if(urlInp&&allTabellen[ti])allTabellen[ti].sourceUrl=urlInp.value.trim();
+  });
+  try{
+    var r=await fetch(wurl+'/tabellen',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Password':adminPw},body:JSON.stringify({tabellen:allTabellen})});
+    var d=await r.json();
+    if(d.ok)toast('Tabellen gespeichert!');
+    else{toast(d.error||'Fehler.','err');if(d.error&&d.error.includes('Passwort'))localStorage.removeItem('vtv_admin_pw');}
+  }catch(e){toast('Fehler: '+e.message,'err');}
+}
+
+function addTabelle(){
+  allTabellen.push({id:'tab_'+Date.now(),name:'Neue Tabelle',sourceUrl:'',headers:['Platz','Team','Sp','S','U','N','Punkte'],rows:[]});
+  renderTabellen();
+  populateTabelleSelects();
+}
+
+// Wandelt eine gespeicherte Tabelle in CSV um (für die "Tabelle"-Folie) und
+// befüllt die Auswahl-Dropdowns beim Anlegen/Bearbeiten dieser Folie.
+function csvEsc(v){v=String(v==null?'':v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
+function csvFromTabelle(tab){
+  var lines=[(tab.headers||[]).map(csvEsc).join(',')];
+  (tab.rows||[]).forEach(function(r){lines.push(r.map(csvEsc).join(','));});
+  return lines.join('\n');
+}
+function applyTabelleSrc(selId,titleId,csvId){
+  var sel=document.getElementById(selId);if(!sel||sel.value==='')return;
+  var tab=allTabellen[parseInt(sel.value)];if(!tab)return;
+  var titleEl=document.getElementById(titleId);
+  if(titleEl&&!titleEl.value)titleEl.value=tab.name||'';
+  document.getElementById(csvId).value=csvFromTabelle(tab);
+}
+function populateTabelleSelects(){
+  ['t-src','et-src'].forEach(function(id){
+    var sel=document.getElementById(id);if(!sel)return;
+    var cur=sel.value;
+    sel.innerHTML='<option value="">-- manuell eingeben --</option>';
+    allTabellen.forEach(function(tab,i){
+      var op=document.createElement('option');op.value=String(i);op.textContent=tab.name||('Tabelle '+(i+1));
+      sel.appendChild(op);
+    });
+    sel.value=cur;
+  });
+}
+
+function renderTabellen(){
+  var cont=document.getElementById('tabellen-list');if(!cont)return;
+  cont.innerHTML='';
+  if(!allTabellen.length){
+    cont.innerHTML='<div style="color:var(--di);font-size:.85rem;padding:8px 0">Noch keine Tabellen angelegt. Auf "+ Tabelle" klicken.</div>';
+    return;
+  }
+  allTabellen.forEach(function(tab,ti){
+    var card=document.createElement('div');card.className='tabelle-card';card.dataset.tabId=tab.id;
+
+    var head=document.createElement('div');head.className='tabelle-head';
+    var ni=document.createElement('input');ni.className='tabelle-name-inp';ni.type='text';ni.value=tab.name||'';ni.placeholder='Bezeichnung (z. B. Herren 40 – Kreisliga A)';
+    var delBtn=document.createElement('button');delBtn.type='button';delBtn.className='btn bd sm';delBtn.textContent='Tabelle ×';
+    delBtn.onclick=function(){if(confirm('Tabelle löschen?')){allTabellen.splice(ti,1);renderTabellen();}};
+    head.appendChild(ni);head.appendChild(delBtn);
+    card.appendChild(head);
+
+    var impRow=document.createElement('div');impRow.className='tabelle-import-row';
+    var urlInp=document.createElement('input');urlInp.type='url';urlInp.className='tabelle-url-inp';urlInp.placeholder='Tennis.de- oder nuLiga-Tabellen-URL';urlInp.value=tab.sourceUrl||'';
+    var impBtn=document.createElement('button');impBtn.type='button';impBtn.className='btn bo2 sm';impBtn.textContent='Importieren';
+    impBtn.onclick=function(){tabImport(ti,urlInp.value.trim());};
+    impRow.appendChild(urlInp);impRow.appendChild(impBtn);
+    card.appendChild(impRow);
+
+    var previewWrap=document.createElement('div');previewWrap.className='tabelle-preview-wrap';previewWrap.id='tab-preview-'+ti;
+    card.appendChild(previewWrap);
+
+    var gridWrap=document.createElement('div');gridWrap.className='tabelle-grid-wrap';
+    gridWrap.appendChild(buildTabelleGrid(tab));
+    card.appendChild(gridWrap);
+
+    var gridBtns=document.createElement('div');gridBtns.style.cssText='display:flex;gap:6px;margin-top:8px';
+    var addRowBtn=document.createElement('button');addRowBtn.type='button';addRowBtn.className='btn bo2 sm';addRowBtn.textContent='+ Zeile';
+    addRowBtn.onclick=function(){tab.rows.push(tab.headers.map(function(){return '';}));renderTabellen();};
+    var addColBtn=document.createElement('button');addColBtn.type='button';addColBtn.className='btn bo2 sm';addColBtn.textContent='+ Spalte';
+    addColBtn.onclick=function(){tab.headers.push('Spalte');tab.rows.forEach(function(r){r.push('');});renderTabellen();};
+    gridBtns.appendChild(addRowBtn);gridBtns.appendChild(addColBtn);
+    card.appendChild(gridBtns);
+
+    cont.appendChild(card);
+  });
+}
+
+function buildTabelleGrid(tab){
+  var table=document.createElement('table');table.className='tabelle-edit-grid';
+  var thead=document.createElement('thead');var htr=document.createElement('tr');
+  tab.headers.forEach(function(h,ci){
+    var th=document.createElement('th');
+    var inp=document.createElement('input');inp.type='text';inp.value=h;
+    inp.oninput=function(){tab.headers[ci]=inp.value;};
+    th.appendChild(inp);htr.appendChild(th);
+  });
+  htr.appendChild(document.createElement('th'));
+  thead.appendChild(htr);table.appendChild(thead);
+  var tbody=document.createElement('tbody');
+  tab.rows.forEach(function(row,ri){
+    while(row.length<tab.headers.length)row.push('');
+    var tr=document.createElement('tr');
+    tab.headers.forEach(function(_,ci){
+      var td=document.createElement('td');
+      var inp=document.createElement('input');inp.type='text';inp.value=row[ci]||'';
+      inp.oninput=function(){row[ci]=inp.value;};
+      td.appendChild(inp);tr.appendChild(td);
+    });
+    var tdDel=document.createElement('td');
+    var delB=document.createElement('button');delB.type='button';delB.className='btn bd sm';delB.textContent='×';
+    delB.onclick=function(){tab.rows.splice(ri,1);renderTabellen();};
+    tdDel.appendChild(delB);tr.appendChild(tdDel);
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  return table;
+}
+
+async function tabImport(ti,srcUrl){
+  if(!srcUrl){toast('Bitte URL eintragen.','err');return;}
+  var wurl=getWurl();if(!wurl){toast('Bitte Worker-URL.','err');return;}
+  var previewWrap=document.getElementById('tab-preview-'+ti);
+  previewWrap.innerHTML='<div style="font-size:.78rem;color:var(--di);padding:6px 0">Lade Tabelle…</div>';
+  try{
+    var r=await fetch(wurl+'/tabelle-scrape?url='+encodeURIComponent(srcUrl));
+    var d=await r.json();
+    if(!d.ok){previewWrap.innerHTML='<div style="font-size:.78rem;color:#c0392b;padding:6px 0">'+esc(d.error||'Fehler beim Import.')+'</div>';return;}
+    var html='<div style="font-size:.75rem;font-weight:700;color:var(--di);margin:8px 0 4px">Gefundene Tabelle(n) — bitte auswählen:</div>';
+    d.tables.forEach(function(t,tix){
+      html+='<div class="tab-preview-opt" style="border:1.5px solid var(--bo);border-radius:8px;padding:8px;margin-bottom:6px;cursor:pointer" onclick="tabApplyImport('+ti+','+tix+')">'
+        +'<div style="font-size:.72rem;color:var(--di);margin-bottom:4px">'+t.rows.length+' Zeilen · Spalten: '+t.headers.map(function(h){return esc(h);}).join(', ')+'</div>'
+        +'<div style="font-size:.72rem;overflow-x:auto;white-space:nowrap">'+esc(t.headers.join(' | '))+'<br>'+t.rows.slice(0,3).map(function(row){return esc(row.join(' | '));}).join('<br>')+(t.rows.length>3?'<br>…':'')+'</div>'
+        +'</div>';
+    });
+    previewWrap.innerHTML=html;
+    previewWrap._tables=d.tables;
+  }catch(e){previewWrap.innerHTML='<div style="font-size:.78rem;color:#c0392b;padding:6px 0">Fehler: '+esc(e.message)+'</div>';}
+}
+function tabApplyImport(ti,tix){
+  var previewWrap=document.getElementById('tab-preview-'+ti);
+  var t=previewWrap._tables&&previewWrap._tables[tix];
+  if(!t)return;
+  allTabellen[ti].headers=t.headers.slice();
+  allTabellen[ti].rows=t.rows.map(function(r){return r.slice();});
+  previewWrap.innerHTML='<div style="font-size:.75rem;color:#1e8449;padding:4px 0">Übernommen — bitte prüfen und „Speichern" klicken.</div>';
+  renderTabellen();
 }
 
 function addTeam(){
