@@ -1288,6 +1288,19 @@ function crH(id,lbl,val){return '<div class="fl"><label>'+lbl+'</label><div clas
 
 function openEdit(id){
   var s=slides.find(function(x){return x.id===id;});if(!s)return;
+  if(s.type==='score'){
+    // Spielstand-Folien werden nicht mehr im Modal bearbeitet (das führte zu doppelten
+    // Feld-IDs und damit zu einer abweichenden/kaputten Maske), sondern springen zur
+    // exakt selben Eingabemaske wie beim Erstellen über die Mannschaftsverwaltung.
+    var team=allTeams.find(function(t){return t.id===s.teamId;});
+    var matchIdx=team?team.matches.findIndex(function(m){return m.id===s.data.matchId;}):-1;
+    if(team&&matchIdx>-1){
+      mgmtOpenScore(team.id,matchIdx);
+      return;
+    }
+    toast('Diese Spielstand-Folie ist keiner Begegnung mehr zugeordnet. Bitte über "Mannschaften, Tabellen & Begegnungen" öffnen.','err');
+    return;
+  }
   editId=id;
   document.getElementById('modal-ttl').textContent=(ICONS2[s.type]||'')+' '+LABELS[s.type]+' bearbeiten';
   document.getElementById('modal-body').innerHTML=mkEF(s);
@@ -1304,10 +1317,14 @@ function openEdit(id){
     // _activeScoreId setzen damit pushScoreNow weiß welche Folie
     _activeScoreId=s.id;
     setTimeout(function(){
-      var isHome=true;
+      var team=allTeams.find(function(t){return t.id===s.teamId;});
+      var ownPlayers=team?(team.ownPlayers||[]):[];
+      // Heim/Auswärts anhand der gespeicherten Teamnamen ableiten (nicht mehr fest
+      // auf "Heim" annehmen) — sonst waren Auswärtsspiele im Bearbeiten-Fenster falsch beschriftet.
+      var isHome=team?team.name===s.data.heimTeam:true;
       _sfState={}; // frischer Zustand, sonst könnten Werte der zuletzt bearbeiteten Begegnung durchsickern
-      buildSFRows('me-sin','E',6,[],s.data.gastTeam||'Gast',isHome,false);
-      buildSFRows('me-dbl','D',3,[],s.data.gastTeam||'Gast',isHome,true);
+      buildSFRows('me-sin','E',6,ownPlayers,s.data.gastTeam||'Gast',isHome,false);
+      buildSFRows('me-dbl','D',3,ownPlayers,s.data.gastTeam||'Gast',isHome,true);
       var meTotH=document.getElementById('sf-total-heim-name');if(meTotH)meTotH.textContent=s.data.heimTeam||'Heim';
       var meTotG=document.getElementById('sf-total-gast-name');if(meTotG)meTotG.textContent=s.data.gastTeam||'Gast';
       setTimeout(function(){
