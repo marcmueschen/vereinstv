@@ -1317,6 +1317,7 @@ function saveEdit(){
     s.name=hm+' vs '+ga;
     s.data={heimTeam:hm,gastTeam:ga,gesamtHeim:String(gh),gesamtGast:String(gg),
       mannschaft:(origS&&origS.data&&origS.data.mannschaft)||'',
+      matchId:(origS&&origS.data&&origS.data.matchId)||null,
       bg:g('es-bg')||(origS&&origS.data&&origS.data.bg)||'#0f2a1c',
       accent:g('es-ac')||(origS&&origS.data&&origS.data.accent)||'#f5c842',
       matches:sin2.concat(dbl2)};
@@ -1420,7 +1421,7 @@ function readTeamsFromDOM(){
     var matches=Array.from(matchRows).map(function(r){
       var ins=r.querySelectorAll('input');
       var ha=r.querySelector('select.match-ha');
-      return{date:ins[0]?ins[0].value.trim():'',opponent:ins[1]?ins[1].value.trim():'',homeAway:ha?ha.value:'home'};
+      return{id:r.dataset.matchId||genMatchId(),date:ins[0]?ins[0].value.trim():'',opponent:ins[1]?ins[1].value.trim():'',homeAway:ha?ha.value:'home'};
     }).filter(function(m){return m.opponent;});
     return{id:id,name:name,ownPlayers:ownPlayers,matches:matches};
   });
@@ -1478,8 +1479,11 @@ function makePlayerRow(name,num){
   return row;
 }
 
+function genMatchId(){return 'm_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);}
+
 function makeMatchRow(m){
   var row=document.createElement('div');row.className='match-row';
+  row.dataset.matchId=m.id||genMatchId(); // feste ID bleibt über Umbenennungen/Umsortierungen hinweg stabil
   var di=document.createElement('input');di.type='date';di.value=m.date||'';
   di.style.cssText='padding:4px 6px;border:1.5px solid var(--bo);border-radius:5px;font-size:.8rem;font-family:Inter,sans-serif;background:var(--bg);outline:none';
   var oi=document.createElement('input');oi.type='text';oi.value=m.opponent||'';oi.placeholder='Gegner (z. B. TC Kevelaer)';
@@ -1610,11 +1614,14 @@ function onMatchChange(){
   document.getElementById('s-match-info-detail').textContent=dt+(isHome?' · Heimspiel':' · Auswärtsspiel');
   info.style.display='block';
 
-  // Vorhandene Score-Folie für diese Begegnung suchen
+  // Vorhandene Score-Folie für diese Begegnung suchen — primär über die stabile
+  // matchId (übersteht Umbenennungen/Umsortierungen); ältere Folien ohne matchId
+  // werden weiterhin über den Team-Namen-Vergleich gefunden (Rückwärtskompatibilität).
   _activeScoreId=null;
   var existingSlide=slides.find(function(s){
-    return s.type==='score'&&s.data&&
-      s.data.heimTeam===heim&&s.data.gastTeam===gast;
+    if(s.type!=='score'||!s.data)return false;
+    if(match.id&&s.data.matchId)return s.data.matchId===match.id&&(s.teamId||null)===(teamId||null);
+    return s.data.heimTeam===heim&&s.data.gastTeam===gast;
   });
 
   // Spieler-Selects aufbauen
@@ -1627,8 +1634,11 @@ function onMatchChange(){
   if(existingSlide){
     // Folie gefunden: ID setzen und Daten laden
     _activeScoreId=existingSlide.id;
-    // Ältere Folien ohne "mannschaft"-Feld (Kategorie, z.B. "Herren 30") nachtragen
+    // Ältere Folien ohne "mannschaft"/"matchId"-Feld nachtragen, damit sie ab jetzt
+    // stabil (statt über Textvergleich) wiedergefunden werden.
     if(!existingSlide.data.mannschaft&&team.name)existingSlide.data.mannschaft=team.name;
+    if(!existingSlide.data.matchId&&match.id)existingSlide.data.matchId=match.id;
+    if(!existingSlide.teamId&&teamId)existingSlide.teamId=teamId;
     if(existingSlide.data&&existingSlide.data.matches){
       setTimeout(function(){
         var ms=existingSlide.data.matches||[];
@@ -1656,6 +1666,7 @@ function onMatchChange(){
       data:{
         heimTeam:heim,gastTeam:gast,
         mannschaft:team.name||'',
+        matchId:match.id||null,
         gesamtHeim:'0',gesamtGast:'0',
         bg:gv('s-bg')||'#0f2a1c',
         accent:gv('s-ac')||'#f5c842',
