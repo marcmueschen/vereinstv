@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>Vereins-TV · Live</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--gd:#1a3a2a;--ye:#f5c842;--bg:#f4f7f5;--bo:#dbe6e0;--tx:#1a2e22;--di:#5a7a65}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%;background:var(--bg);font-family:'Inter',sans-serif;color:var(--tx)}
+.hdr{position:sticky;top:0;z-index:10;background:var(--gd);color:#fff;padding:14px 18px;display:flex;align-items:center;gap:10px;box-shadow:0 2px 10px rgba(0,0,0,.15)}
+.hdr-logo{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:.08em;color:var(--ye);flex:1}
+.hdr-time{font-size:.8rem;color:rgba(255,255,255,.65)}
+.refresh-btn{background:rgba(255,255,255,.12);border:none;color:#fff;width:34px;height:34px;border-radius:9px;font-size:1rem}
+
+.wrap{padding:14px;max-width:640px;margin:0 auto}
+.sec-title{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:.08em;color:var(--gd);margin:20px 4px 10px}
+.sec-title:first-child{margin-top:4px}
+
+/* SCORE CARD */
+.score-card{background:linear-gradient(160deg,#153b26,#0d2418);color:#f2f5ea;border-radius:16px;padding:18px 16px;margin-bottom:14px;box-shadow:0 4px 16px rgba(0,0,0,.15)}
+.score-hd{text-align:center;margin-bottom:10px}
+.score-cat{font-family:'Bebas Neue',sans-serif;font-size:.85rem;letter-spacing:.1em;color:var(--ye);text-transform:uppercase}
+.score-sub{display:flex;align-items:center;justify-content:center;gap:10px;font-size:.95rem;margin-top:2px}
+.score-sub .nm{max-width:38vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.score-sub .vs{font-weight:800;color:var(--ye);font-size:1.15rem}
+.score-dv{height:1.5px;background:linear-gradient(90deg,transparent,var(--ye),transparent);opacity:.5;margin:10px 0}
+.mtile{background:rgba(255,255,255,.05);border-radius:11px;padding:10px 12px;margin-bottom:8px}
+.mtile:last-child{margin-bottom:0}
+.mtile-lbl{display:inline-block;background:var(--ye);color:#0d2b1a;font-family:'Bebas Neue',sans-serif;font-size:.7rem;letter-spacing:.08em;font-weight:700;padding:2px 9px;border-radius:4px;margin-bottom:6px}
+.mrow{display:flex;align-items:center;gap:8px;padding:2px 0}
+.mrow .nm{flex:1;min-width:0;font-size:.95rem;font-weight:600;opacity:.75;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mrow.win .nm{opacity:1;font-weight:800;color:var(--ye)}
+.msets{display:flex;gap:4px;flex-shrink:0}
+.mset{min-width:26px;text-align:center;background:#f2efe4;border-radius:5px;padding:3px 5px;font-family:'Bebas Neue',sans-serif;font-size:.95rem;color:#1a2e12;opacity:.55}
+.mset.win{opacity:1;box-shadow:0 0 0 2px var(--ye)}
+.mempty-sets{opacity:.4;font-size:.8rem;font-style:italic}
+
+/* GENERIC CARDS */
+.gcard{background:#fff;border:1.5px solid var(--bo);border-radius:14px;padding:15px 16px;margin-bottom:12px}
+.gcard-title{font-family:'Bebas Neue',sans-serif;font-size:1.05rem;letter-spacing:.03em;color:var(--gd);margin-bottom:6px}
+.gcard-body{font-size:.88rem;line-height:1.5;color:var(--tx)}
+.gcard img{width:100%;border-radius:10px;margin-top:8px}
+.gtable{width:100%;border-collapse:collapse;font-size:.82rem;margin-top:4px}
+.gtable th,.gtable td{padding:7px 6px;border-bottom:1px solid var(--bo);text-align:left}
+.gtable th{font-size:.68rem;text-transform:uppercase;letter-spacing:.05em;color:var(--di)}
+.glist-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--bo);font-size:.86rem}
+.glist-row:last-child{border-bottom:none}
+.gbadge{font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:12px;background:var(--bg);color:var(--di)}
+.gbadge.h{color:#1e8449;background:#e6f7ea}
+.empty-note{text-align:center;color:var(--di);font-size:.9rem;padding:40px 16px}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-logo">&#128250; Vereins-TV</div>
+  <div class="hdr-time" id="hdr-time"></div>
+  <button class="refresh-btn" onclick="loadAll(true)">&#8635;</button>
+</div>
+
+<div class="wrap" id="wrap">
+  <div class="empty-note">Lade …</div>
+</div>
+
+<script>
+function getWurl(){ return 'https://vereinstv.marc-d55.workers.dev'; }
+function es(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function pad2(n){return (n<10?'0':'')+n;}
+
+var _teamsCache=null;
+
+function isSetWon(hv,gv){var hi=Math.max(hv,gv),lo=Math.min(hv,gv);if(hi<6)return false;if(hi-lo>=2)return true;if(hi===7&&(lo===5||lo===6))return true;return false;}
+function isMtbWon(hv,gv){var hi=Math.max(hv,gv),lo=Math.min(hv,gv);return hi>=10&&hi-lo>=2;}
+
+function scoreCardHtml(s){
+  var d=s.data||{};
+  var gh=parseInt(d.gesamtHeim)||0,gg=parseInt(d.gesamtGast)||0;
+  var matches=d.matches||[];
+  var used=matches.filter(function(m){return m.heimPlayer||m.gastPlayer||(m.sets||[]).some(function(x){return x.h||x.g;});});
+  var html='<div class="score-card">'
+    +'<div class="score-hd">'
+      +(d.mannschaft?'<div class="score-cat">'+es(d.mannschaft)+'</div>':'')
+      +'<div class="score-sub"><span class="nm">'+es(d.heimTeam||'Heim')+'</span><span class="vs">'+gh+' : '+gg+'</span><span class="nm">'+es(d.gastTeam||'Gast')+'</span></div>'
+    +'</div><div class="score-dv"></div>';
+  if(!used.length){
+    html+='<div class="mempty-sets" style="text-align:center;padding:8px 0">Noch keine Ergebnisse eingetragen.</div>';
+  } else {
+    used.forEach(function(m){
+      var hw=m.winner==='heim',gw=m.winner==='gast';
+      html+='<div class="mtile"><div class="mtile-lbl">'+es(m.type)+(m.retiredBy?' · Aufgabe':'')+'</div>'
+        +matchPlayerRow(m.heimPlayer,m.sets,'h',hw)
+        +matchPlayerRow(m.gastPlayer,m.sets,'g',gw)
+      +'</div>';
+    });
+  }
+  html+='</div>';
+  return html;
+}
+function matchPlayerRow(name,sets,side,isWin){
+  var played=(sets||[]).filter(function(st){return st.h||st.g;});
+  var setsHtml=played.map(function(st,si){
+    var hv=parseInt(st.h||0),gv=parseInt(st.g||0);
+    var val=side==='h'?hv:gv,other=side==='h'?gv:hv;
+    return '<span class="mset'+(val>other?' win':'')+'">'+es(String(val))+'</span>';
+  }).join('');
+  return '<div class="mrow'+(isWin?' win':'')+'"><span class="nm">'+(name?es(name):'–')+'</span><div class="msets">'+(setsHtml||'<span class="mempty-sets">–</span>')+'</div></div>';
+}
+
+function genericCard(title,bodyHtml){
+  return '<div class="gcard"><div class="gcard-title">'+es(title)+'</div><div class="gcard-body">'+bodyHtml+'</div></div>';
+}
+
+function parseCsv(csv){
+  var lines=(csv||'').split(/\r?\n/).filter(function(l){return l.trim();});
+  return lines.map(function(l){
+    var cells=[],cur='',inQ=false;
+    for(var i=0;i<l.length;i++){
+      var c=l[i];
+      if(inQ){
+        if(c==='"'){ if(l[i+1]==='"'){cur+='"';i++;} else inQ=false; }
+        else cur+=c;
+      } else {
+        if(c==='"')inQ=true;
+        else if(c===','){cells.push(cur);cur='';}
+        else cur+=c;
+      }
+    }
+    cells.push(cur);
+    return cells;
+  });
+}
+function tableCardHtml(s){
+  var d=s.data||{};
+  var rows=parseCsv(d.csv);
+  if(!rows.length)return genericCard(d.title||'Tabelle','<span style="opacity:.5">Keine Daten.</span>');
+  var head=rows[0],body=rows.slice(1);
+  var html='<table class="gtable"><thead><tr>'+head.map(function(h){return '<th>'+es(h)+'</th>';}).join('')+'</tr></thead><tbody>';
+  body.forEach(function(r){html+='<tr>'+r.map(function(c){return '<td>'+es(c)+'</td>';}).join('')+'</tr>';});
+  html+='</tbody></table>';
+  return genericCard(d.title||'Tabelle',html);
+}
+function menuCardHtml(s){
+  var d=s.data||{};
+  var cats=d.categories||[];
+  if(!cats.length)return genericCard(d.title||'Speisekarte','<span style="opacity:.5">Keine Einträge.</span>');
+  var html='';
+  cats.forEach(function(cat){
+    html+='<div style="font-weight:700;margin:8px 0 4px">'+es(cat.name||'')+'</div>';
+    (cat.items||[]).forEach(function(it){
+      html+='<div class="glist-row"><span>'+es(it.name||'')+'</span><span style="font-weight:700">'+es(it.price||'')+'</span></div>';
+    });
+  });
+  return genericCard(d.title||'Speisekarte',html);
+}
+function announceCardHtml(s){
+  var d=s.data||{};
+  var body=es(d.body||'').replace(/\n/g,'<br>');
+  var html=body;
+  if(d.img)html+='<img src="'+es(d.img)+'">';
+  return genericCard(d.title||'Ankündigung',html);
+}
+function imageCardHtml(s){
+  var d=s.data||{};
+  var html='';
+  if(d.url)html+='<img src="'+es(d.url)+'">';
+  if(d.caption)html+='<div style="margin-top:6px;opacity:.7">'+es(d.caption)+'</div>';
+  return genericCard(d.title||'Bild',html);
+}
+function bracketCardHtml(s){
+  var d=s.data||{};
+  var size=parseInt(d.size)||8;
+  var totalRounds=Math.max(1,Math.round(Math.log2(size)));
+  var names=(d.names||[]).slice(0,size);while(names.length<size)names.push('');
+  var seeds=d.seeds||{};var picks=d.picks||[];
+  var current=names.slice();
+  var html='';
+  for(var r=0;r<totalRounds;r++){
+    var label=(function(idx,total){var rem=total-idx;if(rem===1)return 'Finale';if(rem===2)return 'Halbfinale';if(rem===3)return 'Viertelfinale';return 'Runde '+(idx+1);})(r,totalRounds);
+    html+='<div style="font-weight:700;margin:8px 0 4px">'+es(label)+'</div>';
+    var next=[];
+    for(var i=0;i<current.length;i+=2){
+      var a=current[i]||'',b=current[i+1]||'';
+      var mi=i/2;
+      var pick=(picks[r]&&picks[r][mi]!=null)?picks[r][mi]:null;
+      if(pick===null){if(a&&!b)pick=0;else if(b&&!a)pick=1;}
+      html+='<div class="glist-row"><span style="'+(pick===0?'font-weight:800':'opacity:.6')+'">'+(a?es(a):'<span style="opacity:.4">Freilos</span>')+'</span></div>';
+      html+='<div class="glist-row" style="border-bottom:1.5px solid var(--bo)"><span style="'+(pick===1?'font-weight:800':'opacity:.6')+'">'+(b?es(b):'<span style="opacity:.4">Freilos</span>')+'</span></div>';
+      next.push(pick===0?a:(pick===1?b:''));
+    }
+    current=next;
+  }
+  return genericCard(d.title||'Turnierbaum',html);
+}
+function spielplanCardHtml(s,team){
+  var d=s.data||{};
+  if(!team)return genericCard(d.title||'Spielplan','<span style="opacity:.5">Mannschaft nicht gefunden.</span>');
+  var matches=(team.matches||[]).slice().sort(function(a,b){return (a.date||'').localeCompare(b.date||'');});
+  if(!matches.length)return genericCard(d.title||'Spielplan','<span style="opacity:.5">Keine Begegnungen.</span>');
+  var html='';
+  matches.forEach(function(m){
+    var isHome=m.homeAway==='home';
+    var dt=m.date?new Date(m.date+'T12:00:00').toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'}):'–';
+    html+='<div class="glist-row"><span>'+es(dt)+' · '+es(m.opponent||'')+'</span><span class="gbadge'+(isHome?' h':'')+'">'+(isHome?'Heim':'Auswärts')+'</span></div>';
+  });
+  return genericCard(d.title||team.name||'Spielplan',html);
+}
+function kaderCardHtml(s,team){
+  var d=s.data||{};
+  if(!team)return genericCard(d.title||'Kader','<span style="opacity:.5">Mannschaft nicht gefunden.</span>');
+  var players=(team.ownPlayers||[]).filter(function(p){return p.name;});
+  if(!players.length)return genericCard(d.title||'Kader','<span style="opacity:.5">Keine Spieler.</span>');
+  var html='';
+  players.forEach(function(p,i){html+='<div class="glist-row"><span>'+(i+1)+'. '+es(p.name)+'</span></div>';});
+  return genericCard(d.title||team.name||'Kader',html);
+}
+
+async function loadAll(manual){
+  var wurl=getWurl();
+  try{
+    var cr=await fetch(wurl+'/config');
+    var cd=await cr.json();
+    var slides=(cd.ok&&cd.config&&cd.config.slides)||[];
+    var enabled=slides.filter(function(s){return s.enabled!==false;});
+
+    var needsTeams=enabled.some(function(s){return s.type==='spielplan'||s.type==='kader';});
+    if(needsTeams&&!_teamsCache){
+      try{var tr=await fetch(wurl+'/teams');var td=await tr.json();if(td.ok)_teamsCache=td.teams||[];}catch(e){}
+    }
+
+    var scoreSlides=enabled.filter(function(s){return s.type==='score';});
+    var others=enabled.filter(function(s){return s.type!=='score';});
+
+    var html='';
+    if(scoreSlides.length){
+      html+='<div class="sec-title">&#127934; Live-Ergebnisse</div>';
+      scoreSlides.forEach(function(s){html+=scoreCardHtml(s);});
+    }
+    if(others.length){
+      html+='<div class="sec-title">Weitere Infos</div>';
+      others.forEach(function(s){
+        if(s.type==='table')html+=tableCardHtml(s);
+        else if(s.type==='menu')html+=menuCardHtml(s);
+        else if(s.type==='announce')html+=announceCardHtml(s);
+        else if(s.type==='image'||s.type==='upload')html+=imageCardHtml(s);
+        else if(s.type==='bracket')html+=bracketCardHtml(s);
+        else if(s.type==='spielplan'){
+          var t1=(_teamsCache||[]).find(function(t){return t.id===s.data.teamId;});
+          html+=spielplanCardHtml(s,t1);
+        }
+        else if(s.type==='kader'){
+          var t2=(_teamsCache||[]).find(function(t){return t.id===s.data.teamId;});
+          html+=kaderCardHtml(s,t2);
+        }
+        else html+=genericCard(s.name||s.type,'<span style="opacity:.5">Diese Folienart wird auf der mobilen Ansicht nicht dargestellt — bitte auf dem TV ansehen.</span>');
+      });
+    }
+    if(!html)html='<div class="empty-note">Noch keine Folien aktiv.</div>';
+    document.getElementById('wrap').innerHTML=html;
+    var now=new Date();
+    document.getElementById('hdr-time').textContent='Stand '+pad2(now.getHours())+':'+pad2(now.getMinutes());
+  }catch(e){
+    if(manual)document.getElementById('wrap').innerHTML='<div class="empty-note">Fehler beim Laden: '+es(e.message)+'</div>';
+  }
+}
+
+loadAll();
+setInterval(function(){loadAll(false);},15000);
+</script>
+</body>
+</html>
