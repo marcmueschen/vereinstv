@@ -107,16 +107,16 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a3a2a;font-family:
 /* Ergebniskarte im Turnier-Scoreboard-Stil: pro Spieler eine eigene Zeile
    (Name links, Sätze rechts als exakt bündige Spalten) — direkt vergleichbar
    wie bei den Anzeigetafeln großer Tennisturniere. */
-.sc-card{flex:1;display:flex;flex-direction:column;justify-content:center;gap:.6%;min-height:0;border-top:1px solid rgba(255,255,255,.08);padding-top:2%}
+.sc-card{flex:1;display:flex;flex-direction:column;justify-content:center;gap:1.2%;min-height:0;border-top:1px solid rgba(255,255,255,.08);padding-top:2.4%}
 .sc-card:first-child{border-top:none;padding-top:0}
-.sc-card-lbl{align-self:flex-start;background:var(--ac,#8fae2a);color:#0d2b1a;font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(.78rem,1.5vw,1.05rem);letter-spacing:.12em;text-transform:uppercase;font-weight:700;padding:.3% 3%;border-radius:3px;margin-bottom:.8%}
-.sc-mplayer{display:flex;align-items:center;gap:2%;padding:.6% 0}
-.sc-mname{flex:1;min-width:0;font-size:clamp(1.5rem,3.4vw,2.7rem);font-weight:700;font-style:italic;color:#fff;opacity:.72;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left}
+.sc-card-lbl{align-self:flex-start;background:var(--ac,#8fae2a);color:#0d2b1a;font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(.85rem,1.6vw,1.15rem);letter-spacing:.12em;text-transform:uppercase;font-weight:700;padding:.4% 3%;border-radius:3px;margin-bottom:1%}
+.sc-mplayer{display:flex;align-items:center;gap:2.4%;padding:.9% 0}
+.sc-mname{flex:1;min-width:0;font-size:clamp(1.8rem,4.2vw,3.4rem);font-weight:700;font-style:italic;color:#fff;opacity:.72;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left}
 .sc-mplayer.winner .sc-mname{opacity:1;color:var(--ac,#c9db4d)}
-.sc-msets{display:flex;gap:.7%;flex-shrink:0}
-.sc-mset{min-width:11%;text-align:center;background:#f2efe4;border-radius:5px;padding:1.2% 0;font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(1.5rem,3.4vw,2.7rem);font-weight:700;color:#1a2e12;opacity:.55;line-height:1;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.sc-msets{display:flex;gap:1%;flex-shrink:0}
+.sc-mset{min-width:13%;text-align:center;background:#f2efe4;border-radius:6px;padding:1.6% 0;font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(1.8rem,4.2vw,3.4rem);font-weight:700;color:#1a2e12;opacity:.55;line-height:1;box-shadow:0 2px 8px rgba(0,0,0,.2)}
 .sc-mset.win{opacity:1;background:#fff;box-shadow:0 0 0 3px var(--ac,#c9db4d),0 2px 8px rgba(0,0,0,.2);color:#1a2e12}
-.sc-mset.mtb{margin-left:1%}
+.sc-mset.mtb{margin-left:1.4%}
 .sc-card.flash .sc-mset.win{animation:scfl 2.2s cubic-bezier(.4,0,.2,1) forwards}
 @keyframes scfl{
   0%  {box-shadow:0 0 0 6px var(--ac,#c9db4d),0 2px 8px rgba(0,0,0,.2)}
@@ -716,7 +716,7 @@ function bsc(s,div){
   }
   function cardHtml(m){
     var hw=m.winner==='heim',gw=m.winner==='gast';
-    var played=m.sets.filter(function(st){return st.h||st.g;});
+    var played=m.sets.filter(function(st){return (parseInt(st.h)||0)>0||(parseInt(st.g)||0)>0;});
     return '<div class="sc-card-lbl">'+es(m.type)+(m.retiredBy?' · Aufgabe':'')+'</div>'
       +playerRowHtml(m.heimPlayer,played,'h',hw)
       +playerRowHtml(m.gastPlayer,played,'g',gw);
@@ -790,7 +790,7 @@ function bsc(s,div){
       var m=matches[c];
       var card=page.querySelector('.sc-card[data-slot="'+c+'"]');
       if(!card)continue;
-      if(!m||!(m.heimPlayer||m.gastPlayer||m.sets.some(function(x){return x.h||x.g;}))){
+      if(!m||!(m.heimPlayer||m.gastPlayer||m.sets.some(function(x){return (parseInt(x.h)||0)>0||(parseInt(x.g)||0)>0;}))){
         if(card.dataset.filled||!card.childNodes.length){
           card.innerHTML='<div class="sc-empty">–</div>';
           delete card.dataset.filled;
