@@ -151,7 +151,15 @@ main{max-width:920px;margin:0 auto;padding:24px 16px 80px}
 .tabelle-edit-grid input{width:100%;min-width:56px;padding:5px 6px;border:none;font-size:.82rem;font-family:Inter,sans-serif;background:transparent;outline:none;box-sizing:border-box}
 .tabelle-edit-grid input:focus{background:#fff}
 .tabelle-edit-grid tr:nth-child(even) td{background:rgba(0,0,0,.02)}
-.match-row{display:grid;grid-template-columns:120px 1fr auto 28px;gap:6px;align-items:center;background:#fff;border:1px solid var(--bo);border-radius:6px;padding:6px 8px}
+.match-row{display:grid;grid-template-columns:120px 1fr auto auto 28px;gap:6px;align-items:center;background:#fff;border:1px solid var(--bo);border-radius:6px;padding:6px 8px}
+/* NEUE VEREINHEITLICHTE VERWALTUNG */
+.mgmt-team-row{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#f6faf7;border:1.5px solid var(--bo);border-radius:10px;padding:12px 16px;margin-bottom:8px;cursor:pointer;transition:border-color .15s}
+.mgmt-team-row:hover{border-color:var(--gl)}
+.mgmt-team-info{flex:1;min-width:0}
+.mgmt-team-name{font-size:.98rem;font-weight:700;color:var(--tx)}
+.mgmt-team-meta{font-size:.76rem;color:var(--di);margin-top:2px}
+.mgmt-section-title{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--di);margin-bottom:6px}
+.mgmt-match-row{align-items:center}
 .match-row input{padding:4px 7px;border:1.5px solid var(--bo);border-radius:5px;font-size:.82rem;font-family:Inter,sans-serif;background:var(--bg);outline:none}
 .match-row input:focus{border-color:var(--gl);background:#fff}
 .match-home-badge{font-size:.68rem;font-weight:700;padding:2px 7px;border-radius:3px;white-space:nowrap}
@@ -348,32 +356,19 @@ main{max-width:920px;margin:0 auto;padding:24px 16px 80px}
   </div>
 
 
-  <!-- Team Management (Admin only) -->
-  <div class="card" id="teams-card" style="display:none">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:.1em;color:var(--gd)">&#127934; Mannschaftsverwaltung</div>
+  <!-- Mannschaften-, Tabellen- & Begegnungsverwaltung (Admin only) -->
+  <div class="card" id="mgmt-card" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px" id="mgmt-toolbar">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:.1em;color:var(--gd)">&#127934; Mannschaften, Tabellen &amp; Begegnungen</div>
       <div style="display:flex;gap:7px">
-        <button class="btn bo2 sm" onclick="loadTeams()">&#8635; Aktualisieren</button>
-        <button class="btn bp sm" onclick="addTeam()">+ Mannschaft</button>
-        <button class="btn bp sm" onclick="saveTeams()">&#9729; Speichern</button>
+        <button class="btn bo2 sm" onclick="mgmtRefresh()">&#8635; Aktualisieren</button>
+        <button class="btn bp sm" onclick="mgmtAddTeam()">+ Mannschaft</button>
+        <button class="btn bp sm" onclick="mgmtSaveAll()">&#9729; Speichern</button>
       </div>
     </div>
-    <div style="font-size:.78rem;color:var(--di);margin-bottom:10px">Spieler und Spielplan pro Mannschaft eingeben. Mannschaftsführer wählen dann beim Spielstand-Tab ihre Begegnung aus dem Dropdown.</div>
-    <div id="teams-list"></div>
-  </div>
-
-  <!-- Tabellen-Verwaltung (Admin only) -->
-  <div class="card" id="tabellen-card" style="display:none">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:.1em;color:var(--gd)">&#128202; Tabellenverwaltung</div>
-      <div style="display:flex;gap:7px">
-        <button class="btn bo2 sm" onclick="loadTabellen()">&#8635; Aktualisieren</button>
-        <button class="btn bp sm" onclick="addTabelle()">+ Tabelle</button>
-        <button class="btn bp sm" onclick="saveTabellen()">&#9729; Speichern</button>
-      </div>
-    </div>
-    <div style="font-size:.78rem;color:var(--di);margin-bottom:10px">Liga-Tabellen manuell pflegen oder direkt von Tennis.de/nuLiga importieren. Diese Tabellen stehen dann bei der Folie „Tabelle" zur Auswahl.</div>
-    <div id="tabellen-list"></div>
+    <div style="font-size:.78rem;color:var(--di);margin-bottom:10px" id="mgmt-hint">Mannschaft öffnen, um Kader, Tabelle, Spielplan und Spielstände zu verwalten.</div>
+    <div id="mgmt-team-list"></div>
+    <div id="mgmt-team-detail" style="display:none"></div>
   </div>
 
   <!-- New Slide (filtered by role) -->
@@ -794,8 +789,7 @@ function showApp(){
   var adminColors=document.getElementById('s-admin-colors');if(adminColors)adminColors.style.display=role==='admin'?'block':'none';
   document.getElementById('api-bar').style.display = role==='admin'?'block':'none';
   document.getElementById('users-card').style.display = role==='admin'?'block':'none';
-  document.getElementById('teams-card').style.display = role==='admin'?'block':'none';
-  document.getElementById('tabellen-card').style.display = role==='admin'?'block':'none';
+  document.getElementById('mgmt-card').style.display = role==='admin'?'block':'none';
 
   // Role info for non-admin
   var info=document.getElementById('role-info');
@@ -1436,7 +1430,7 @@ function toast(m,type){var e=document.getElementById('toast');e.textContent=m;e.
 // ══════════════════════════════════════════════════════════
 async function loadTeams(){
   var wurl=getWurl();if(!wurl)return;
-  try{var r=await fetch(wurl+'/teams');var d=await r.json();if(d.ok){allTeams=d.teams||[];renderTeams();populateTeamSelects();}}catch(e){}
+  try{var r=await fetch(wurl+'/teams');var d=await r.json();if(d.ok){allTeams=d.teams||[];mgmtSelectedTeamIdx=null;renderMgmtTeamList();populateTeamSelects();}}catch(e){}
 }
 
 // Befüllt alle einfachen "Mannschaft wählen"-Dropdowns (Spielplan-/Kader-Folie,
@@ -1458,7 +1452,7 @@ async function saveTeams(){
   var wurl=getWurl(),adminPw=localStorage.getItem('vtv_admin_pw')||'';
   if(!wurl){toast('Bitte Worker-URL.','err');return;}
   if(!adminPw){adminPw=prompt('Admin-Passwort:','');if(!adminPw)return;localStorage.setItem('vtv_admin_pw',adminPw);}
-  allTeams=readTeamsFromDOM();
+  // allTeams ist durch die oninput-Bindung in der Verwaltung bereits aktuell
   try{
     var r=await fetch(wurl+'/teams',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Password':adminPw},body:JSON.stringify({teams:allTeams})});
     var d=await r.json();
@@ -1498,42 +1492,30 @@ function saveMasterMenu(categories){
 }
 
 // ══════════════════════════════════════════════════════════
-// TABELLENVERWALTUNG
+// TABELLENVERWALTUNG (Daten + Grid-Editor)
 // Liga-Tabellen — manuell gepflegt oder von Tennis.de/nuLiga importiert.
 // Eigenständig gespeichert (KV-Key "tabellen"), damit sie bei der Folie "Tabelle"
-// jederzeit wieder ausgewählt werden können.
+// jederzeit wieder ausgewählt werden können. Die Verwaltungs-Oberfläche selbst
+// lebt in der Mannschafts-Detailansicht (siehe mgmtTabelleCard weiter unten).
 // ══════════════════════════════════════════════════════════
 var allTabellen=[];
 
 async function loadTabellen(){
   var wurl=getWurl();if(!wurl)return;
-  try{var r=await fetch(wurl+'/tabellen');var d=await r.json();if(d.ok){allTabellen=d.tabellen||[];renderTabellen();populateTabelleSelects();}}catch(e){}
+  try{var r=await fetch(wurl+'/tabellen');var d=await r.json();if(d.ok){allTabellen=d.tabellen||[];populateTabelleSelects();if(mgmtSelectedTeamIdx!==null)renderMgmtTeamDetail();else renderMgmtTeamList();}}catch(e){}
 }
 
 async function saveTabellen(){
   var wurl=getWurl(),adminPw=localStorage.getItem('vtv_admin_pw')||'';
   if(!wurl){toast('Bitte Worker-URL.','err');return;}
   if(!adminPw){adminPw=prompt('Admin-Passwort:','');if(!adminPw)return;localStorage.setItem('vtv_admin_pw',adminPw);}
-  // Namen/Quell-URLs aus den Eingabefeldern übernehmen (Zellinhalte sind über
-  // oninput bereits laufend mit allTabellen synchronisiert)
-  document.querySelectorAll('.tabelle-card').forEach(function(card,ti){
-    var nameInp=card.querySelector('.tabelle-name-inp');
-    var urlInp=card.querySelector('.tabelle-url-inp');
-    if(nameInp&&allTabellen[ti])allTabellen[ti].name=nameInp.value.trim();
-    if(urlInp&&allTabellen[ti])allTabellen[ti].sourceUrl=urlInp.value.trim();
-  });
+  // allTabellen ist durch die oninput-Bindung in der Verwaltung bereits aktuell
   try{
     var r=await fetch(wurl+'/tabellen',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Password':adminPw},body:JSON.stringify({tabellen:allTabellen})});
     var d=await r.json();
     if(d.ok)toast('Tabellen gespeichert!');
     else{toast(d.error||'Fehler.','err');if(d.error&&d.error.includes('Passwort'))localStorage.removeItem('vtv_admin_pw');}
   }catch(e){toast('Fehler: '+e.message,'err');}
-}
-
-function addTabelle(){
-  allTabellen.push({id:'tab_'+Date.now(),name:'Neue Tabelle',sourceUrl:'',headers:['Platz','Team','Sp','S','U','N','Punkte'],rows:[]});
-  renderTabellen();
-  populateTabelleSelects();
 }
 
 // Wandelt eine gespeicherte Tabelle in CSV um (für die "Tabelle"-Folie) und
@@ -1564,49 +1546,6 @@ function populateTabelleSelects(){
   });
 }
 
-function renderTabellen(){
-  var cont=document.getElementById('tabellen-list');if(!cont)return;
-  cont.innerHTML='';
-  if(!allTabellen.length){
-    cont.innerHTML='<div style="color:var(--di);font-size:.85rem;padding:8px 0">Noch keine Tabellen angelegt. Auf "+ Tabelle" klicken.</div>';
-    return;
-  }
-  allTabellen.forEach(function(tab,ti){
-    var card=document.createElement('div');card.className='tabelle-card';card.dataset.tabId=tab.id;
-
-    var head=document.createElement('div');head.className='tabelle-head';
-    var ni=document.createElement('input');ni.className='tabelle-name-inp';ni.type='text';ni.value=tab.name||'';ni.placeholder='Bezeichnung (z. B. Herren 40 – Kreisliga A)';
-    var delBtn=document.createElement('button');delBtn.type='button';delBtn.className='btn bd sm';delBtn.textContent='Tabelle ×';
-    delBtn.onclick=function(){if(confirm('Tabelle löschen?')){allTabellen.splice(ti,1);renderTabellen();}};
-    head.appendChild(ni);head.appendChild(delBtn);
-    card.appendChild(head);
-
-    var impRow=document.createElement('div');impRow.className='tabelle-import-row';
-    var urlInp=document.createElement('input');urlInp.type='url';urlInp.className='tabelle-url-inp';urlInp.placeholder='Tennis.de- oder nuLiga-Tabellen-URL';urlInp.value=tab.sourceUrl||'';
-    var impBtn=document.createElement('button');impBtn.type='button';impBtn.className='btn bo2 sm';impBtn.textContent='Importieren';
-    impBtn.onclick=function(){tabImport(ti,urlInp.value.trim());};
-    impRow.appendChild(urlInp);impRow.appendChild(impBtn);
-    card.appendChild(impRow);
-
-    var previewWrap=document.createElement('div');previewWrap.className='tabelle-preview-wrap';previewWrap.id='tab-preview-'+ti;
-    card.appendChild(previewWrap);
-
-    var gridWrap=document.createElement('div');gridWrap.className='tabelle-grid-wrap';
-    gridWrap.appendChild(buildTabelleGrid(tab));
-    card.appendChild(gridWrap);
-
-    var gridBtns=document.createElement('div');gridBtns.style.cssText='display:flex;gap:6px;margin-top:8px';
-    var addRowBtn=document.createElement('button');addRowBtn.type='button';addRowBtn.className='btn bo2 sm';addRowBtn.textContent='+ Zeile';
-    addRowBtn.onclick=function(){tab.rows.push(tab.headers.map(function(){return '';}));renderTabellen();};
-    var addColBtn=document.createElement('button');addColBtn.type='button';addColBtn.className='btn bo2 sm';addColBtn.textContent='+ Spalte';
-    addColBtn.onclick=function(){tab.headers.push('Spalte');tab.rows.forEach(function(r){r.push('');});renderTabellen();};
-    gridBtns.appendChild(addRowBtn);gridBtns.appendChild(addColBtn);
-    card.appendChild(gridBtns);
-
-    cont.appendChild(card);
-  });
-}
-
 function buildTabelleGrid(tab){
   var table=document.createElement('table');table.className='tabelle-edit-grid';
   var thead=document.createElement('thead');var htr=document.createElement('tr');
@@ -1630,7 +1569,7 @@ function buildTabelleGrid(tab){
     });
     var tdDel=document.createElement('td');
     var delB=document.createElement('button');delB.type='button';delB.className='btn bd sm';delB.textContent='×';
-    delB.onclick=function(){tab.rows.splice(ri,1);renderTabellen();};
+    delB.onclick=function(){row.splice(0,row.length);tab.rows.splice(ri,1);if(mgmtSelectedTeamIdx!==null)renderMgmtTeamDetail();};
     tdDel.appendChild(delB);tr.appendChild(tdDel);
     tbody.appendChild(tr);
   });
@@ -1638,10 +1577,279 @@ function buildTabelleGrid(tab){
   return table;
 }
 
-async function tabImport(ti,srcUrl){
+// ══════════════════════════════════════════════════════════
+// NEUE VEREINHEITLICHTE VERWALTUNG: Mannschaften → Tabelle & Begegnungen → Spielstand
+// ══════════════════════════════════════════════════════════
+var mgmtSelectedTeamIdx=null;
+function genMatchId(){return 'm_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);}
+
+function mgmtRefresh(){loadTeams();loadTabellen();toast('Aktualisiert.');}
+
+async function mgmtSaveAll(){
+  // Änderungen sind bereits laufend in allTeams/allTabellen gespiegelt (oninput-Bindung) —
+  // beides einfach nacheinander persistieren.
+  await saveTeams();
+  await saveTabellen();
+}
+
+function mgmtAddTeam(){
+  allTeams.push({id:'team_'+Date.now(),name:'Neue Mannschaft',ownPlayers:[{name:''},{name:''},{name:''},{name:''},{name:''},{name:''}],matches:[]});
+  renderMgmtTeamList();
+  mgmtOpenTeam(allTeams.length-1);
+}
+
+function renderMgmtTeamList(){
+  var cont=document.getElementById('mgmt-team-list');if(!cont)return;
+  if(mgmtSelectedTeamIdx!==null)return; // Detailansicht ist gerade offen
+  cont.innerHTML='';
+  cont.style.display='block';
+  if(!allTeams.length){
+    cont.innerHTML='<div style="color:var(--di);font-size:.85rem;padding:8px 0">Noch keine Mannschaften angelegt. Auf "+ Mannschaft" klicken.</div>';
+    return;
+  }
+  allTeams.forEach(function(team,ti){
+    var row=document.createElement('div');row.className='mgmt-team-row';
+    var playerCount=(team.ownPlayers||[]).filter(function(p){return p.name;}).length;
+    var matchCount=(team.matches||[]).filter(function(m){return m.opponent;}).length;
+    var tabCount=allTabellen.filter(function(t){return t.teamId===team.id;}).length;
+    var info=document.createElement('div');info.className='mgmt-team-info';
+    info.innerHTML='<div class="mgmt-team-name">'+esc(team.name||'(ohne Namen)')+'</div>'
+      +'<div class="mgmt-team-meta">'+playerCount+' Spieler · '+matchCount+' Begegnungen · '+tabCount+' Tabelle(n)</div>';
+    info.onclick=function(){mgmtOpenTeam(ti);};
+    var btnWrap=document.createElement('div');btnWrap.style.cssText='display:flex;gap:6px;flex-shrink:0';
+    var openBtn=document.createElement('button');openBtn.type='button';openBtn.className='btn bp sm';openBtn.textContent='Öffnen →';
+    openBtn.onclick=function(){mgmtOpenTeam(ti);};
+    var delBtn=document.createElement('button');delBtn.type='button';delBtn.className='btn bd sm';delBtn.textContent='×';
+    delBtn.onclick=function(e){e.stopPropagation();if(confirm('Mannschaft "'+(team.name||'')+'" wirklich löschen? (Zugehörige Tabellen bleiben erhalten.)')){allTeams.splice(ti,1);renderMgmtTeamList();}};
+    btnWrap.appendChild(openBtn);btnWrap.appendChild(delBtn);
+    row.appendChild(info);row.appendChild(btnWrap);
+    cont.appendChild(row);
+  });
+}
+
+function mgmtOpenTeam(ti){
+  mgmtSelectedTeamIdx=ti;
+  document.getElementById('mgmt-team-list').style.display='none';
+  document.getElementById('mgmt-toolbar').style.display='none';
+  document.getElementById('mgmt-hint').style.display='none';
+  var detail=document.getElementById('mgmt-team-detail');
+  detail.style.display='block';
+  renderMgmtTeamDetail();
+}
+
+function mgmtBackToList(){
+  mgmtSelectedTeamIdx=null;
+  document.getElementById('mgmt-toolbar').style.display='flex';
+  document.getElementById('mgmt-hint').style.display='block';
+  document.getElementById('mgmt-team-detail').style.display='none';
+  document.getElementById('mgmt-team-detail').innerHTML='';
+  renderMgmtTeamList();
+  populateTeamSelects();
+}
+
+function mgmtSectionTitle(txt,mt){
+  var d=document.createElement('div');d.className='mgmt-section-title';if(mt)d.style.marginTop=mt;d.textContent=txt;return d;
+}
+
+function renderMgmtTeamDetail(){
+  var team=allTeams[mgmtSelectedTeamIdx];
+  var detail=document.getElementById('mgmt-team-detail');
+  if(!team){detail.innerHTML='';return;}
+  detail.innerHTML='';
+
+  var backBtn=document.createElement('button');backBtn.type='button';backBtn.className='btn bo2 sm';backBtn.textContent='← Zurück zu Mannschaften';backBtn.style.marginBottom='14px';
+  backBtn.onclick=mgmtBackToList;
+  detail.appendChild(backBtn);
+
+  // ── Name + Kader ──────────────────────────────────────────
+  var head=document.createElement('div');head.className='team-head';
+  var ni=document.createElement('input');ni.className='team-name-inp';ni.type='text';ni.value=team.name||'';ni.placeholder='Mannschaftsname (z. B. Herren 40)';
+  ni.oninput=function(){team.name=ni.value;};
+  var kaderFolieBtn=document.createElement('button');kaderFolieBtn.type='button';kaderFolieBtn.className='btn bp sm';kaderFolieBtn.textContent='📺 Kader auf Folie';
+  kaderFolieBtn.onclick=function(){mgmtPushKaderSlide(team);};
+  head.appendChild(ni);head.appendChild(kaderFolieBtn);
+  detail.appendChild(head);
+
+  detail.appendChild(mgmtSectionTitle('Kader (Nachname, Vorname)'));
+  var plList=document.createElement('div');plList.className='player-list';
+  if(!team.ownPlayers||!team.ownPlayers.length)team.ownPlayers=[{name:''},{name:''},{name:''},{name:''},{name:''},{name:''}];
+  team.ownPlayers.forEach(function(p,pi){plList.appendChild(mgmtPlayerRow(team,p,pi));});
+  detail.appendChild(plList);
+  var addPBtn=document.createElement('button');addPBtn.type='button';addPBtn.className='btn bo2 sm';addPBtn.textContent='+ Spieler';
+  addPBtn.onclick=function(){team.ownPlayers.push({name:''});plList.appendChild(mgmtPlayerRow(team,team.ownPlayers[team.ownPlayers.length-1],team.ownPlayers.length-1));};
+  detail.appendChild(addPBtn);
+
+  // ── Tabelle ───────────────────────────────────────────────
+  var tabHd=document.createElement('div');tabHd.style.cssText='display:flex;align-items:center;justify-content:space-between;margin-top:18px';
+  tabHd.appendChild(mgmtSectionTitle('Tabelle'));
+  var addTabBtn=document.createElement('button');addTabBtn.type='button';addTabBtn.className='btn bo2 sm';addTabBtn.textContent='+ Tabelle';
+  addTabBtn.onclick=function(){
+    allTabellen.push({id:'tab_'+Date.now(),teamId:team.id,name:team.name||'Tabelle',sourceUrl:'',headers:['Platz','Team','Sp','S','U','N','Punkte'],rows:[]});
+    renderMgmtTeamDetail();
+  };
+  tabHd.appendChild(addTabBtn);
+  detail.appendChild(tabHd);
+
+  var linkedTabellen=allTabellen.filter(function(t){return t.teamId===team.id;});
+  if(!linkedTabellen.length){
+    var noTab=document.createElement('div');noTab.style.cssText='color:var(--di);font-size:.82rem;padding:4px 0 8px';noTab.textContent='Noch keine Tabelle für diese Mannschaft. Manuell anlegen oder von Tennis.de/nuLiga importieren.';
+    detail.appendChild(noTab);
+  }
+  linkedTabellen.forEach(function(tab){
+    detail.appendChild(mgmtTabelleCard(tab));
+  });
+
+  // ── Begegnungen ───────────────────────────────────────────
+  var mHd=document.createElement('div');mHd.style.cssText='display:flex;align-items:center;justify-content:space-between;margin-top:18px';
+  mHd.appendChild(mgmtSectionTitle('Begegnungen (Spielplan)'));
+  var spFolieBtn=document.createElement('button');spFolieBtn.type='button';spFolieBtn.className='btn bp sm';spFolieBtn.textContent='📺 Spielplan auf Folie';
+  spFolieBtn.onclick=function(){mgmtPushSpielplanSlide(team);};
+  mHd.appendChild(spFolieBtn);
+  detail.appendChild(mHd);
+
+  var mList=document.createElement('div');mList.className='match-list';
+  if(!team.matches)team.matches=[];
+  team.matches.forEach(function(m,mi){mList.appendChild(mgmtMatchRow(team,m,mi));});
+  detail.appendChild(mList);
+  var addMBtn=document.createElement('button');addMBtn.type='button';addMBtn.className='btn bo2 sm';addMBtn.style.marginTop='6px';addMBtn.textContent='+ Begegnung';
+  addMBtn.onclick=function(){
+    team.matches.push({id:genMatchId(),date:'',opponent:'',homeAway:'home'});
+    mList.appendChild(mgmtMatchRow(team,team.matches[team.matches.length-1],team.matches.length-1));
+  };
+  detail.appendChild(addMBtn);
+}
+
+function mgmtPlayerRow(team,player,pi){
+  var row=document.createElement('div');row.className='player-row';
+  var lbl=document.createElement('span');
+  lbl.style.cssText='font-size:.72rem;color:var(--di);width:22px;text-align:right;flex-shrink:0';
+  lbl.textContent=(pi+1)+'.';
+  var inp=document.createElement('input');inp.type='text';inp.value=player.name||'';inp.placeholder='Nachname, Vorname';
+  inp.oninput=function(){player.name=inp.value;};
+  var del=document.createElement('button');del.type='button';del.className='btn bd sm';del.style.padding='3px 7px';del.textContent='×';
+  del.onclick=function(){var idx=team.ownPlayers.indexOf(player);if(idx>-1)team.ownPlayers.splice(idx,1);row.remove();};
+  row.appendChild(lbl);row.appendChild(inp);row.appendChild(del);
+  return row;
+}
+
+function mgmtMatchRow(team,m,mi){
+  var row=document.createElement('div');row.className='match-row mgmt-match-row';
+  row.dataset.matchId=m.id||(m.id=genMatchId());
+  var di=document.createElement('input');di.type='date';di.value=m.date||'';
+  di.style.cssText='padding:4px 6px;border:1.5px solid var(--bo);border-radius:5px;font-size:.8rem;font-family:Inter,sans-serif;background:var(--bg);outline:none';
+  di.oninput=function(){m.date=di.value;};
+  var oi=document.createElement('input');oi.type='text';oi.value=m.opponent||'';oi.placeholder='Gegner (z. B. TC Kevelaer)';
+  oi.style.cssText='padding:4px 7px;border:1.5px solid var(--bo);border-radius:5px;font-size:.82rem;font-family:Inter,sans-serif;background:var(--bg);outline:none;width:100%';
+  oi.oninput=function(){m.opponent=oi.value;};
+  var ha=document.createElement('select');ha.className='match-ha';
+  ha.style.cssText='padding:4px 6px;border:1.5px solid var(--bo);border-radius:5px;font-size:.78rem;font-family:Inter,sans-serif;background:var(--bg);outline:none';
+  [{v:'home',l:'Heim'},{v:'away',l:'Auswärts'}].forEach(function(o){
+    var op=document.createElement('option');op.value=o.v;op.textContent=o.l;if((m.homeAway||'home')===o.v)op.selected=true;ha.appendChild(op);
+  });
+  ha.onchange=function(){m.homeAway=ha.value;};
+  var scoreBtn=document.createElement('button');scoreBtn.type='button';scoreBtn.className='btn bp sm';scoreBtn.textContent='🎾 Spielstand';scoreBtn.title='Partien & Live-Spielstand für diese Begegnung eintragen';
+  scoreBtn.style.whiteSpace='nowrap';
+  scoreBtn.onclick=function(){if(!m.opponent){toast('Bitte zuerst den Gegner eintragen.','err');return;}mgmtOpenScore(team.id,mi);};
+  var del=document.createElement('button');del.type='button';del.className='btn bd sm';del.style.padding='3px 7px';del.textContent='×';
+  del.onclick=function(){var idx=team.matches.indexOf(m);if(idx>-1)team.matches.splice(idx,1);row.remove();};
+  row.appendChild(di);row.appendChild(oi);row.appendChild(ha);row.appendChild(scoreBtn);row.appendChild(del);
+  return row;
+}
+
+function mgmtTabelleCard(tab){
+  var card=document.createElement('div');card.className='tabelle-card';card.dataset.tabId=tab.id;
+
+  var headRow=document.createElement('div');headRow.className='tabelle-head';
+  var ni=document.createElement('input');ni.className='tabelle-name-inp';ni.type='text';ni.value=tab.name||'';ni.placeholder='Bezeichnung (z. B. Herren 40 – Kreisliga A)';
+  ni.oninput=function(){tab.name=ni.value;};
+  var folieBtn=document.createElement('button');folieBtn.type='button';folieBtn.className='btn bp sm';folieBtn.textContent='📺 Auf Folie';
+  folieBtn.onclick=function(){mgmtPushTabelleSlide(tab);};
+  var delBtn=document.createElement('button');delBtn.type='button';delBtn.className='btn bd sm';delBtn.textContent='Tabelle ×';
+  delBtn.onclick=function(){if(confirm('Tabelle löschen?')){var idx=allTabellen.indexOf(tab);if(idx>-1)allTabellen.splice(idx,1);renderMgmtTeamDetail();}};
+  headRow.appendChild(ni);headRow.appendChild(folieBtn);headRow.appendChild(delBtn);
+  card.appendChild(headRow);
+
+  var impRow=document.createElement('div');impRow.className='tabelle-import-row';
+  var urlInp=document.createElement('input');urlInp.type='url';urlInp.className='tabelle-url-inp';urlInp.placeholder='Tennis.de- oder nuLiga-Tabellen-URL';urlInp.value=tab.sourceUrl||'';
+  urlInp.oninput=function(){tab.sourceUrl=urlInp.value;};
+  var impBtn=document.createElement('button');impBtn.type='button';impBtn.className='btn bo2 sm';impBtn.textContent='Importieren';
+  var previewId='tab-preview-'+tab.id;
+  impBtn.onclick=function(){tabImportById(tab,previewId,urlInp.value.trim());};
+  impRow.appendChild(urlInp);impRow.appendChild(impBtn);
+  card.appendChild(impRow);
+
+  var previewWrap=document.createElement('div');previewWrap.className='tabelle-preview-wrap';previewWrap.id=previewId;
+  card.appendChild(previewWrap);
+
+  var gridWrap=document.createElement('div');gridWrap.className='tabelle-grid-wrap';
+  gridWrap.appendChild(buildTabelleGrid(tab));
+  card.appendChild(gridWrap);
+
+  var gridBtns=document.createElement('div');gridBtns.style.cssText='display:flex;gap:6px;margin-top:8px';
+  var addRowBtn=document.createElement('button');addRowBtn.type='button';addRowBtn.className='btn bo2 sm';addRowBtn.textContent='+ Zeile';
+  addRowBtn.onclick=function(){tab.rows.push(tab.headers.map(function(){return '';}));renderMgmtTeamDetail();};
+  var addColBtn=document.createElement('button');addColBtn.type='button';addColBtn.className='btn bo2 sm';addColBtn.textContent='+ Spalte';
+  addColBtn.onclick=function(){tab.headers.push('Spalte');tab.rows.forEach(function(r){r.push('');});renderMgmtTeamDetail();};
+  gridBtns.appendChild(addRowBtn);gridBtns.appendChild(addColBtn);
+  card.appendChild(gridBtns);
+
+  return card;
+}
+
+// Springt zum Spielstand-Tab und wählt dort automatisch Mannschaft + Begegnung
+// vor — nutzt exakt denselben, bereits bewährten Mechanismus wie bisher.
+function mgmtOpenScore(teamId,matchIdx){
+  var btn=document.querySelector('.tt[data-t="score"]');
+  if(btn)selTab(btn,'score');
+  setTimeout(function(){
+    var teamSel=document.getElementById('s-team-sel');
+    if(!teamSel)return;
+    teamSel.value=teamId;
+    onTeamChange();
+    setTimeout(function(){
+      var matchSel=document.getElementById('s-match-sel');
+      if(matchSel){matchSel.value=String(matchIdx);onMatchChange();}
+      var wrap=document.getElementById('s-matches-wrap');
+      if(wrap)wrap.scrollIntoView({behavior:'smooth',block:'start'});
+    },80);
+  },80);
+}
+
+function mgmtFindOrCreateSlide(type,matchFn,buildFn){
+  var existing=slides.find(function(s){return s.type===type&&s.data&&matchFn(s);});
+  var fresh=buildFn();
+  if(existing){Object.assign(existing.data,fresh.data);existing.name=fresh.name;}
+  else{slides.push(fresh);}
+  doSave();renderList();
+}
+function mgmtPushKaderSlide(team){
+  mgmtFindOrCreateSlide('kader',
+    function(s){return s.data.teamId===team.id;},
+    function(){return{id:Date.now(),type:'kader',name:'Kader: '+(team.name||''),enabled:true,duration:20,data:{teamId:team.id,title:team.name||'Kader',bg:'#0f2a1c',accent:'#f5c842'}};}
+  );
+  toast('Kader wird jetzt angezeigt!');
+}
+function mgmtPushSpielplanSlide(team){
+  mgmtFindOrCreateSlide('spielplan',
+    function(s){return s.data.teamId===team.id;},
+    function(){return{id:Date.now(),type:'spielplan',name:'Spielplan: '+(team.name||''),enabled:true,duration:30,data:{teamId:team.id,title:team.name||'Spielplan',bg:'#0f2a1c',accent:'#f5c842'}};}
+  );
+  toast('Spielplan wird jetzt angezeigt!');
+}
+function mgmtPushTabelleSlide(tab){
+  var csv=csvFromTabelle(tab);
+  mgmtFindOrCreateSlide('table',
+    function(s){return s.data._tabelleId===tab.id;},
+    function(){return{id:Date.now(),type:'table',name:tab.name||'Tabelle',enabled:true,duration:null,data:{title:tab.name||'Tabelle',csv:csv,bg:'#1a3a2a',accent:'#f5c842',_tabelleId:tab.id}};}
+  );
+  toast('Tabelle wird jetzt angezeigt!');
+}
+
+// Import-Variante für die Team-Detailansicht (Tabelle ist über ihre id statt Index bekannt)
+async function tabImportById(tab,previewId,srcUrl){
   if(!srcUrl){toast('Bitte URL eintragen.','err');return;}
   var wurl=getWurl();if(!wurl){toast('Bitte Worker-URL.','err');return;}
-  var previewWrap=document.getElementById('tab-preview-'+ti);
+  var previewWrap=document.getElementById(previewId);
   previewWrap.innerHTML='<div style="font-size:.78rem;color:var(--di);padding:6px 0">Lade Tabelle…</div>';
   try{
     var r=await fetch(wurl+'/tabelle-scrape?url='+encodeURIComponent(srcUrl));
@@ -1649,117 +1857,21 @@ async function tabImport(ti,srcUrl){
     if(!d.ok){previewWrap.innerHTML='<div style="font-size:.78rem;color:#c0392b;padding:6px 0">'+esc(d.error||'Fehler beim Import.')+'</div>';return;}
     var html='<div style="font-size:.75rem;font-weight:700;color:var(--di);margin:8px 0 4px">Gefundene Tabelle(n) — bitte auswählen:</div>';
     d.tables.forEach(function(t,tix){
-      html+='<div class="tab-preview-opt" style="border:1.5px solid var(--bo);border-radius:8px;padding:8px;margin-bottom:6px;cursor:pointer" onclick="tabApplyImport('+ti+','+tix+')">'
+      html+='<div class="tab-preview-opt" style="border:1.5px solid var(--bo);border-radius:8px;padding:8px;margin-bottom:6px;cursor:pointer" data-tix="'+tix+'">'
         +'<div style="font-size:.72rem;color:var(--di);margin-bottom:4px">'+t.rows.length+' Zeilen · Spalten: '+t.headers.map(function(h){return esc(h);}).join(', ')+'</div>'
         +'<div style="font-size:.72rem;overflow-x:auto;white-space:nowrap">'+esc(t.headers.join(' | '))+'<br>'+t.rows.slice(0,3).map(function(row){return esc(row.join(' | '));}).join('<br>')+(t.rows.length>3?'<br>…':'')+'</div>'
         +'</div>';
     });
     previewWrap.innerHTML=html;
-    previewWrap._tables=d.tables;
+    previewWrap.querySelectorAll('.tab-preview-opt').forEach(function(opt){
+      opt.onclick=function(){
+        var t=d.tables[parseInt(opt.dataset.tix)];if(!t)return;
+        tab.headers=t.headers.slice();tab.rows=t.rows.map(function(r){return r.slice();});
+        previewWrap.innerHTML='<div style="font-size:.75rem;color:#1e8449;padding:4px 0">Übernommen — bitte prüfen und „Speichern" klicken.</div>';
+        renderMgmtTeamDetail();
+      };
+    });
   }catch(e){previewWrap.innerHTML='<div style="font-size:.78rem;color:#c0392b;padding:6px 0">Fehler: '+esc(e.message)+'</div>';}
-}
-function tabApplyImport(ti,tix){
-  var previewWrap=document.getElementById('tab-preview-'+ti);
-  var t=previewWrap._tables&&previewWrap._tables[tix];
-  if(!t)return;
-  allTabellen[ti].headers=t.headers.slice();
-  allTabellen[ti].rows=t.rows.map(function(r){return r.slice();});
-  previewWrap.innerHTML='<div style="font-size:.75rem;color:#1e8449;padding:4px 0">Übernommen — bitte prüfen und „Speichern" klicken.</div>';
-  renderTabellen();
-}
-
-function addTeam(){
-  allTeams.push({id:'team_'+Date.now(),name:'Neue Mannschaft',ownPlayers:[{name:''},{name:''},{name:''},{name:''},{name:''},{name:''}],matches:[]});
-  renderTeams();
-}
-
-function readTeamsFromDOM(){
-  var cards=document.getElementById('teams-list').querySelectorAll('.team-card');
-  return Array.from(cards).map(function(c){
-    var id=c.dataset.teamId;
-    var name=c.querySelector('.team-name-inp').value.trim();
-    var playerInputs=c.querySelectorAll('.player-row input');
-    var ownPlayers=Array.from(playerInputs).map(function(inp){return{name:inp.value.trim()};}).filter(function(p){return p.name;});
-    var matchRows=c.querySelectorAll('.match-row');
-    var matches=Array.from(matchRows).map(function(r){
-      var ins=r.querySelectorAll('input');
-      var ha=r.querySelector('select.match-ha');
-      return{id:r.dataset.matchId||genMatchId(),date:ins[0]?ins[0].value.trim():'',opponent:ins[1]?ins[1].value.trim():'',homeAway:ha?ha.value:'home'};
-    }).filter(function(m){return m.opponent;});
-    return{id:id,name:name,ownPlayers:ownPlayers,matches:matches};
-  });
-}
-
-function renderTeams(){
-  var cont=document.getElementById('teams-list');if(!cont)return;
-  cont.innerHTML='';
-  if(!allTeams.length){
-    cont.innerHTML='<div style="color:var(--di);font-size:.85rem;padding:8px 0">Noch keine Mannschaften angelegt. Auf "+ Mannschaft" klicken.</div>';
-    return;
-  }
-  allTeams.forEach(function(team,ti){
-    var card=document.createElement('div');card.className='team-card';card.dataset.teamId=team.id;
-    var head=document.createElement('div');head.className='team-head';
-    var ni=document.createElement('input');ni.className='team-name-inp';ni.type='text';ni.value=team.name||'';ni.placeholder='Mannschaftsname (z. B. Herren 40)';
-    var addPBtn=document.createElement('button');addPBtn.type='button';addPBtn.className='btn bp sm';addPBtn.textContent='+ Spieler';
-    var addMBtn=document.createElement('button');addMBtn.type='button';addMBtn.className='btn bo2 sm';addMBtn.textContent='+ Begegnung';
-    var delBtn=document.createElement('button');delBtn.type='button';delBtn.className='btn bd sm';delBtn.textContent='Mannschaft ×';
-    delBtn.onclick=function(){if(confirm('Mannschaft löschen?')){allTeams.splice(ti,1);renderTeams();}};
-    head.appendChild(ni);head.appendChild(addPBtn);head.appendChild(addMBtn);head.appendChild(delBtn);
-    card.appendChild(head);
-
-    var plTitle=document.createElement('div');
-    plTitle.style.cssText='font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--di);margin-bottom:5px';
-    plTitle.textContent='Eigene Spieler (Nachname, Vorname)';
-    card.appendChild(plTitle);
-    var plList=document.createElement('div');plList.className='player-list';
-    var players=team.ownPlayers&&team.ownPlayers.length?team.ownPlayers:[{name:''},{name:''},{name:''},{name:''},{name:''},{name:''}];
-    players.forEach(function(p,pi){plList.appendChild(makePlayerRow(p.name,pi+1));});
-    addPBtn.onclick=function(){plList.appendChild(makePlayerRow('',plList.children.length+1));};
-    card.appendChild(plList);
-
-    var mTitle=document.createElement('div');
-    mTitle.style.cssText='font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--di);margin:10px 0 5px';
-    mTitle.textContent='Spielplan (Begegnungen dieser Saison)';
-    card.appendChild(mTitle);
-    var mList=document.createElement('div');mList.className='match-list';
-    (team.matches||[]).forEach(function(m){mList.appendChild(makeMatchRow(m));});
-    addMBtn.onclick=function(){mList.appendChild(makeMatchRow({date:'',opponent:'',homeAway:'home'}));};
-    card.appendChild(mList);
-    cont.appendChild(card);
-  });
-}
-
-function makePlayerRow(name,num){
-  var row=document.createElement('div');row.className='player-row';
-  var lbl=document.createElement('span');
-  lbl.style.cssText='font-size:.72rem;color:var(--di);width:22px;text-align:right;flex-shrink:0';
-  lbl.textContent=num+'.';
-  var inp=document.createElement('input');inp.type='text';inp.value=name||'';inp.placeholder='Nachname, Vorname';
-  var del=document.createElement('button');del.type='button';del.className='btn bd sm';del.style.padding='3px 7px';del.textContent='×';
-  del.onclick=function(){row.remove();};
-  row.appendChild(lbl);row.appendChild(inp);row.appendChild(del);
-  return row;
-}
-
-function genMatchId(){return 'm_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);}
-
-function makeMatchRow(m){
-  var row=document.createElement('div');row.className='match-row';
-  row.dataset.matchId=m.id||genMatchId(); // feste ID bleibt über Umbenennungen/Umsortierungen hinweg stabil
-  var di=document.createElement('input');di.type='date';di.value=m.date||'';
-  di.style.cssText='padding:4px 6px;border:1.5px solid var(--bo);border-radius:5px;font-size:.8rem;font-family:Inter,sans-serif;background:var(--bg);outline:none';
-  var oi=document.createElement('input');oi.type='text';oi.value=m.opponent||'';oi.placeholder='Gegner (z. B. TC Kevelaer)';
-  oi.style.cssText='padding:4px 7px;border:1.5px solid var(--bo);border-radius:5px;font-size:.82rem;font-family:Inter,sans-serif;background:var(--bg);outline:none;width:100%';
-  var ha=document.createElement('select');ha.className='match-ha';
-  ha.style.cssText='padding:4px 6px;border:1.5px solid var(--bo);border-radius:5px;font-size:.78rem;font-family:Inter,sans-serif;background:var(--bg);outline:none';
-  [{v:'home',l:'Heim'},{v:'away',l:'Auswärts'}].forEach(function(o){
-    var op=document.createElement('option');op.value=o.v;op.textContent=o.l;if(m.homeAway===o.v)op.selected=true;ha.appendChild(op);
-  });
-  var del=document.createElement('button');del.type='button';del.className='btn bd sm';del.style.padding='3px 7px';del.textContent='×';
-  del.onclick=function(){row.remove();};
-  row.appendChild(di);row.appendChild(oi);row.appendChild(ha);row.appendChild(del);
-  return row;
 }
 
 function getMyTeam(){
