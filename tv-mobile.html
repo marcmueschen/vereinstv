@@ -875,10 +875,20 @@ function mOpenScore(team,matchIdx){
     if(!existingSlide.data.mannschaft&&team.name)existingSlide.data.mannschaft=team.name;
     if(!existingSlide.data.matchId&&match.id)existingSlide.data.matchId=match.id;
     if(!existingSlide.teamId&&team.id)existingSlide.teamId=team.id;
-    fillMatch('E',(existingSlide.data.matches||[]).slice(0,6),false);
-    fillMatch('D',(existingSlide.data.matches||[]).slice(6,9),true);
-    document.getElementById('sf-total-heim-score').textContent=existingSlide.data.gesamtHeim||0;
-    document.getElementById('sf-total-gast-score').textContent=existingSlide.data.gesamtGast||0;
+    // wie in der Haupt-Verwaltung: erst NACH dem Erzeugen der Eingabefelder (buildSFRows)
+    // per setTimeout befüllen, sonst gehen die Werte durch ein Timing-Problem verloren
+    // und die Begegnung erscheint leer, obwohl Daten vorhanden sind.
+    (function(slide){
+      setTimeout(function(){
+        var ms=slide.data.matches||[];
+        fillMatch('E',ms.slice(0,6),false);
+        fillMatch('D',ms.slice(6,9),true);
+        var hs=document.getElementById('sf-total-heim-score');
+        var gs=document.getElementById('sf-total-gast-score');
+        if(hs)hs.textContent=slide.data.gesamtHeim||0;
+        if(gs)gs.textContent=slide.data.gesamtGast||0;
+      },50);
+    })(existingSlide);
   } else {
     var newSlide={
       id:Date.now(),type:'score',teamId:team.id||null,
