@@ -159,7 +159,9 @@ main{max-width:920px;margin:0 auto;padding:24px 16px 80px}
 .mgmt-team-name{font-size:.98rem;font-weight:700;color:var(--tx)}
 .mgmt-team-meta{font-size:.76rem;color:var(--di);margin-top:2px}
 .mgmt-section-title{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--di);margin-bottom:6px}
-.mgmt-match-row{align-items:center}
+.mgmt-match-row{background:#fff;border:1.5px solid var(--bo);border-radius:8px;padding:8px;margin-bottom:8px}
+.mgmt-match-row-top{display:flex;gap:6px;margin-bottom:7px}
+.mgmt-match-row-actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .match-row input{padding:4px 7px;border:1.5px solid var(--bo);border-radius:5px;font-size:.82rem;font-family:Inter,sans-serif;background:var(--bg);outline:none}
 .match-row input:focus{border-color:var(--gl);background:#fff}
 .match-home-badge{font-size:.68rem;font-weight:700;padding:2px 7px;border-radius:3px;white-space:nowrap}
@@ -1269,7 +1271,9 @@ function renderList(){
       +'<label class="tog"><input type="checkbox"'+(s.enabled!==false?' checked':'')+'><div class="tr2"></div></label>'
       +'<div style="display:flex;gap:4px">'
       +'<button class="btn bo2 sm" onclick="openEdit('+s.id+')">&#9998;</button>'
-      +'<button class="btn bd sm" onclick="delSlide('+s.id+')">&#128465;</button>'
+      +(s.type==='score'
+        ?'<button class="btn bd sm" disabled title="Spielstand-Folien können nicht gelöscht werden — bitte über \'Mannschaften, Tabellen &amp; Begegnungen\' ausblenden." style="opacity:.35;cursor:not-allowed">&#128465;</button>'
+        :'<button class="btn bd sm" onclick="delSlide('+s.id+')">&#128465;</button>')
       +'</div>';
     c.querySelector('input[type=checkbox]').onchange=function(e){toggleSlide(s.id,e.target.checked);};
     if(role==='admin') setupDrag(c);
@@ -1278,7 +1282,14 @@ function renderList(){
 }
 
 function toggleSlide(id,v){var s=slides.find(function(x){return x.id===id;});if(s)s.enabled=v;document.querySelector('.sc2[data-id="'+id+'"]').classList.toggle('off',!v);}
-function delSlide(id){if(!confirm('Folie löschen?'))return;slides=slides.filter(function(s){return s.id!==id;});renderList();toast('Folie entfernt.');}
+function delSlide(id){
+  var s=slides.find(function(x){return x.id===id;});
+  if(s&&s.type==='score'){toast('Spielstand-Folien können nicht gelöscht werden — bitte über "Mannschaften, Tabellen & Begegnungen" ausblenden.','err');return;}
+  if(!confirm('Folie löschen?'))return;
+  slides=slides.filter(function(x){return x.id!==id;});
+  renderList();
+  toast('Folie entfernt.');
+}
 
 var dragSrc=null;
 function setupDrag(c){
@@ -1758,27 +1769,64 @@ function mgmtPlayerRow(team,player,pi){
 }
 
 function mgmtMatchRow(team,m,mi){
-  var row=document.createElement('div');row.className='match-row mgmt-match-row';
+  var row=document.createElement('div');row.className='mgmt-match-row';
   row.dataset.matchId=m.id||(m.id=genMatchId());
+
+  var top=document.createElement('div');top.className='mgmt-match-row-top';
   var di=document.createElement('input');di.type='date';di.value=m.date||'';
-  di.style.cssText='padding:4px 6px;border:1.5px solid var(--bo);border-radius:5px;font-size:.8rem;font-family:Inter,sans-serif;background:var(--bg);outline:none';
+  di.style.cssText='padding:5px 6px;border:1.5px solid var(--bo);border-radius:5px;font-size:.8rem;font-family:Inter,sans-serif;background:var(--bg);outline:none;flex:0 0 130px';
   di.oninput=function(){m.date=di.value;};
   var oi=document.createElement('input');oi.type='text';oi.value=m.opponent||'';oi.placeholder='Gegner (z. B. TC Kevelaer)';
-  oi.style.cssText='padding:4px 7px;border:1.5px solid var(--bo);border-radius:5px;font-size:.82rem;font-family:Inter,sans-serif;background:var(--bg);outline:none;width:100%';
+  oi.style.cssText='padding:5px 7px;border:1.5px solid var(--bo);border-radius:5px;font-size:.82rem;font-family:Inter,sans-serif;background:var(--bg);outline:none;flex:1;min-width:0';
   oi.oninput=function(){m.opponent=oi.value;};
   var ha=document.createElement('select');ha.className='match-ha';
-  ha.style.cssText='padding:4px 6px;border:1.5px solid var(--bo);border-radius:5px;font-size:.78rem;font-family:Inter,sans-serif;background:var(--bg);outline:none';
+  ha.style.cssText='padding:5px 6px;border:1.5px solid var(--bo);border-radius:5px;font-size:.78rem;font-family:Inter,sans-serif;background:var(--bg);outline:none;flex:0 0 90px';
   [{v:'home',l:'Heim'},{v:'away',l:'Auswärts'}].forEach(function(o){
     var op=document.createElement('option');op.value=o.v;op.textContent=o.l;if((m.homeAway||'home')===o.v)op.selected=true;ha.appendChild(op);
   });
   ha.onchange=function(){m.homeAway=ha.value;};
+  top.appendChild(di);top.appendChild(oi);top.appendChild(ha);
+  row.appendChild(top);
+
+  var actions=document.createElement('div');actions.className='mgmt-match-row-actions';
   var scoreBtn=document.createElement('button');scoreBtn.type='button';scoreBtn.className='btn bp sm';scoreBtn.textContent='🎾 Spielstand';scoreBtn.title='Partien & Live-Spielstand für diese Begegnung eintragen';
   scoreBtn.style.whiteSpace='nowrap';
   scoreBtn.onclick=function(){if(!m.opponent){toast('Bitte zuerst den Gegner eintragen.','err');return;}mgmtOpenScore(team.id,mi);};
-  var del=document.createElement('button');del.type='button';del.className='btn bd sm';del.style.padding='3px 7px';del.textContent='×';
-  del.onclick=function(){var idx=team.matches.indexOf(m);if(idx>-1)team.matches.splice(idx,1);row.remove();};
-  row.appendChild(di);row.appendChild(oi);row.appendChild(ha);row.appendChild(scoreBtn);row.appendChild(del);
+  var existingSlide=slides.find(function(s){return s.type==='score'&&s.data&&s.data.matchId===m.id&&(s.teamId||null)===(team.id||null);});
+  var isOn=!!(existingSlide&&existingSlide.enabled!==false);
+  var showBtn=document.createElement('button');showBtn.type='button';showBtn.className='btn sm '+(isOn?'bp':'bo2');
+  showBtn.textContent=isOn?'📺 Eingeblendet':'📺 Einblenden';showBtn.title='Live-Ergebnis dieser Begegnung auf dem Display ein-/ausblenden';
+  showBtn.style.whiteSpace='nowrap';
+  showBtn.onclick=function(){mgmtToggleScoreSlide(team,m);};
+  var del=document.createElement('button');del.type='button';del.className='btn bd sm';del.style.marginLeft='auto';del.textContent='× Begegnung entfernen';
+  del.onclick=function(){
+    if(existingSlide){toast('Diese Begegnung hat bereits eine Spielstand-Folie und kann nicht gelöscht werden. Bitte zuerst über "📺 Eingeblendet" ausblenden.','err');return;}
+    var idx=team.matches.indexOf(m);if(idx>-1)team.matches.splice(idx,1);row.remove();
+  };
+  actions.appendChild(scoreBtn);actions.appendChild(showBtn);actions.appendChild(del);
+  row.appendChild(actions);
   return row;
+}
+
+// Blendet die Live-Ergebnis-Folie einer Begegnung ein/aus, OHNE sie zu löschen —
+// alle bereits eingetragenen Ergebnisse bleiben dabei immer erhalten.
+async function mgmtToggleScoreSlide(team,m){
+  var existing=slides.find(function(s){return s.type==='score'&&s.data&&s.data.matchId===m.id&&(s.teamId||null)===(team.id||null);});
+  if(existing){
+    existing.enabled=existing.enabled===false;
+  } else {
+    var isHome=m.homeAway==='home';
+    var heim=isHome?team.name:m.opponent;
+    var gast=isHome?m.opponent:team.name;
+    slides.push({
+      id:Date.now(),type:'score',teamId:team.id||null,
+      name:heim+' vs '+gast,enabled:true,duration:30,
+      data:{heimTeam:heim,gastTeam:gast,mannschaft:team.name||'',matchId:m.id||null,gesamtHeim:'0',gesamtGast:'0',bg:'#0f2a1c',accent:'#f5c842',matches:[]}
+    });
+  }
+  await doSave();
+  renderList();
+  renderMgmtTeamDetail();
 }
 
 function mgmtTabelleCard(tab){
@@ -2060,7 +2108,7 @@ function onMatchChange(){
       id:Date.now(),
       type:'score',
       name:heim+' vs '+gast,
-      enabled:true,
+      enabled:false,
       duration:dur?parseInt(dur):null,
       teamId:gv('s-team-sel')||null,
       data:{
@@ -2076,9 +2124,10 @@ function onMatchChange(){
     slides.push(newSlide);
     renderList();
     _activeScoreId=newSlide.id;
-    // Sofort übertragen
+    // Daten werden ab jetzt live mitgespeichert, aber die Folie ist noch NICHT
+    // eingeblendet — das erfolgt bewusst über den "📺 Einblenden"-Button.
     doSave();
-    toast('Spielstand-Folie angelegt und übertragen');
+    toast('Begegnung angelegt — zum Anzeigen auf dem Display bitte "📺 Einblenden" nutzen.');
   }
 }
 
