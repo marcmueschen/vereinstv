@@ -104,25 +104,33 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a3a2a;font-family:
 .sc-page{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;gap:3%;opacity:0;pointer-events:none;transition:opacity 1.8s ease-in-out}
 .sc-page.on{opacity:1;pointer-events:auto}
 .sc-page-hd{font-size:.68rem;font-weight:800;letter-spacing:.22em;text-transform:uppercase;opacity:.38;text-align:center;flex-shrink:0}
-/* Ergebniskarte im Turnier-Scoreboard-Stil: pro Spieler eine eigene Zeile
-   (Name links, Sätze rechts als exakt bündige Spalten) — direkt vergleichbar
-   wie bei den Anzeigetafeln großer Tennisturniere. */
-.sc-card{flex:1;display:flex;flex-direction:column;justify-content:center;gap:1.2%;min-height:0;border-top:1px solid rgba(255,255,255,.08);padding-top:2.4%}
-.sc-card:first-child{border-top:none;padding-top:0}
-.sc-card-lbl{align-self:flex-start;background:var(--ac,#8fae2a);color:#0d2b1a;font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(.85rem,1.6vw,1.15rem);letter-spacing:.12em;text-transform:uppercase;font-weight:700;padding:.4% 3%;border-radius:3px;margin-bottom:1%}
-.sc-mplayer{display:flex;align-items:center;gap:2.4%;padding:.9% 0}
-.sc-mname{flex:1;min-width:0;font-size:clamp(1.8rem,4.2vw,3.4rem);font-weight:700;font-style:italic;color:#fff;opacity:.72;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left}
-.sc-mplayer.winner .sc-mname{opacity:1;color:var(--ac,#c9db4d)}
-.sc-msets{display:flex;gap:1%;flex-shrink:0}
-.sc-mset{min-width:13%;text-align:center;background:#f2efe4;border-radius:6px;padding:1.6% 0;font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(1.8rem,4.2vw,3.4rem);font-weight:700;color:#1a2e12;opacity:.55;line-height:1;box-shadow:0 2px 8px rgba(0,0,0,.2)}
-.sc-mset.win{opacity:1;background:#fff;box-shadow:0 0 0 3px var(--ac,#c9db4d),0 2px 8px rgba(0,0,0,.2);color:#1a2e12}
-.sc-mset.mtb{margin-left:1.4%}
-.sc-card.flash .sc-mset.win{animation:scfl 2.2s cubic-bezier(.4,0,.2,1) forwards}
+/* Ergebniskarte im Anzeigetafel-Stil: PLATZ-Box links, helle Ergebnistabelle in
+   der Mitte (Namen + 1./2./3. Satz je Zeile), Status-Feld rechts (läuft/wartet/beendet). */
+.sc-card{flex:1;display:flex;align-items:stretch;min-height:0;border-radius:14px;overflow:hidden;box-shadow:0 3px 16px rgba(0,0,0,.28)}
+.sc-platz{flex:0 0 12.5%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(160deg,#c1662f,#9a4a1f);color:#fff;padding:1% 0}
+.sc-platz-lbl{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(.7rem,1.3vw,1rem);letter-spacing:.12em;opacity:.92}
+.sc-platz-num{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(2.1rem,4.8vw,3.6rem);line-height:1;margin-top:3%}
+.sc-content{flex:1;min-width:0;background:#f1efe8;padding:1.4% 2.2%;display:flex;flex-direction:column;justify-content:center}
+.sc-set-hdrow{display:flex;align-items:center;gap:1.2%;margin-bottom:.4%}
+.sc-name-spacer{flex:1;min-width:0}
+.sc-set-hd{min-width:14%;text-align:center;font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(.68rem,1.25vw,.95rem);color:#6b6b60;letter-spacing:.04em}
+.sc-mplayer{display:flex;align-items:center;gap:1.2%;padding:.8% 0}
+.sc-mplayer+.sc-mplayer{border-top:1.5px solid rgba(0,0,0,.1)}
+.sc-mname{flex:1;min-width:0;font-size:clamp(1.5rem,3.3vw,2.7rem);font-weight:800;color:#161611;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left}
+.sc-msets{display:flex;gap:1.2%;flex-shrink:0}
+.sc-mset{min-width:14%;text-align:center;font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(1.6rem,3.6vw,3rem);color:#161611;font-weight:700}
+.sc-status{flex:0 0 16%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8%;color:#fff;text-align:center;padding:2% 4%}
+.sc-status-laeuft{background:linear-gradient(160deg,#a9ca3c,#7fa022)}
+.sc-status-wartet{background:linear-gradient(160deg,#98a49e,#727d78)}
+.sc-status-beendet{background:linear-gradient(160deg,#1f5233,#123420)}
+.sc-status-icon{width:34%;aspect-ratio:1;border:3px solid #fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:clamp(.9rem,2vw,1.5rem);flex-shrink:0}
+.sc-status-txt{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(.7rem,1.35vw,1rem);letter-spacing:.05em;line-height:1.2}
+.sc-card.flash{animation:scfl 2.2s cubic-bezier(.4,0,.2,1) forwards}
 @keyframes scfl{
-  0%  {box-shadow:0 0 0 6px var(--ac,#c9db4d),0 2px 8px rgba(0,0,0,.2)}
-  100%{box-shadow:0 0 0 3px var(--ac,#c9db4d),0 2px 8px rgba(0,0,0,.2)}
+  0%  {box-shadow:0 0 0 4px var(--ac,#c9db4d),0 3px 16px rgba(0,0,0,.28)}
+  100%{box-shadow:0 0 0 0 var(--ac,#c9db4d),0 3px 16px rgba(0,0,0,.28)}
 }
-.sc-empty{opacity:.3;font-size:clamp(1rem,1.8vw,1.3rem);text-align:center;padding:2% 0}
+.sc-empty{flex:1;display:flex;align-items:center;justify-content:center;opacity:.3;font-size:clamp(1rem,1.8vw,1.3rem)}
 .sc-page-dots{position:absolute;left:0;right:0;bottom:6px;display:none;justify-content:center;gap:8px;z-index:2}
 .sc-bd.multi-page .sc-page-dots{display:flex}
 .sc-page-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.25);transition:background .3s,transform .3s}
@@ -699,27 +707,33 @@ function bsc(s,div){
   div.dataset.scoreId=String(s.id);
   var gh=parseInt(d.gesamtHeim)||0,gg=parseInt(d.gesamtGast)||0;
 
-  // Klassisches Turnier-Scoreboard: Name + Satz-Spalten je Spieler in einer eigenen
-  // Zeile, untereinander — Spaltenbreiten sind für beide Zeilen identisch, damit die
-  // Sätze exakt bündig untereinanderstehen.
-  function playerRowHtml(name,sets,side,isWin){
-    var setsHtml=sets.map(function(st,si){
-      var hv=parseInt(st.h||0),gv=parseInt(st.g||0);
-      var val=side==='h'?hv:gv,other=side==='h'?gv:hv;
-      var mtb=si===2?' mtb':'';
-      return '<span class="sc-mset'+(val>other?' win':'')+mtb+'">'+es(String(val))+'</span>';
+  // Neues Scoreboard-Design: Platz-Nummer links, Satzstände in der Mitte
+  // (Kopfzeile "1./2./3. Satz"), Status-Feld rechts (läuft/wartet/beendet).
+  function statusInfo(m,played){
+    if(m.winner)return {cls:'beendet',icon:'&#10003;',txt:'SPIEL<br>BEENDET'};
+    if(played.length>0)return {cls:'laeuft',icon:'&#9654;',txt:'SPIEL<br>L&Auml;UFT'};
+    return {cls:'wartet',icon:'&#128337;',txt:'NOCH NICHT<br>GESTARTET'};
+  }
+  function setRowHtml(sets,side){
+    return sets.map(function(st){
+      var hv=parseInt(st.h)||0,gv=parseInt(st.g)||0;
+      var played=hv>0||gv>0;
+      var val=side==='h'?hv:gv;
+      return '<span class="sc-mset">'+(played?es(String(val)):'&ndash;')+'</span>';
     }).join('');
-    return '<div class="sc-mplayer'+(isWin?' winner':'')+'">'
-      +'<span class="sc-mname">'+(name?es(name):'–')+'</span>'
-      +'<div class="sc-msets">'+setsHtml+'</div>'
-      +'</div>';
   }
   function cardHtml(m){
-    var hw=m.winner==='heim',gw=m.winner==='gast';
-    var played=m.sets.filter(function(st){return (parseInt(st.h)||0)>0||(parseInt(st.g)||0)>0;});
-    return '<div class="sc-card-lbl">'+es(m.type)+(m.retiredBy?' · Aufgabe':'')+'</div>'
-      +playerRowHtml(m.heimPlayer,played,'h',hw)
-      +playerRowHtml(m.gastPlayer,played,'g',gw);
+    var sets=[0,1,2].map(function(si){return m.sets[si]||{h:0,g:0};});
+    var played=sets.filter(function(st){return (parseInt(st.h)||0)>0||(parseInt(st.g)||0)>0;});
+    var st=statusInfo(m,played);
+    var setHdHtml=['1. SATZ','2. SATZ','3. SATZ'].map(function(l){return '<span class="sc-set-hd">'+l+'</span>';}).join('');
+    return '<div class="sc-platz"><div class="sc-platz-lbl">PLATZ</div><div class="sc-platz-num">'+(m.platz?es(m.platz):'&ndash;')+'</div></div>'
+      +'<div class="sc-content">'
+        +'<div class="sc-set-hdrow"><span class="sc-name-spacer"></span>'+setHdHtml+'</div>'
+        +'<div class="sc-mplayer"><span class="sc-mname">'+(m.heimPlayer?es(m.heimPlayer):'&ndash;')+'</span><div class="sc-msets">'+setRowHtml(sets,'h')+'</div></div>'
+        +'<div class="sc-mplayer"><span class="sc-mname">'+(m.gastPlayer?es(m.gastPlayer):'&ndash;')+'</span><div class="sc-msets">'+setRowHtml(sets,'g')+'</div></div>'
+      +'</div>'
+      +'<div class="sc-status sc-status-'+st.cls+'"><div class="sc-status-icon">'+st.icon+'</div><div class="sc-status-txt">'+st.txt+'</div></div>';
   }
 
   function flashCard(card, rowKey){
