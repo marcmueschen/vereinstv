@@ -79,7 +79,7 @@ function scoreCardHtml(s){
   var d=s.data||{};
   var gh=parseInt(d.gesamtHeim)||0,gg=parseInt(d.gesamtGast)||0;
   var matches=d.matches||[];
-  var used=matches.filter(function(m){return m.heimPlayer||m.gastPlayer||(m.sets||[]).some(function(x){return x.h||x.g;});});
+  var used=matches.filter(function(m){return m.heimPlayer||m.gastPlayer||(m.sets||[]).some(function(x){return (parseInt(x.h)||0)>0||(parseInt(x.g)||0)>0;});});
   var html='<div class="score-card">'
     +'<div class="score-hd">'
       +(d.mannschaft?'<div class="score-cat">'+es(d.mannschaft)+'</div>':'')
@@ -90,7 +90,7 @@ function scoreCardHtml(s){
   } else {
     used.forEach(function(m){
       var hw=m.winner==='heim',gw=m.winner==='gast';
-      html+='<div class="mtile"><div class="mtile-lbl">'+es(m.type)+(m.retiredBy?' · Aufgabe':'')+'</div>'
+      html+='<div class="mtile"><div class="mtile-lbl">'+es(m.type)+(m.platz?' · Platz '+es(m.platz):'')+(m.retiredBy?' · Aufgabe':'')+'</div>'
         +matchPlayerRow(m.heimPlayer,m.sets,'h',hw)
         +matchPlayerRow(m.gastPlayer,m.sets,'g',gw)
       +'</div>';
@@ -100,7 +100,7 @@ function scoreCardHtml(s){
   return html;
 }
 function matchPlayerRow(name,sets,side,isWin){
-  var played=(sets||[]).filter(function(st){return st.h||st.g;});
+  var played=(sets||[]).filter(function(st){return (parseInt(st.h)||0)>0||(parseInt(st.g)||0)>0;});
   var setsHtml=played.map(function(st,si){
     var hv=parseInt(st.h||0),gv=parseInt(st.g||0);
     var val=side==='h'?hv:gv,other=side==='h'?gv:hv;
