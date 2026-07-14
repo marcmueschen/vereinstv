@@ -53,6 +53,10 @@ button,input,select,textarea{font-family:inherit}
 .mbtn-row{display:flex;gap:8px;flex-wrap:wrap}
 
 .team-row{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--bg);border:1.5px solid var(--bo);border-radius:12px;padding:14px 16px;margin-bottom:10px}
+.mgmt-login-info{background:#fff8e0;border:2px solid var(--ye);border-radius:12px;padding:14px;margin-bottom:14px}
+.mgmt-login-info-title{font-weight:800;margin-bottom:6px}
+.mgmt-login-info-row{font-size:.92rem;margin-bottom:2px}
+.mgmt-login-info-hint{font-size:.75rem;color:var(--di);margin-top:6px}
 .team-row-name{font-size:1.02rem;font-weight:700}
 .team-row-meta{font-size:.78rem;color:var(--di);margin-top:2px}
 
@@ -167,6 +171,7 @@ button,input,select,textarea{font-family:inherit}
 
   <!-- SCREEN 2: Team-Detail -->
   <div class="scr" id="scr-team-detail">
+    <div id="td-login"></div>
     <div class="mcard">
       <div class="mfield" style="margin-bottom:8px">
         <label>Mannschaftsname</label>
@@ -216,7 +221,7 @@ button,input,select,textarea{font-family:inherit}
 // GRUNDFUNKTIONEN (geteilt mit der Haupt-Verwaltung / demselben Worker)
 // ══════════════════════════════════════════════════════════
 var SESSION=null;
-var allTeams=[],allTabellen=[];
+var allTeams=[],allTabellen=[],allUsers=[];
 var slides=[]; // aus /config, wird für "Auf Folie anzeigen" + Spielstand-Verknüpfung gebraucht
 var _activeScoreId=null;
 var _autoSaveTimer=null,_suppressAutoSave=false;
@@ -294,14 +299,17 @@ async function mRefreshAll(){
   setSt('busy');
   var wurl=getWurl();
   try{
-    var [tr,ar,cr]=await Promise.all([
+    var adminPw=localStorage.getItem('vtv_admin_pw')||'';
+    var [tr,ar,cr,ur]=await Promise.all([
       fetch(wurl+'/teams').then(function(r){return r.json();}),
       fetch(wurl+'/tabellen').then(function(r){return r.json();}),
-      fetch(wurl+'/config').then(function(r){return r.json();})
+      fetch(wurl+'/config').then(function(r){return r.json();}),
+      adminPw?fetch(wurl+'/users',{headers:{'X-Admin-Password':adminPw}}).then(function(r){return r.json();}).catch(function(){return{ok:false};}):Promise.resolve({ok:false})
     ]);
     if(tr.ok)allTeams=tr.teams||[];
     if(ar.ok)allTabellen=ar.tabellen||[];
     if(cr.ok&&cr.config)slides=cr.config.slides||[];
+    if(ur.ok)allUsers=ur.users||[];
     setSt('');
     renderTeamList();
   }catch(e){setSt('err');toast('Fehler beim Laden: '+e.message,'err');}
@@ -325,9 +333,60 @@ function renderTeamList(){
   });
 }
 function mAddTeam(){
-  allTeams.push({id:'team_'+Date.now(),name:'Neue Mannschaft',ownPlayers:[{name:''},{name:''},{name:''},{name:''},{name:''},{name:''}],matches:[]});
+  var team={id:'team_'+Date.now(),name:'Neue Mannschaft',ownPlayers:[{name:''},{name:''},{name:''},{name:''},{name:''},{name:''}],matches:[]};
+  allTeams.push(team);
   renderTeamList();
   mOpenTeam(allTeams.length-1);
+  mCreateTeamLogin(team);
+}
+
+function genPassword(len){
+  var chars='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+  var pw='';
+  for(var i=0;i<(len||8);i++)pw+=chars.charAt(Math.floor(Math.random()*chars.length));
+  return pw;
+}
+function slugifyUsername(name){
+  var base=(name||'team').toLowerCase()
+    .replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue').replace(/ß/g,'ss')
+    .replace(/[^a-z0-9]+/g,'').slice(0,20)||'team';
+  var username=base,n=2;
+  while(allUsers.some(function(u){return u.username===username;})){username=base+n;n++;}
+  return username;
+}
+// Legt automatisch einen Mannschaftsführer-Zugang für eine neu angelegte Mannschaft
+// an und zeigt die Zugangsdaten einmalig an (Passwort ist danach nicht mehr abrufbar).
+async function mCreateTeamLogin(team){
+  var wurl=getWurl();if(!wurl)return;
+  var adminPw=localStorage.getItem('vtv_admin_pw')||'';
+  if(!adminPw){adminPw=prompt('Admin-Passwort (zum Anlegen des Mannschaftslogins):','');if(!adminPw)return;localStorage.setItem('vtv_admin_pw',adminPw);}
+  var username=slugifyUsername(team.name);
+  var password=genPassword(8);
+  var token='teamleader:'+username+':'+Date.now();
+  var newUser={username:username,password:password,name:team.name||'Mannschaft',role:'teamleader',teamId:team.id,token:token};
+  var users=allUsers.concat([newUser]);
+  try{
+    var r=await fetch(wurl+'/users',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Password':adminPw},body:JSON.stringify({users:users})});
+    var d=await r.json();
+    if(d.ok){
+      allUsers=users.slice();
+      mShowNewLoginInfo(team.name,username,password);
+    } else {
+      toast(d.error||'Fehler beim Anlegen des Mannschaftslogins.','err');
+    }
+  }catch(e){toast('Fehler: '+e.message,'err');}
+}
+function mShowNewLoginInfo(teamName,username,password){
+  var lw=document.getElementById('td-login');if(!lw)return;
+  var box=document.createElement('div');box.className='mgmt-login-info';
+  box.innerHTML='<div class="mgmt-login-info-title">🔑 Mannschaftslogin für „'+esc(teamName)+'" angelegt</div>'
+    +'<div class="mgmt-login-info-row">Benutzername: <b>'+esc(username)+'</b></div>'
+    +'<div class="mgmt-login-info-row">Passwort: <b>'+esc(password)+'</b></div>'
+    +'<div class="mgmt-login-info-hint">Bitte jetzt notieren und an die Mannschaft weitergeben — das Passwort wird danach nicht mehr angezeigt.</div>'
+    +'<button type="button" class="mbtn sec sm" style="margin-top:8px">Verstanden, ausblenden</button>';
+  box.querySelector('button').onclick=function(){lw.innerHTML='';renderTeamDetail();};
+  lw.innerHTML='';
+  lw.appendChild(box);
 }
 
 // ── SCREEN 2: TEAM-DETAIL ───────────────────────────────────
@@ -345,6 +404,20 @@ function mOnTeamName(){
 function renderTeamDetail(){
   var team=allTeams[mTeamIdx];if(!team)return;
   document.getElementById('td-name').value=team.name||'';
+
+  // Login-Status
+  var lw=document.getElementById('td-login');
+  if(lw&&!lw.querySelector('.mgmt-login-info')){
+    var linkedUser=allUsers.find(function(u){return u.teamId===team.id;});
+    if(linkedUser){
+      lw.innerHTML='<div class="mempty" style="text-align:left">🔑 Mannschaftslogin: <b>'+esc(linkedUser.username)+'</b></div>';
+    } else {
+      lw.innerHTML='<div class="mempty" style="text-align:left;margin-bottom:6px">🔑 Noch kein Mannschaftslogin.</div>';
+      var cbtn=document.createElement('button');cbtn.type='button';cbtn.className='mbtn pri sm';cbtn.textContent='Login jetzt anlegen';
+      cbtn.onclick=function(){mCreateTeamLogin(team);};
+      lw.appendChild(cbtn);
+    }
+  }
 
   // Kader
   var pl=document.getElementById('td-players');pl.innerHTML='';
