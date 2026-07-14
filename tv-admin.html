@@ -114,7 +114,9 @@ main{max-width:920px;margin:0 auto;padding:24px 16px 80px}
 .api-bar{background:#f0fff4;border:1.5px solid #a8d5b5;border-radius:9px;padding:14px 18px;margin-bottom:18px}
 .api-bar.uncfg{background:#fff8e1;border-color:#f5c842}
 /* user management */
-.user-row{display:grid;grid-template-columns:1fr 100px 1fr auto;gap:8px;align-items:center;padding:8px 12px;background:#f6faf7;border:1px solid var(--bo);border-radius:7px;margin-bottom:6px;font-size:.85rem}
+.user-row{display:grid;grid-template-columns:1fr 100px 1fr auto auto;gap:8px;align-items:center;padding:8px 12px;background:#f6faf7;border:1px solid var(--bo);border-radius:7px;margin-bottom:6px;font-size:.85rem}
+.user-pw-wrap{display:flex;align-items:center;gap:6px}
+.user-pw{font-family:monospace;font-size:.8rem;color:var(--tx);min-width:70px;letter-spacing:.05em}
 .role-pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:.72rem;font-weight:700;text-transform:uppercase}
 .role-pill.admin{background:#fff3cd;color:#7a5c00}
 .role-pill.wirtin{background:#ffe8d0;color:#b35a00}
@@ -154,6 +156,10 @@ main{max-width:920px;margin:0 auto;padding:24px 16px 80px}
 .match-row{display:grid;grid-template-columns:120px 1fr auto auto 28px;gap:6px;align-items:center;background:#fff;border:1px solid var(--bo);border-radius:6px;padding:6px 8px}
 /* NEUE VEREINHEITLICHTE VERWALTUNG */
 .mgmt-team-row{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#f6faf7;border:1.5px solid var(--bo);border-radius:10px;padding:12px 16px;margin-bottom:8px;cursor:pointer;transition:border-color .15s}
+.mgmt-login-info{background:#fff8e0;border:2px solid var(--ye);border-radius:10px;padding:12px 14px;margin-bottom:16px}
+.mgmt-login-info-title{font-weight:800;margin-bottom:6px}
+.mgmt-login-info-row{font-size:.9rem;margin-bottom:2px}
+.mgmt-login-info-hint{font-size:.72rem;color:var(--di);margin-top:6px}
 .mgmt-team-row:hover{border-color:var(--gl)}
 .mgmt-team-info{flex:1;min-width:0}
 .mgmt-team-name{font-size:.98rem;font-weight:700;color:var(--tx)}
@@ -983,9 +989,17 @@ function renderUsers(){
     row.innerHTML='<span style="font-weight:600">'+esc(u.username)+'</span>'
       +'<span class="role-pill '+roleCls+'">'+esc(u.role)+'</span>'
       +'<span style="color:var(--di)">'+esc(u.name||'')+(u.teamId?' · '+esc(u.teamId):'')+'</span>'
+      +'<span class="user-pw-wrap"><span class="user-pw" id="upw-'+i+'" data-pw="'+esc(u.password||'')+'">••••••</span>'
+      +'<button type="button" class="btn bo2 sm" onclick="toggleUserPw('+i+')" title="Passwort anzeigen/verbergen">&#128065;</button></span>'
       +'<button class="btn bd sm" onclick="deleteUser('+i+')">&#128465;</button>';
     cont.appendChild(row);
   });
+}
+function toggleUserPw(i){
+  var el=document.getElementById('upw-'+i);if(!el)return;
+  var shown=el.dataset.shown==='1';
+  el.textContent=shown?'••••••':(el.dataset.pw||'');
+  el.dataset.shown=shown?'0':'1';
 }
 
 function openAddUser(){document.getElementById('user-modal').classList.add('on');}
@@ -1002,7 +1016,9 @@ async function saveNewUser(){
   if(role==='teamleader'&&!teamId){toast('Bitte Mannschafts-ID eingeben.','err');return;}
   var token=role+':'+username+':'+Date.now();
   var newUser={username,password:pw,name,role,teamId:teamId||null,token};
-  var users=[...allUsers.map(function(u){return Object.assign({},u,{password:u._pw||u.password});}), newUser];
+  // allUsers enthält seit dem Laden bereits die echten Passwörter (kein Maskieren mehr) —
+  // deshalb genügt es, die vorhandenen Benutzer unverändert zu übernehmen.
+  var users=allUsers.concat([newUser]);
   var wurl=getWurl(),adminPw=localStorage.getItem('vtv_admin_pw')||'';
   try{
     var r=await fetch(wurl+'/users',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Password':adminPw},body:JSON.stringify({users})});
@@ -1342,6 +1358,7 @@ function openEdit(id){
       // auf "Heim" annehmen) — sonst waren Auswärtsspiele im Bearbeiten-Fenster falsch beschriftet.
       var isHome=team?team.name===s.data.heimTeam:true;
       _sfState={}; // frischer Zustand, sonst könnten Werte der zuletzt bearbeiteten Begegnung durchsickern
+      _sfTouched={};
       buildSFRows('me-sin','E',6,ownPlayers,s.data.gastTeam||'Gast',isHome,false);
       buildSFRows('me-dbl','D',3,ownPlayers,s.data.gastTeam||'Gast',isHome,true);
       var meTotH=document.getElementById('sf-total-heim-name');if(meTotH)meTotH.textContent=s.data.heimTeam||'Heim';
@@ -1629,9 +1646,69 @@ async function mgmtSaveAll(){
 }
 
 function mgmtAddTeam(){
-  allTeams.push({id:'team_'+Date.now(),name:'Neue Mannschaft',ownPlayers:[{name:''},{name:''},{name:''},{name:''},{name:''},{name:''}],matches:[]});
+  var team={id:'team_'+Date.now(),name:'Neue Mannschaft',ownPlayers:[{name:''},{name:''},{name:''},{name:''},{name:''},{name:''}],matches:[]};
+  allTeams.push(team);
   renderMgmtTeamList();
   mgmtOpenTeam(allTeams.length-1);
+  mgmtCreateTeamLogin(team);
+}
+
+// Erzeugt einen lesbaren Zufallscode (ohne verwechselbare Zeichen wie 0/O, 1/l).
+function genPassword(len){
+  var chars='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+  var pw='';
+  for(var i=0;i<(len||8);i++)pw+=chars.charAt(Math.floor(Math.random()*chars.length));
+  return pw;
+}
+// Leitet aus dem Mannschaftsnamen einen eindeutigen Benutzernamen ab.
+function slugifyUsername(name){
+  var base=(name||'team').toLowerCase()
+    .replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue').replace(/ß/g,'ss')
+    .replace(/[^a-z0-9]+/g,'').slice(0,20)||'team';
+  var username=base,n=2;
+  while(allUsers.some(function(u){return u.username===username;})){username=base+n;n++;}
+  return username;
+}
+
+// Legt automatisch einen Mannschaftsführer-Zugang (Rolle "teamleader") für eine
+// neu angelegte Mannschaft an und zeigt die Zugangsdaten einmalig an — danach
+// ist das Passwort (wie bei allen Benutzern) nicht mehr abrufbar.
+async function mgmtCreateTeamLogin(team){
+  var wurl=getWurl();if(!wurl)return;
+  var adminPw=localStorage.getItem('vtv_admin_pw')||'';
+  if(!adminPw){adminPw=prompt('Admin-Passwort (zum Anlegen des Mannschaftslogins):','');if(!adminPw)return;localStorage.setItem('vtv_admin_pw',adminPw);}
+  var username=slugifyUsername(team.name);
+  var password=genPassword(8);
+  var token='teamleader:'+username+':'+Date.now();
+  var newUser={username:username,password:password,name:team.name||'Mannschaft',role:'teamleader',teamId:team.id,token:token};
+  var users=allUsers.concat([newUser]);
+  try{
+    var r=await fetch(wurl+'/users',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Password':adminPw},body:JSON.stringify({users:users})});
+    var d=await r.json();
+    if(d.ok){
+      allUsers=users.slice();
+      renderUsers();
+      mgmtShowNewLoginInfo(team.name,username,password);
+    } else {
+      toast(d.error||'Fehler beim Anlegen des Mannschaftslogins.','err');
+    }
+  }catch(e){toast('Fehler: '+e.message,'err');}
+}
+
+// Zeigt die neu erzeugten Zugangsdaten einmalig gut sichtbar in der Team-Detailansicht an.
+function mgmtShowNewLoginInfo(teamName,username,password){
+  var detail=document.getElementById('mgmt-team-detail');if(!detail)return;
+  var old=detail.querySelector('.mgmt-login-info');if(old)old.remove();
+  var box=document.createElement('div');box.className='mgmt-login-info';
+  box.innerHTML='<div class="mgmt-login-info-title">🔑 Mannschaftslogin für „'+esc(teamName)+'" angelegt</div>'
+    +'<div class="mgmt-login-info-row">Benutzername: <b>'+esc(username)+'</b></div>'
+    +'<div class="mgmt-login-info-row">Passwort: <b>'+esc(password)+'</b></div>'
+    +'<div class="mgmt-login-info-hint">Bitte jetzt notieren und an die Mannschaft weitergeben — das Passwort wird danach nicht mehr angezeigt.</div>'
+    +'<button type="button" class="btn bo2 sm" style="margin-top:8px">Verstanden, ausblenden</button>';
+  box.querySelector('button').onclick=function(){box.remove();};
+  var backBtn=detail.querySelector('button');
+  if(backBtn&&backBtn.nextSibling)detail.insertBefore(box,backBtn.nextSibling);
+  else detail.appendChild(box);
 }
 
 function renderMgmtTeamList(){
@@ -1696,6 +1773,22 @@ function renderMgmtTeamDetail(){
   var backBtn=document.createElement('button');backBtn.type='button';backBtn.className='btn bo2 sm';backBtn.textContent='← Zurück zu Mannschaften';backBtn.style.marginBottom='14px';
   backBtn.onclick=mgmtBackToList;
   detail.appendChild(backBtn);
+
+  // ── Login-Status ──────────────────────────────────────────
+  var linkedUser=allUsers.find(function(u){return u.teamId===team.id;});
+  var loginBar=document.createElement('div');loginBar.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:14px;font-size:.85rem;flex-wrap:wrap';
+  if(linkedUser){
+    loginBar.innerHTML='<span>🔑 Mannschaftslogin: <b>'+esc(linkedUser.username)+'</b></span>';
+    var manageBtn=document.createElement('button');manageBtn.type='button';manageBtn.className='btn bo2 sm';manageBtn.textContent='Passwort zurücksetzen (in Benutzerverwaltung)';
+    manageBtn.onclick=function(){var el=document.getElementById('users-card');if(el)el.scrollIntoView({behavior:'smooth'});};
+    loginBar.appendChild(manageBtn);
+  } else {
+    loginBar.innerHTML='<span style="color:var(--di)">🔑 Noch kein Mannschaftslogin für diese Mannschaft.</span>';
+    var createBtn=document.createElement('button');createBtn.type='button';createBtn.className='btn bp sm';createBtn.textContent='Login jetzt anlegen';
+    createBtn.onclick=function(){mgmtCreateTeamLogin(team);};
+    loginBar.appendChild(createBtn);
+  }
+  detail.appendChild(loginBar);
 
   // ── Name + Kader ──────────────────────────────────────────
   var head=document.createElement('div');head.className='team-head';
@@ -2075,6 +2168,7 @@ function onMatchChange(){
   // Spieler-Selects aufbauen
   var ownPlayers=team.ownPlayers||[];
   _sfState={}; // frischer Zustand für die neu gewählte Begegnung
+  _sfTouched={};
   buildSFRows('sf-sin','E',6,ownPlayers,match.opponent,isHome);
   buildSFRows('sf-dbl','D',3,ownPlayers,match.opponent,isHome,true);
   wrap.style.display='block';
@@ -2193,6 +2287,13 @@ function sfDefaultState(){
 // wenn eine Seite über die Aufgabe-Taste als Sieger markiert wird.
 // ══════════════════════════════════════════════════════════
 var _sfState={};
+// Merkt sich, welche Partien (E1..D3) auf DIESEM Gerät seit dem Öffnen der
+// Begegnung tatsächlich verändert wurden. Beim Speichern werden nur diese
+// Partien überschrieben — alle anderen werden frisch vom Server übernommen,
+// damit gleichzeitige Eingaben mehrerer Personen an unterschiedlichen Partien
+// derselben Begegnung sich nicht gegenseitig überschreiben.
+var _sfTouched={};
+function sfMarkTouched(lbl){_sfTouched[lbl]=true;}
 
 function sfIncGame(lbl,side){
   var st=_sfState[lbl];if(!st||st.winner)return; // Match bereits entschieden -> keine weitere Zählung
@@ -2206,6 +2307,7 @@ function sfIncGame(lbl,side){
     if(autoWin)st.winner=autoWin;
     else if(cs<2)st.currentSet=cs+1;
   }
+  sfMarkTouched(lbl);
   renderMatchCounter(lbl);
   updateTotalScore();
   scheduleScorePush();
@@ -2219,6 +2321,7 @@ function sfDecGame(lbl,side){
     st.currentSet=sfDeriveCurrentSet(st.sets);
     st.winner=computeAutoWinner(st.sets);
   }
+  sfMarkTouched(lbl);
   renderMatchCounter(lbl);
   updateTotalScore();
   scheduleScorePush();
@@ -2234,6 +2337,7 @@ function sfRetire(lbl,side){
     st.retiredBy=side;
     st.winner=side; // Gegner hat aufgegeben -> diese Seite gewinnt
   }
+  sfMarkTouched(lbl);
   renderMatchCounter(lbl);
   updateTotalScore();
   scheduleScorePush();
@@ -2293,31 +2397,66 @@ async function pushScoreNow(allowPrompt){
   // Folie aus lokalem slides[] holen
   var si=slides.findIndex(function(s){return s.id===_activeScoreId;});
   if(si===-1)return;
+  var localSlide=slides[si];
 
-  // Wenn Score-Tab offen: Formular auslesen und in slides[] schreiben
-  // Wenn Modal geschlossen: slides[] enthält bereits die Daten (saveEdit hat sie gesetzt)
+  // Aktuelle Werte aus der offenen Maske lesen (nur wenn Score-Tab offen ist)
   var formEl=document.getElementById('sf-E1-hp');
+  var localMatches=null;
   if(formEl){
     var sin2=readSFMatches('E',6);
     var dbl2=readSFMatches('D',3,true);
-    var matches=sin2.concat(dbl2);
-    var gh=0,gg=0;
-    matches.forEach(function(m){if(m.winner==='heim')gh++;else if(m.winner==='gast')gg++;});
-    slides[si].data.matches=matches;
-    slides[si].data.gesamtHeim=String(gh);
-    slides[si].data.gesamtGast=String(gg);
+    localMatches=sin2.concat(dbl2);
   }
-
-  // Score-Folie die gesendet wird (mit aktuellen Daten aus slides[])
-  var scoreSlide=slides[si];
 
   setSt('busy','⚡...');
   try{
     var role=SESSION?SESSION.role:'admin';
-    var postBody,headers={'Content-Type':'application/json'};
 
+    // Immer zuerst den aktuellen Serverstand holen: mehrere Personen können
+    // gleichzeitig verschiedene Partien derselben Begegnung eintragen. Nur die
+    // auf DIESEM Gerät tatsächlich berührten Partien werden überschrieben —
+    // alle anderen werden unverändert vom aktuellen Serverstand übernommen,
+    // damit sich parallele Eingaben nicht gegenseitig überschreiben.
+    var gr=await fetch(wurl+'/config');
+    var gc=await gr.json();
+    var cfg=gc.ok&&gc.config?gc.config:{slides:[]};
+    var as=cfg.slides||[];
+    var ei=as.findIndex(function(s){return s.id===_activeScoreId;});
+    var serverSlide=ei!==-1?as[ei]:null;
+
+    var mergedSlide=JSON.parse(JSON.stringify(serverSlide||localSlide));
+    if(!mergedSlide.data)mergedSlide.data={};
+
+    if(localMatches){
+      var byType={};
+      (mergedSlide.data.matches||[]).forEach(function(m){if(m&&m.type)byType[m.type]=m;});
+      mergedSlide.data.matches=localMatches.map(function(m){
+        return _sfTouched[m.type]?m:(byType[m.type]||m);
+      });
+      var gh=0,gg=0;
+      mergedSlide.data.matches.forEach(function(m){if(m.winner==='heim')gh++;else if(m.winner==='gast')gg++;});
+      mergedSlide.data.gesamtHeim=String(gh);
+      mergedSlide.data.gesamtGast=String(gg);
+    }
+    // Stammdaten der Folie (Namen, Verknüpfung, Design, Sichtbarkeit) immer vom
+    // lokalen Stand übernehmen — die werden nicht partienweise zusammengeführt.
+    mergedSlide.enabled=localSlide.enabled;
+    mergedSlide.duration=localSlide.duration;
+    mergedSlide.name=localSlide.name;
+    mergedSlide.teamId=localSlide.teamId;
+    if(localSlide.data){
+      mergedSlide.data.heimTeam=localSlide.data.heimTeam;
+      mergedSlide.data.gastTeam=localSlide.data.gastTeam;
+      mergedSlide.data.mannschaft=localSlide.data.mannschaft||mergedSlide.data.mannschaft;
+      mergedSlide.data.matchId=localSlide.data.matchId||mergedSlide.data.matchId;
+      mergedSlide.data.bg=mergedSlide.data.bg||localSlide.data.bg;
+      mergedSlide.data.accent=mergedSlide.data.accent||localSlide.data.accent;
+    }
+    slides[si]=mergedSlide; // lokalen Stand aktualisieren
+
+    var postBody,headers={'Content-Type':'application/json'};
     if(role==='admin'){
-      // Admin: kompletten Config holen, Score patchen, zurückschicken
+      // Admin: kompletten Config holen, zusammengeführte Folie patchen, zurückschicken
       var pw=localStorage.getItem('vtv_admin_pw')||'';
       if(!pw){
         if(!allowPrompt)return; // kein Auto-Prompt beim Auto-Save
@@ -2325,18 +2464,13 @@ async function pushScoreNow(allowPrompt){
         if(!pw){setSt('err','Abgebrochen');return;}
         localStorage.setItem('vtv_admin_pw',pw);
       }
-      var gr=await fetch(wurl+'/config');
-      var gc=await gr.json();
-      var cfg=gc.ok&&gc.config?gc.config:{slides:[]};
-      var as=cfg.slides||[];
-      var ei=as.findIndex(function(s){return s.id===scoreSlide.id;});
-      if(ei!==-1)as[ei]=scoreSlide;else as.push(scoreSlide);
+      if(ei!==-1)as[ei]=mergedSlide;else as.push(mergedSlide);
       cfg.slides=as;
       postBody=JSON.stringify(cfg);
       headers['X-Admin-Password']=pw;
     } else {
-      // Teamleader/Wirtin: nur eigene Folie schicken, Worker merged
-      postBody=JSON.stringify({slides:[scoreSlide]});
+      // Teamleader/Wirtin: nur eigene (bereits zusammengeführte) Folie schicken, Worker merged
+      postBody=JSON.stringify({slides:[mergedSlide]});
       headers['X-Role-Token']=SESSION.token;
     }
 
@@ -2395,7 +2529,11 @@ function buildSFRows(contId,prefix,count,ownPlayers,opponent,isHome,isDbl){
     var platzWrap=document.createElement('div');platzWrap.className='sf-platz-inp-wrap';
     var platzLbl=document.createElement('label');platzLbl.textContent='Platz';
     var platzInp=document.createElement('input');platzInp.type='text';platzInp.className='sf-platz-inp';platzInp.id='sf-'+lbl+'-platz';platzInp.placeholder='–';platzInp.maxLength=3;
-    platzInp.oninput=function(){scheduleScorePush();};
+    platzInp.oninput=function(){
+      var m=this.id.match(/^sf-([A-Za-z]+\d+)-/);
+      if(m)sfMarkTouched(m[1]);
+      scheduleScorePush();
+    };
     platzWrap.appendChild(platzLbl);platzWrap.appendChild(platzInp);
     hdRow.appendChild(mlbl);hdRow.appendChild(platzWrap);
     block.appendChild(hdRow);
@@ -2437,7 +2575,11 @@ function makeSFPlayerInput(ownPlayers,isOwn,id){
   var inp=document.createElement('input');
   inp.type='text';inp.id=id;inp.className='sf-player-inp';inp.autocomplete='off';
   inp.placeholder=isOwn?'Spielername':'Gegner';
-  inp.oninput=function(){scheduleScorePush();};
+  inp.oninput=function(){
+    var m=this.id.match(/^sf-([A-Za-z]+\d+)-/);
+    if(m)sfMarkTouched(m[1]);
+    scheduleScorePush();
+  };
   if(isOwn && ownPlayers && ownPlayers.length){
     var listId=id+'-dl';
     var dl=document.createElement('datalist');dl.id=listId;
