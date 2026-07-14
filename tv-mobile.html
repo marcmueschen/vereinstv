@@ -286,6 +286,7 @@ function mBack(){
   document.getElementById('hdr-title').textContent=TITLES[id]||'';
   document.getElementById('hdr-back').classList.toggle('hidden',mStack.length<=1);
   if(id==='scr-teams')renderTeamList();
+  if(id==='scr-team-detail')renderTeamDetail();
   window.scrollTo(0,0);
 }
 
@@ -624,6 +625,8 @@ function sfLastActiveSetIdx(sets){
 }
 function sfDefaultState(){return {sets:[{h:0,g:0},{h:0,g:0},{h:0,g:0}],currentSet:0,winner:'',retiredBy:null};}
 var _sfState={};
+var _sfTouched={};
+function sfMarkTouched(lbl){_sfTouched[lbl]=true;}
 
 function sfIncGame(lbl,side){
   var st=_sfState[lbl];if(!st||st.winner)return;
@@ -637,6 +640,7 @@ function sfIncGame(lbl,side){
     if(autoWin)st.winner=autoWin;
     else if(cs<2)st.currentSet=cs+1;
   }
+  sfMarkTouched(lbl);
   renderMatchCounter(lbl);updateTotalScore();scheduleScorePush();
 }
 function sfDecGame(lbl,side){
@@ -645,12 +649,14 @@ function sfDecGame(lbl,side){
   var key=side==='heim'?'h':'g';
   st.sets[cs][key]=Math.max(0,(st.sets[cs][key]||0)-1);
   if(!st.retiredBy){st.currentSet=sfDeriveCurrentSet(st.sets);st.winner=computeAutoWinner(st.sets);}
+  sfMarkTouched(lbl);
   renderMatchCounter(lbl);updateTotalScore();scheduleScorePush();
 }
 function sfRetire(lbl,side){
   var st=_sfState[lbl];if(!st)return;
   if(st.retiredBy===side){st.retiredBy=null;st.winner=computeAutoWinner(st.sets);st.currentSet=sfDeriveCurrentSet(st.sets);}
   else{st.retiredBy=side;st.winner=side;}
+  sfMarkTouched(lbl);
   renderMatchCounter(lbl);updateTotalScore();scheduleScorePush();
 }
 function renderMatchCounter(lbl){
@@ -689,7 +695,11 @@ function makeSFPlayerInput(ownPlayers,isOwn,id){
   var inp=document.createElement('input');
   inp.type='text';inp.id=id;inp.className='sf-player-inp';inp.autocomplete='off';
   inp.placeholder=isOwn?'Spielername':'Gegner';
-  inp.oninput=function(){scheduleScorePush();};
+  inp.oninput=function(){
+    var m=this.id.match(/^sf-([A-Za-z]+\d+)-/);
+    if(m)sfMarkTouched(m[1]);
+    scheduleScorePush();
+  };
   if(isOwn&&ownPlayers&&ownPlayers.length){
     var listId=id+'-dl';
     var dl=document.createElement('datalist');dl.id=listId;
@@ -711,7 +721,11 @@ function buildSFRows(contId,prefix,count,ownPlayers,opponent,isHome,isDbl){
     var platzWrap=document.createElement('div');platzWrap.className='sf-platz-inp-wrap';
     var platzLbl=document.createElement('label');platzLbl.textContent='Platz';
     var platzInp=document.createElement('input');platzInp.type='text';platzInp.className='sf-platz-inp';platzInp.id='sf-'+lbl+'-platz';platzInp.placeholder='–';platzInp.maxLength=3;
-    platzInp.oninput=function(){scheduleScorePush();};
+    platzInp.oninput=function(){
+      var m=this.id.match(/^sf-([A-Za-z]+\d+)-/);
+      if(m)sfMarkTouched(m[1]);
+      scheduleScorePush();
+    };
     platzWrap.appendChild(platzLbl);platzWrap.appendChild(platzInp);
     hdRow.appendChild(mlbl);hdRow.appendChild(platzWrap);
     block.appendChild(hdRow);
@@ -813,30 +827,67 @@ async function pushScoreNow(){
   if(!_activeScoreId)return;
   var si=slides.findIndex(function(s){return s.id===_activeScoreId;});
   if(si===-1)return;
+  var localSlide=slides[si];
+
   var formEl=document.getElementById('sf-E1-hp');
+  var localMatches=null;
   if(formEl){
     var sin2=readSFMatches('E',6);
     var dbl2=readSFMatches('D',3,true);
-    var matches=sin2.concat(dbl2);
-    var gh=0,gg=0;
-    matches.forEach(function(m){if(m.winner==='heim')gh++;else if(m.winner==='gast')gg++;});
-    slides[si].data.matches=matches;
-    slides[si].data.gesamtHeim=String(gh);
-    slides[si].data.gesamtGast=String(gg);
-    var hn=document.getElementById('sf-total-heim-score');if(hn)hn.textContent=gh;
-    var gn=document.getElementById('sf-total-gast-score');if(gn)gn.textContent=gg;
+    localMatches=sin2.concat(dbl2);
   }
-  var scoreSlide=slides[si];
+
   setSt('busy');
   try{
     var pw=localStorage.getItem('vtv_admin_pw')||'';
     if(!pw){pw=prompt('Admin-Passwort:','');if(!pw){setSt('err');return;}localStorage.setItem('vtv_admin_pw',pw);}
+
+    // Immer zuerst den aktuellen Serverstand holen: mehrere Personen können
+    // gleichzeitig verschiedene Partien derselben (oder anderer) Begegnungen
+    // eintragen. Nur die auf DIESEM Gerät tatsächlich berührten Partien werden
+    // überschrieben — alle anderen werden unverändert vom aktuellen Serverstand
+    // übernommen, damit sich parallele Eingaben nicht gegenseitig überschreiben.
     var gr=await fetch(wurl+'/config');
     var gc=await gr.json();
     var cfg=gc.ok&&gc.config?gc.config:{slides:[]};
     var as=cfg.slides||[];
-    var ei=as.findIndex(function(s){return s.id===scoreSlide.id;});
-    if(ei!==-1)as[ei]=scoreSlide;else as.push(scoreSlide);
+    var ei=as.findIndex(function(s){return s.id===_activeScoreId;});
+    var serverSlide=ei!==-1?as[ei]:null;
+
+    var mergedSlide=JSON.parse(JSON.stringify(serverSlide||localSlide));
+    if(!mergedSlide.data)mergedSlide.data={};
+
+    if(localMatches){
+      var byType={};
+      (mergedSlide.data.matches||[]).forEach(function(m){if(m&&m.type)byType[m.type]=m;});
+      mergedSlide.data.matches=localMatches.map(function(m){
+        return _sfTouched[m.type]?m:(byType[m.type]||m);
+      });
+      var gh=0,gg=0;
+      mergedSlide.data.matches.forEach(function(m){if(m.winner==='heim')gh++;else if(m.winner==='gast')gg++;});
+      mergedSlide.data.gesamtHeim=String(gh);
+      mergedSlide.data.gesamtGast=String(gg);
+    }
+    // Stammdaten der Folie (Namen, Verknüpfung, Design, Sichtbarkeit) immer vom
+    // lokalen Stand übernehmen — die werden nicht partienweise zusammengeführt.
+    mergedSlide.enabled=localSlide.enabled;
+    mergedSlide.duration=localSlide.duration;
+    mergedSlide.name=localSlide.name;
+    mergedSlide.teamId=localSlide.teamId;
+    if(localSlide.data){
+      mergedSlide.data.heimTeam=localSlide.data.heimTeam;
+      mergedSlide.data.gastTeam=localSlide.data.gastTeam;
+      mergedSlide.data.mannschaft=localSlide.data.mannschaft||mergedSlide.data.mannschaft;
+      mergedSlide.data.matchId=localSlide.data.matchId||mergedSlide.data.matchId;
+      mergedSlide.data.bg=mergedSlide.data.bg||localSlide.data.bg;
+      mergedSlide.data.accent=mergedSlide.data.accent||localSlide.data.accent;
+    }
+    slides[si]=mergedSlide;
+
+    var hn=document.getElementById('sf-total-heim-score');if(hn)hn.textContent=mergedSlide.data.gesamtHeim||0;
+    var gn=document.getElementById('sf-total-gast-score');if(gn)gn.textContent=mergedSlide.data.gesamtGast||0;
+
+    if(ei!==-1)as[ei]=mergedSlide;else as.push(mergedSlide);
     cfg.slides=as;
     var r=await fetch(wurl+'/config',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Password':pw},body:JSON.stringify(cfg)});
     var d=await r.json();
@@ -845,9 +896,36 @@ async function pushScoreNow(){
 }
 
 // ── Begegnung öffnen -> Score-Screen aufbauen (identisch zur
-// Haupt-Verwaltung: matchId-basiert, ältere Ergebnisse bleiben erhalten) ──
-function mOpenScore(team,matchIdx){
+// Haupt-Verwaltung: matchId-basiert, ältere Ergebnisse bleiben erhalten).
+// Lädt vorher IMMER frische Daten vom Server, damit eine Begegnung, die z.B.
+// über die Desktop-Verwaltung gespeichert wurde, hier nicht durch einen
+// veralteten lokalen Zwischenspeicher leer erscheint.
+async function mOpenScore(team,matchIdx){
   var match=team.matches[matchIdx];if(!match)return;
+  var matchId=match.id;
+  var teamId=team.id;
+
+  setSt('busy');
+  try{
+    var wurl=getWurl();
+    var [tr,cr]=await Promise.all([
+      fetch(wurl+'/teams').then(function(r){return r.json();}),
+      fetch(wurl+'/config').then(function(r){return r.json();})
+    ]);
+    if(tr.ok)allTeams=tr.teams||[];
+    if(cr.ok&&cr.config)slides=cr.config.slides||[];
+    setSt('');
+  }catch(e){setSt('err');toast('Konnte keine aktuellen Daten laden: '+e.message,'err');}
+
+  // Nach dem Neuladen dieselbe Mannschaft/Begegnung anhand ihrer festen ID
+  // wiederfinden (Positionen/Indizes können sich durch das Neuladen verschieben).
+  var freshTeam=allTeams.find(function(t){return t.id===teamId;})||team;
+  var freshIdx=(freshTeam.matches||[]).findIndex(function(m){return m.id===matchId;});
+  team=freshTeam;
+  match=freshIdx>-1?team.matches[freshIdx]:match;
+  mTeamIdx=allTeams.indexOf(freshTeam);
+  if(mTeamIdx===-1)mTeamIdx=null;
+
   var isHome=match.homeAway==='home';
   var heim=isHome?team.name:match.opponent;
   var gast=isHome?match.opponent:team.name;
@@ -867,6 +945,7 @@ function mOpenScore(team,matchIdx){
 
   var ownPlayers=team.ownPlayers||[];
   _sfState={};
+  _sfTouched={};
   buildSFRows('sf-sin','E',6,ownPlayers,match.opponent,isHome);
   buildSFRows('sf-dbl','D',3,ownPlayers,match.opponent,isHome,true);
 
