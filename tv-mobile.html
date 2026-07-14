@@ -401,9 +401,17 @@ function mMatchRow(team,m,mi){
   var btns=document.createElement('div');btns.className='match-row2-btns';
   var scoreBtn=document.createElement('button');scoreBtn.type='button';scoreBtn.className='mbtn pri sm';scoreBtn.style.flex='1';scoreBtn.textContent='🎾 Spielstand';
   scoreBtn.onclick=function(){if(!m.opponent){toast('Bitte zuerst Gegner eintragen.','err');return;}mOpenScore(team,mi);};
+  var existingSlide=slides.find(function(s){return s.type==='score'&&s.data&&s.data.matchId===m.id&&(s.teamId||null)===(team.id||null);});
+  var isOn=!!(existingSlide&&existingSlide.enabled!==false);
+  var showBtn=document.createElement('button');showBtn.type='button';showBtn.className='mbtn sm '+(isOn?'pri':'sec');showBtn.style.flex='1';
+  showBtn.textContent=isOn?'📺 Eingeblendet':'📺 Einblenden';
+  showBtn.onclick=function(){mToggleScoreSlide(team,m);};
   var del=document.createElement('button');del.type='button';del.className='mbtn dgr sm';del.textContent='×';
-  del.onclick=function(){var idx=team.matches.indexOf(m);if(idx>-1)team.matches.splice(idx,1);renderTeamDetail();};
-  btns.appendChild(scoreBtn);btns.appendChild(del);
+  del.onclick=function(){
+    if(existingSlide){toast('Diese Begegnung hat bereits eine Spielstand-Folie — bitte zuerst ausblenden.','err');return;}
+    var idx=team.matches.indexOf(m);if(idx>-1)team.matches.splice(idx,1);renderTeamDetail();
+  };
+  btns.appendChild(scoreBtn);btns.appendChild(showBtn);btns.appendChild(del);
   row.appendChild(btns);
   return row;
 }
@@ -540,6 +548,24 @@ async function mPushKader(){
     return{id:Date.now(),type:'kader',name:'Kader: '+(team.name||''),enabled:true,duration:20,data:{teamId:team.id,title:team.name||'Kader',bg:'#0f2a1c',accent:'#f5c842'}};
   });
   if(await mSaveConfig())toast('Kader wird jetzt angezeigt!');
+}
+// Blendet die Live-Ergebnis-Folie einer Begegnung ein/aus, OHNE sie zu löschen —
+// alle bereits eingetragenen Ergebnisse bleiben dabei immer erhalten.
+async function mToggleScoreSlide(team,m){
+  var existing=slides.find(function(s){return s.type==='score'&&s.data&&s.data.matchId===m.id&&(s.teamId||null)===(team.id||null);});
+  if(existing){
+    existing.enabled=existing.enabled===false;
+  } else {
+    var isHome=m.homeAway==='home';
+    var heim=isHome?team.name:m.opponent;
+    var gast=isHome?m.opponent:team.name;
+    slides.push({
+      id:Date.now(),type:'score',teamId:team.id||null,
+      name:heim+' vs '+gast,enabled:true,duration:30,
+      data:{heimTeam:heim,gastTeam:gast,mannschaft:team.name||'',matchId:m.id||null,gesamtHeim:'0',gesamtGast:'0',bg:'#0f2a1c',accent:'#f5c842',matches:[]}
+    });
+  }
+  if(await mSaveConfig())renderTeamDetail();
 }
 async function mPushSpielplan(){
   var team=allTeams[mTeamIdx];if(!team)return;
@@ -856,7 +882,7 @@ function mOpenScore(team,matchIdx){
   } else {
     var newSlide={
       id:Date.now(),type:'score',teamId:team.id||null,
-      name:heim+' vs '+gast,enabled:true,duration:30,
+      name:heim+' vs '+gast,enabled:false,duration:30,
       data:{
         heimTeam:heim,gastTeam:gast,
         mannschaft:team.name||'',
