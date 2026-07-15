@@ -893,7 +893,7 @@ async function loadFromWorker(){
   var wurl=getWurl();if(!wurl)return;
   setSt('busy','Lade...');
   try{
-    var r=await fetch(wurl+'/config');var d=await r.json();
+    var r=await fetch(wurl+'/config',{cache:'no-store'});var d=await r.json();
     if(d.ok&&d.config){
       var c=d.config;
       // Filter slides by role
@@ -1287,9 +1287,7 @@ function renderList(){
       +'<label class="tog"><input type="checkbox"'+(s.enabled!==false?' checked':'')+'><div class="tr2"></div></label>'
       +'<div style="display:flex;gap:4px">'
       +'<button class="btn bo2 sm" onclick="openEdit('+s.id+')">&#9998;</button>'
-      +(s.type==='score'
-        ?'<button class="btn bd sm" disabled title="Spielstand-Folien können nicht gelöscht werden — bitte über \'Mannschaften, Tabellen &amp; Begegnungen\' ausblenden." style="opacity:.35;cursor:not-allowed">&#128465;</button>'
-        :'<button class="btn bd sm" onclick="delSlide('+s.id+')">&#128465;</button>')
+      +'<button class="btn bd sm" onclick="delSlide('+s.id+')">&#128465;</button>'
       +'</div>';
     c.querySelector('input[type=checkbox]').onchange=function(e){toggleSlide(s.id,e.target.checked);};
     if(role==='admin') setupDrag(c);
@@ -1300,8 +1298,11 @@ function renderList(){
 function toggleSlide(id,v){var s=slides.find(function(x){return x.id===id;});if(s)s.enabled=v;document.querySelector('.sc2[data-id="'+id+'"]').classList.toggle('off',!v);}
 function delSlide(id){
   var s=slides.find(function(x){return x.id===id;});
-  if(s&&s.type==='score'){toast('Spielstand-Folien können nicht gelöscht werden — bitte über "Mannschaften, Tabellen & Begegnungen" ausblenden.','err');return;}
-  if(!confirm('Folie löschen?'))return;
+  if(s&&s.type==='score'){
+    if(!confirm('Diese Spielstand-Folie inklusive ALLER eingetragenen Ergebnisse für „'+s.name+'" endgültig löschen? Das kann nicht rückgängig gemacht werden.\n\nTipp: Zum vorübergehenden Ausblenden reicht der Schiebeschalter oder der "📺 Einblenden"-Button in der Mannschaftsverwaltung — dabei bleiben die Ergebnisse erhalten.'))return;
+  } else if(!confirm('Folie löschen?')){
+    return;
+  }
   slides=slides.filter(function(x){return x.id!==id;});
   renderList();
   toast('Folie entfernt.');
@@ -1483,7 +1484,7 @@ function toast(m,type){var e=document.getElementById('toast');e.textContent=m;e.
 // ══════════════════════════════════════════════════════════
 async function loadTeams(){
   var wurl=getWurl();if(!wurl)return;
-  try{var r=await fetch(wurl+'/teams');var d=await r.json();if(d.ok){allTeams=d.teams||[];mgmtSelectedTeamIdx=null;renderMgmtTeamList();populateTeamSelects();}}catch(e){}
+  try{var r=await fetch(wurl+'/teams',{cache:'no-store'});var d=await r.json();if(d.ok){allTeams=d.teams||[];mgmtSelectedTeamIdx=null;renderMgmtTeamList();populateTeamSelects();}}catch(e){}
 }
 
 // Befüllt alle einfachen "Mannschaft wählen"-Dropdowns (Spielplan-/Kader-Folie,
@@ -1524,7 +1525,7 @@ var masterMenu={categories:[]};
 
 async function loadMasterMenu(){
   var wurl=getWurl();if(!wurl)return;
-  try{var r=await fetch(wurl+'/menu');var d=await r.json();if(d.ok)masterMenu=d.menu||{categories:[]};}catch(e){}
+  try{var r=await fetch(wurl+'/menu',{cache:'no-store'});var d=await r.json();if(d.ok)masterMenu=d.menu||{categories:[]};}catch(e){}
 }
 
 // Speichert die aktuellen Kategorien als Stammdaten (fire-and-forget, blockiert das
@@ -1555,7 +1556,7 @@ var allTabellen=[];
 
 async function loadTabellen(){
   var wurl=getWurl();if(!wurl)return;
-  try{var r=await fetch(wurl+'/tabellen');var d=await r.json();if(d.ok){allTabellen=d.tabellen||[];populateTabelleSelects();if(mgmtSelectedTeamIdx!==null)renderMgmtTeamDetail();else renderMgmtTeamList();}}catch(e){}
+  try{var r=await fetch(wurl+'/tabellen',{cache:'no-store'});var d=await r.json();if(d.ok){allTabellen=d.tabellen||[];populateTabelleSelects();if(mgmtSelectedTeamIdx!==null)renderMgmtTeamDetail();else renderMgmtTeamList();}}catch(e){}
 }
 
 async function saveTabellen(){
@@ -1885,7 +1886,7 @@ function mgmtMatchRow(team,m,mi){
   var scoreBtn=document.createElement('button');scoreBtn.type='button';scoreBtn.className='btn bp sm';scoreBtn.textContent='🎾 Spielstand';scoreBtn.title='Partien & Live-Spielstand für diese Begegnung eintragen';
   scoreBtn.style.whiteSpace='nowrap';
   scoreBtn.onclick=function(){if(!m.opponent){toast('Bitte zuerst den Gegner eintragen.','err');return;}mgmtOpenScore(team.id,mi);};
-  var existingSlide=slides.find(function(s){return s.type==='score'&&s.data&&s.data.matchId===m.id&&(s.teamId||null)===(team.id||null);});
+  var existingSlide=findScoreSlideForMatch(team,m);
   var isOn=!!(existingSlide&&existingSlide.enabled!==false);
   var showBtn=document.createElement('button');showBtn.type='button';showBtn.className='btn sm '+(isOn?'bp':'bo2');
   showBtn.textContent=isOn?'📺 Eingeblendet':'📺 Einblenden';showBtn.title='Live-Ergebnis dieser Begegnung auf dem Display ein-/ausblenden';
@@ -1901,12 +1902,30 @@ function mgmtMatchRow(team,m,mi){
   return row;
 }
 
+// Findet die zu einer Begegnung gehörende Spielstand-Folie robust: zuerst über die
+// feste matchId, UND falls das (z.B. durch einen noch nicht synchronisierten Stand
+// auf einem anderen Gerät) nicht klappt, zusätzlich über Heim-/Gastmannschaft als
+// Rückfalloption — vorher wurde bei nicht passender ID sofort aufgegeben, wodurch
+// bereits vorhandene Folien nicht gefunden und stattdessen leere Duplikate angelegt wurden.
+function findScoreSlideForMatch(team,m){
+  var isHome=(m.homeAway||'home')==='home';
+  var heim=isHome?team.name:m.opponent;
+  var gast=isHome?m.opponent:team.name;
+  return slides.find(function(s){
+    if(s.type!=='score'||!s.data)return false;
+    if(m.id&&s.data.matchId&&(s.teamId||null)===(team.id||null)&&s.data.matchId===m.id)return true;
+    return s.data.heimTeam===heim&&s.data.gastTeam===gast;
+  });
+}
+
 // Blendet die Live-Ergebnis-Folie einer Begegnung ein/aus, OHNE sie zu löschen —
 // alle bereits eingetragenen Ergebnisse bleiben dabei immer erhalten.
 async function mgmtToggleScoreSlide(team,m){
-  var existing=slides.find(function(s){return s.type==='score'&&s.data&&s.data.matchId===m.id&&(s.teamId||null)===(team.id||null);});
+  var existing=findScoreSlideForMatch(team,m);
   if(existing){
     existing.enabled=existing.enabled===false;
+    if(!existing.data.matchId&&m.id)existing.data.matchId=m.id;
+    if(!existing.teamId&&team.id)existing.teamId=team.id;
   } else {
     var isHome=m.homeAway==='home';
     var heim=isHome?team.name:m.opponent;
@@ -2159,11 +2178,7 @@ function onMatchChange(){
   // matchId (übersteht Umbenennungen/Umsortierungen); ältere Folien ohne matchId
   // werden weiterhin über den Team-Namen-Vergleich gefunden (Rückwärtskompatibilität).
   _activeScoreId=null;
-  var existingSlide=slides.find(function(s){
-    if(s.type!=='score'||!s.data)return false;
-    if(match.id&&s.data.matchId)return s.data.matchId===match.id&&(s.teamId||null)===(teamId||null);
-    return s.data.heimTeam===heim&&s.data.gastTeam===gast;
-  });
+  var existingSlide=findScoreSlideForMatch(team,match);
 
   // Spieler-Selects aufbauen
   var ownPlayers=team.ownPlayers||[];
@@ -2417,7 +2432,7 @@ async function pushScoreNow(allowPrompt){
     // auf DIESEM Gerät tatsächlich berührten Partien werden überschrieben —
     // alle anderen werden unverändert vom aktuellen Serverstand übernommen,
     // damit sich parallele Eingaben nicht gegenseitig überschreiben.
-    var gr=await fetch(wurl+'/config');
+    var gr=await fetch(wurl+'/config',{cache:'no-store'});
     var gc=await gr.json();
     var cfg=gc.ok&&gc.config?gc.config:{slides:[]};
     var as=cfg.slides||[];
