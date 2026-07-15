@@ -301,10 +301,10 @@ async function mRefreshAll(){
   try{
     var adminPw=localStorage.getItem('vtv_admin_pw')||'';
     var [tr,ar,cr,ur]=await Promise.all([
-      fetch(wurl+'/teams').then(function(r){return r.json();}),
-      fetch(wurl+'/tabellen').then(function(r){return r.json();}),
-      fetch(wurl+'/config').then(function(r){return r.json();}),
-      adminPw?fetch(wurl+'/users',{headers:{'X-Admin-Password':adminPw}}).then(function(r){return r.json();}).catch(function(){return{ok:false};}):Promise.resolve({ok:false})
+      fetch(wurl+'/teams',{cache:'no-store'}).then(function(r){return r.json();}),
+      fetch(wurl+'/tabellen',{cache:'no-store'}).then(function(r){return r.json();}),
+      fetch(wurl+'/config',{cache:'no-store'}).then(function(r){return r.json();}),
+      adminPw?fetch(wurl+'/users',{cache:'no-store',headers:{'X-Admin-Password':adminPw}}).then(function(r){return r.json();}).catch(function(){return{ok:false};}):Promise.resolve({ok:false})
     ]);
     if(tr.ok)allTeams=tr.teams||[];
     if(ar.ok)allTabellen=ar.tabellen||[];
@@ -452,6 +452,22 @@ function mPlayerRow(team,player,pi){
   return row;
 }
 function genMatchId(){return 'm_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);}
+
+// Findet die zu einer Begegnung gehörende Spielstand-Folie robust: zuerst über
+// die feste matchId, UND falls das (z.B. durch einen noch nicht synchronisierten
+// Stand) nicht klappt, zusätzlich über Heim-/Gastmannschaft als Rückfalloption —
+// vorher wurde bei einer nicht passenden ID sofort aufgegeben, wodurch bereits
+// vorhandene Folien nicht gefunden und stattdessen leere Duplikate angelegt wurden.
+function findScoreSlideForMatch(team,m){
+  var isHome=(m.homeAway||'home')==='home';
+  var heim=isHome?team.name:m.opponent;
+  var gast=isHome?m.opponent:team.name;
+  return slides.find(function(s){
+    if(s.type!=='score'||!s.data)return false;
+    if(m.id&&s.data.matchId&&(s.teamId||null)===(team.id||null)&&s.data.matchId===m.id)return true;
+    return s.data.heimTeam===heim&&s.data.gastTeam===gast;
+  });
+}
 function mAddMatch(){
   var team=allTeams[mTeamIdx];if(!team)return;
   team.matches.push({id:genMatchId(),date:'',opponent:'',homeAway:'home'});
@@ -475,7 +491,7 @@ function mMatchRow(team,m,mi){
   var btns=document.createElement('div');btns.className='match-row2-btns';
   var scoreBtn=document.createElement('button');scoreBtn.type='button';scoreBtn.className='mbtn pri sm';scoreBtn.style.flex='1';scoreBtn.textContent='🎾 Spielstand';
   scoreBtn.onclick=function(){if(!m.opponent){toast('Bitte zuerst Gegner eintragen.','err');return;}mOpenScore(team,mi);};
-  var existingSlide=slides.find(function(s){return s.type==='score'&&s.data&&s.data.matchId===m.id&&(s.teamId||null)===(team.id||null);});
+  var existingSlide=findScoreSlideForMatch(team,m);
   var isOn=!!(existingSlide&&existingSlide.enabled!==false);
   var showBtn=document.createElement('button');showBtn.type='button';showBtn.className='mbtn sm '+(isOn?'pri':'sec');showBtn.style.flex='1';
   showBtn.textContent=isOn?'📺 Eingeblendet':'📺 Einblenden';
@@ -600,7 +616,7 @@ async function mSaveConfig(){
   var wurl=getWurl(),adminPw=localStorage.getItem('vtv_admin_pw')||'';
   if(!adminPw){adminPw=prompt('Admin-Passwort:','');if(!adminPw)return false;localStorage.setItem('vtv_admin_pw',adminPw);}
   try{
-    var gr=await fetch(wurl+'/config');
+    var gr=await fetch(wurl+'/config',{cache:'no-store'});
     var gc=await gr.json();
     var cfg=gc.ok&&gc.config?gc.config:{slides:[]};
     cfg.slides=slides;
@@ -626,9 +642,11 @@ async function mPushKader(){
 // Blendet die Live-Ergebnis-Folie einer Begegnung ein/aus, OHNE sie zu löschen —
 // alle bereits eingetragenen Ergebnisse bleiben dabei immer erhalten.
 async function mToggleScoreSlide(team,m){
-  var existing=slides.find(function(s){return s.type==='score'&&s.data&&s.data.matchId===m.id&&(s.teamId||null)===(team.id||null);});
+  var existing=findScoreSlideForMatch(team,m);
   if(existing){
     existing.enabled=existing.enabled===false;
+    if(!existing.data.matchId&&m.id)existing.data.matchId=m.id;
+    if(!existing.teamId&&team.id)existing.teamId=team.id;
   } else {
     var isHome=m.homeAway==='home';
     var heim=isHome?team.name:m.opponent;
@@ -920,7 +938,7 @@ async function pushScoreNow(){
     // eintragen. Nur die auf DIESEM Gerät tatsächlich berührten Partien werden
     // überschrieben — alle anderen werden unverändert vom aktuellen Serverstand
     // übernommen, damit sich parallele Eingaben nicht gegenseitig überschreiben.
-    var gr=await fetch(wurl+'/config');
+    var gr=await fetch(wurl+'/config',{cache:'no-store'});
     var gc=await gr.json();
     var cfg=gc.ok&&gc.config?gc.config:{slides:[]};
     var as=cfg.slides||[];
@@ -982,8 +1000,8 @@ async function mOpenScore(team,matchIdx){
   try{
     var wurl=getWurl();
     var [tr,cr]=await Promise.all([
-      fetch(wurl+'/teams').then(function(r){return r.json();}),
-      fetch(wurl+'/config').then(function(r){return r.json();})
+      fetch(wurl+'/teams',{cache:'no-store'}).then(function(r){return r.json();}),
+      fetch(wurl+'/config',{cache:'no-store'}).then(function(r){return r.json();})
     ]);
     if(tr.ok)allTeams=tr.teams||[];
     if(cr.ok&&cr.config)slides=cr.config.slides||[];
@@ -1010,11 +1028,7 @@ async function mOpenScore(team,matchIdx){
   document.getElementById('sf-total-gast-name').textContent=gast;
 
   _activeScoreId=null;
-  var existingSlide=slides.find(function(s){
-    if(s.type!=='score'||!s.data)return false;
-    if(match.id&&s.data.matchId)return s.data.matchId===match.id&&(s.teamId||null)===(team.id||null);
-    return s.data.heimTeam===heim&&s.data.gastTeam===gast;
-  });
+  var existingSlide=findScoreSlideForMatch(team,match);
 
   var ownPlayers=team.ownPlayers||[];
   _sfState={};
