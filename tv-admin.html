@@ -277,6 +277,20 @@ main{max-width:1180px;margin:0 auto;padding:24px 16px 80px}
     <div class="login-note" id="login-note"></div>
   </div>
 </div>
+<header id="main-header" style="display:none">
+  <div style="display:flex;align-items:center">
+    <span class="logo-h">Vereins-TV</span>
+    <span class="badge" id="role-badge-text">Verwaltung</span>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center">
+    <div class="sdot" id="sdot"></div>
+    <span id="stxt" style="color:rgba(255,255,255,.6);font-size:.78rem"></span>
+    <span id="user-name-badge" class="role-badge admin" style="margin-right:4px"></span>
+    <button class="btn bg2 sm" onclick="doLogout()">Abmelden</button>
+    <button class="btn bp sm" onclick="doSave()">&#9729; Speichern</button>
+  </div>
+</header>
+
 <main id="main-app" style="display:none">
 
   <!-- Role info box (non-admin) -->
