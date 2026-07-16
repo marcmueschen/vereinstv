@@ -39,7 +39,23 @@ header{background:var(--gd);border-bottom:3px solid var(--ye);padding:0 32px;dis
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 
 /* ── LAYOUT ── */
-main{max-width:920px;margin:0 auto;padding:24px 16px 80px}
+main{max-width:1180px;margin:0 auto;padding:24px 16px 80px}
+.app-shell{display:flex;align-items:flex-start;gap:18px}
+.app-sidebar{width:216px;flex-shrink:0;position:sticky;top:24px;display:flex;flex-direction:column;gap:2px;background:var(--ca);border:1.5px solid var(--bo);border-radius:11px;padding:10px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;font-size:.85rem;font-weight:600;color:var(--tx);cursor:pointer;user-select:none;transition:background .12s}
+.nav-item:hover{background:var(--bg)}
+.nav-item.on{background:var(--gd);color:var(--ye)}
+.nav-item .ic{font-size:1.05rem;width:20px;text-align:center;flex-shrink:0}
+.app-content{flex:1;min-width:0}
+.panel{display:none}
+.panel.on{display:block}
+.settings-sub{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--di);margin:18px 0 8px}
+.settings-sub:first-child{margin-top:0}
+@media (max-width:860px){
+  .app-shell{flex-direction:column}
+  .app-sidebar{width:100%;position:static;flex-direction:row;flex-wrap:wrap}
+  .nav-item{flex:1 1 auto;justify-content:center}
+}
 .btn{display:inline-flex;align-items:center;gap:5px;padding:7px 15px;border-radius:7px;font-size:.84rem;font-weight:600;cursor:pointer;border:none;font-family:'Inter',sans-serif;text-decoration:none;white-space:nowrap;transition:opacity .15s}
 .bp{background:var(--ye);color:var(--gd)}.bp:hover{opacity:.88}
 .bg2{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2)}.bg2:hover{background:rgba(255,255,255,.18)}
@@ -261,137 +277,129 @@ main{max-width:920px;margin:0 auto;padding:24px 16px 80px}
     <div class="login-note" id="login-note"></div>
   </div>
 </div>
-
-<!-- ── MAIN APP ── -->
-<header id="main-header" style="display:none">
-  <div style="display:flex;align-items:center">
-    <span class="logo-h">Vereins-TV</span>
-    <span class="badge" id="role-badge-text">Verwaltung</span>
-  </div>
-  <div style="display:flex;gap:10px;align-items:center">
-    <div class="sdot" id="sdot"></div>
-    <span id="stxt" style="color:rgba(255,255,255,.6);font-size:.78rem"></span>
-    <span id="user-name-badge" class="role-badge admin" style="margin-right:4px"></span>
-    <button class="btn bg2 sm" onclick="doLogout()">Abmelden</button>
-    <button class="btn bp sm" onclick="doSave()">&#9729; Speichern</button>
-  </div>
-</header>
-
 <main id="main-app" style="display:none">
-
-  <!-- API Bar (Admin only) -->
-  <div class="api-bar uncfg" id="api-bar">
-    <div style="font-size:.82rem;font-weight:700;color:#5a7a65;margin-bottom:10px;text-transform:uppercase;letter-spacing:.08em">&#9881; Cloudflare Worker URL</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
-      <div class="fl" style="flex:1;margin:0;min-width:200px"><label>Worker-URL</label><input type="url" id="cfg-url" value="https://vereinstv.marc-d55.workers.dev" readonly style="opacity:.6;cursor:default"></div>
-      <button class="btn bp sm" onclick="testConn()">Verbindung testen</button>
-    </div>
-  </div>
 
   <!-- Role info box (non-admin) -->
   <div id="role-info" class="role-info" style="display:none"></div>
 
-  <!-- Settings (Admin only) -->
-  <div class="card" id="settings-card">
-    <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end">
-      <div class="fl" style="margin:0"><label>Vereinsname</label><input type="text" id="cfg-club" value="TC Mein Verein" style="width:190px"></div>
-      <div class="fl" style="margin:0"><label>Standard-Dauer (Sek.)</label><input type="number" id="cfg-dur" min="3" max="600" value="10" style="width:75px"></div>
-      <div class="fl" style="margin:0">
-        <label>Schriftart</label>
-        <select id="cfg-font" style="width:160px" onchange="previewFont()">
-          <option value="Inter">Inter (Standard)</option>
-          <option value="Roboto">Roboto</option>
-          <option value="Open Sans">Open Sans</option>
-          <option value="Lato">Lato</option>
-          <option value="Montserrat">Montserrat</option>
-          <option value="Poppins">Poppins</option>
-          <option value="Nunito">Nunito</option>
-          <option value="Nunito Sans">Nunito Sans</option>
-          <option value="Raleway">Raleway</option>
-          <option value="Oswald">Oswald</option>
-          <option value="Ubuntu">Ubuntu</option>
-          <option value="Source Sans 3">Source Sans 3</option>
-          <option value="Barlow">Barlow</option>
-          <optgroup label="── Geschwungen / Script ──">
-          <option value="Pacifico">Pacifico (geschwungen, leserlich)</option>
-          <option value="Dancing Script">Dancing Script (elegant)</option>
-          <option value="Caveat">Caveat (handschriftlich)</option>
-          <option value="Satisfy">Satisfy (klassisch)</option>
-          <option value="Kaushan Script">Kaushan Script (sportlich)</option>
-          </optgroup>
-        </select>
-      </div>
-      <div class="fl" style="margin:0">
-        <label>Schriftgröße</label>
-        <select id="cfg-fontsize" style="width:120px">
-          <option value="0.8">Klein (80%)</option>
-          <option value="0.9">Etwas kleiner</option>
-          <option value="1" selected>Normal (100%)</option>
-          <option value="1.1">Etwas größer</option>
-          <option value="1.2">Groß (120%)</option>
-          <option value="1.35">Sehr groß</option>
-        </select>
-      </div>
-      <div class="fl" style="margin:0">
-        <label>Vorschau</label>
-        <div id="font-preview" style="padding:6px 12px;background:var(--gd);color:var(--ye);border-radius:6px;font-size:.95rem">Vereins-TV</div>
-      </div>
-      <div class="fl" style="margin:0">
-        <label>Folien-Titelfarbe</label>
-        <div style="display:flex;gap:6px;align-items:center">
-          <input type="color" id="cfg-stc" value="#f5c842" style="width:36px;height:32px;border:none;border-radius:4px;cursor:pointer;padding:1px" oninput="document.getElementById('cfg-stc-hex').value=this.value">
-          <input type="text" id="cfg-stc-hex" value="#f5c842" style="width:76px" oninput="document.getElementById('cfg-stc').value=this.value">
+  <div class="app-shell">
+    <nav class="app-sidebar" id="app-sidebar">
+      <div class="nav-item" data-panel="folien" onclick="selSidebar('folien')"><span class="ic">&#127902;</span>Folien</div>
+      <div class="nav-item" data-panel="mannschaften" onclick="selSidebar('mannschaften')"><span class="ic">&#128101;</span>Mannschaften</div>
+      <div class="nav-item" data-panel="begegnungen" onclick="selSidebar('begegnungen')"><span class="ic">&#127934;</span>Begegnungen &amp; Tabellen</div>
+      <div class="nav-item" data-panel="turnier" onclick="selSidebar('turnier')"><span class="ic">&#127942;</span>Turnierbaum</div>
+      <div class="nav-item" data-panel="news" onclick="selSidebar('news')"><span class="ic">&#128240;</span>News</div>
+      <div class="nav-item" data-panel="multimedia" onclick="selSidebar('multimedia')"><span class="ic">&#127916;</span>Multimedia</div>
+      <div class="nav-item" data-panel="einstellungen" onclick="selSidebar('einstellungen')"><span class="ic">&#9881;</span>Einstellungen</div>
+    </nav>
+
+    <div class="app-content">
+
+      <!-- ══════════ FOLIEN ══════════ -->
+      <section class="panel" id="panel-folien">
+        <div class="card">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.25rem;letter-spacing:.1em;color:var(--gd);margin-bottom:4px">Folien-Reihenfolge</div>
+          <div style="font-size:.78rem;color:var(--di);margin-bottom:10px" id="list-hint">Drag &amp; Drop zum Sortieren</div>
+          <div class="slist" id="slist"></div>
+          <div id="empty" style="display:none;text-align:center;padding:40px 20px;color:var(--di);background:var(--ca);border:1.5px solid var(--bo);border-radius:9px;margin-top:4px">
+            <div style="font-size:2.8rem;opacity:.3;margin-bottom:7px">&#127902;</div>
+            <div id="empty-msg">Noch keine Folien erstellt.</div>
+          </div>
         </div>
+      </section>
+
+      <!-- ══════════ MANNSCHAFTEN ══════════ -->
+      <section class="panel" id="panel-mannschaften">
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px" id="mannschaften-toolbar">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:.1em;color:var(--gd)">&#128101; Mannschaften</div>
+            <div style="display:flex;gap:7px">
+              <button class="btn bo2 sm" onclick="mannschaftenRefresh()">&#8635; Aktualisieren</button>
+              <button class="btn bp sm" onclick="mannschaftenAddTeam()">+ Mannschaft</button>
+              <button class="btn bp sm" onclick="mgmtSaveAll()">&#9729; Speichern</button>
+            </div>
+          </div>
+          <div style="font-size:.78rem;color:var(--di);margin-bottom:10px" id="mannschaften-hint">Mannschaft öffnen, um Namen und Kader zu bearbeiten.</div>
+          <div id="mannschaften-team-list"></div>
+          <div id="mannschaften-team-detail" style="display:none"></div>
+        </div>
+      </section>
+
+      <!-- ══════════ BEGEGNUNGEN & TABELLEN ══════════ -->
+      <section class="panel" id="panel-begegnungen">
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px" id="begegnungen-toolbar">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:.1em;color:var(--gd)">&#127934; Begegnungen &amp; Tabellen</div>
+            <div style="display:flex;gap:7px">
+              <button class="btn bo2 sm" onclick="begegnungenRefresh()">&#8635; Aktualisieren</button>
+              <button class="btn bp sm" onclick="mgmtSaveAll()">&#9729; Speichern</button>
+            </div>
+          </div>
+          <div style="font-size:.78rem;color:var(--di);margin-bottom:10px" id="begegnungen-hint">Mannschaft öffnen, um Live-Tabelle (inkl. NU-Liga-Import) und Begegnungen zu verwalten.</div>
+          <div id="begegnungen-team-list"></div>
+          <div id="begegnungen-team-detail" style="display:none"></div>
+          <div id="begegnungen-score-detail" style="display:none">
+            <button type="button" class="btn bo2 sm" style="margin-bottom:14px" onclick="begegnungenScoreBack()">← Zurück zur Begegnung</button>
+            <div class="sf-match-sel" style="margin-bottom:10px">
+              <div class="sf-match-info" id="sc-match-info-txt"></div>
+              <div class="sf-match-detail" id="sc-match-info-detail"></div>
+            </div>
+            <div class="sf-total-bar">
+              <div class="sf-tot-team">
+                <div class="sf-tot-name" id="sf-total-heim-name">Heim</div>
+                <div class="sf-tot-score" id="sf-total-heim-score">0</div>
+              </div>
+              <div class="sf-tot-vs">:</div>
+              <div class="sf-tot-team">
+                <div class="sf-tot-score" id="sf-total-gast-score">0</div>
+                <div class="sf-tot-name" id="sf-total-gast-name">Gast</div>
+              </div>
+            </div>
+            <div class="sf-section">
+              <div class="sf-section-title">Einzel E1–E6</div>
+              <div id="sf-sin"></div>
+            </div>
+            <div class="sf-section">
+              <div class="sf-section-title">Doppel D1–D3</div>
+              <div id="sf-dbl"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ TURNIERBAUM ══════════ -->
+      <section class="panel" id="panel-turnier">
+        <div class="card">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:.1em;color:var(--gd);margin-bottom:14px">&#127942; Turnierbaum</div>
+<div class="tf on" id="tf-bracket">
+      <div class="g2">
+        <div class="fl s2"><label>Titel</label><input type="text" id="br-title" placeholder="Herren"></div>
+        <div class="fl"><label>Anzahl Teilnehmer</label>
+          <select id="br-size" onchange="buildBracketEditor('br')">
+            <option value="4">4</option>
+            <option value="8" selected>8</option>
+            <option value="16">16</option>
+          </select>
+        </div>
+        <div class="fl"><label>Dauer Sek.</label><input type="number" id="br-dur" min="10" placeholder="30"></div>
+        <div class="fl"><label>Hintergrundfarbe</label><div class="cr"><input type="color" id="br-bg" value="#0d2b1a" oninput="cct('br-bg','br-bgt')"><input type="text" id="br-bgt" value="#0d2b1a" oninput="ctc('br-bg','br-bgt')"></div></div>
+        <div class="fl"><label>Akzentfarbe</label><div class="cr"><input type="color" id="br-ac" value="#c9db4d" oninput="cct('br-ac','br-act')"><input type="text" id="br-act" value="#c9db4d" oninput="ctc('br-ac','br-act')"></div></div>
+        <div class="s2" style="font-size:.72rem;color:var(--di)">Namen eintragen (leer lassen = Freilos/„Rast"). Sobald beide Seiten einer Begegnung feststehen, per Klick auf den Namen den Sieger markieren — die nächste Runde füllt sich automatisch.</div>
       </div>
-      <div class="fl" style="margin:0">
-        <label>Folien-Titelschrift</label>
-        <select id="cfg-stf" style="width:160px">
-          <option value="">Wie Hauptschrift</option>
-          <option value="Bebas Neue">Bebas Neue</option>
-          <option value="Inter">Inter</option>
-          <option value="Roboto">Roboto</option>
-          <option value="Montserrat">Montserrat</option>
-          <option value="Oswald">Oswald</option>
-          <option value="Poppins">Poppins</option>
-          <option value="Raleway">Raleway</option>
-          <option value="Nunito">Nunito</option>
-        </select>
-      </div>
+      <div id="br-editor" style="margin-top:10px"></div>
     </div>
-  </div>
+          <div style="display:flex;justify-content:flex-end;margin-top:12px">
+            <button class="btn bp" onclick="curTab='bracket';addSlide()">+ Turnier-Folie hinzufügen</button>
+          </div>
+        </div>
+      </section>
 
-  <!-- User Management (Admin only) -->
-  <div class="card" id="users-card" style="display:none">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:.1em;color:var(--gd)">&#128100; Benutzerverwaltung</div>
-      <button class="btn bp sm" onclick="openAddUser()">+ Benutzer hinzufügen</button>
-    </div>
-    <div id="users-list"></div>
-  </div>
-
-
-  <!-- Mannschaften-, Tabellen- & Begegnungsverwaltung (Admin only) -->
-  <div class="card" id="mgmt-card" style="display:none">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px" id="mgmt-toolbar">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:.1em;color:var(--gd)">&#127934; Mannschaften, Tabellen &amp; Begegnungen</div>
-      <div style="display:flex;gap:7px">
-        <button class="btn bo2 sm" onclick="mgmtRefresh()">&#8635; Aktualisieren</button>
-        <button class="btn bp sm" onclick="mgmtAddTeam()">+ Mannschaft</button>
-        <button class="btn bp sm" onclick="mgmtSaveAll()">&#9729; Speichern</button>
-      </div>
-    </div>
-    <div style="font-size:.78rem;color:var(--di);margin-bottom:10px" id="mgmt-hint">Mannschaft öffnen, um Kader, Tabelle, Spielplan und Spielstände zu verwalten.</div>
-    <div id="mgmt-team-list"></div>
-    <div id="mgmt-team-detail" style="display:none"></div>
-  </div>
-
-  <!-- New Slide (filtered by role) -->
-  <div class="card">
-    <div style="font-size:.95rem;font-weight:600;margin-bottom:13px">Neue Folie</div>
-    <div class="ttabs" id="type-tabs"></div>
-
-    <!-- All type forms (shown/hidden based on role) -->
-    <div class="tf" id="tf-announce">
+      <!-- ══════════ NEWS ══════════ -->
+      <section class="panel" id="panel-news">
+        <div class="card">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:.1em;color:var(--gd);margin-bottom:14px">&#128240; News</div>
+          <div class="ttabs" id="news-tabs"></div>
+<div class="tf" id="tf-announce">
       <div class="g2">
         <div class="fl s2"><label>Titel</label><input type="text" id="a-title" placeholder="z. B. Sommerfest 2025"></div>
         <div class="fl s2"><label>Text</label><textarea id="a-body" style="font-family:'Inter',sans-serif;font-size:.88rem" placeholder="Nachrichtentext..."></textarea></div>
@@ -402,75 +410,87 @@ main{max-width:920px;margin:0 auto;padding:24px 16px 80px}
         <div class="fl"><label>Dauer Sek.</label><input type="number" id="a-dur" min="3" placeholder=""></div>
       </div>
     </div>
-    <div class="tf" id="tf-table">
+<div class="tf" id="tf-weather">
       <div class="g2">
-        <div class="fl s2"><label>Aus Tabellenverwaltung übernehmen (optional)</label>
-          <select id="t-src" onchange="applyTabelleSrc('t-src','t-title','t-csv')" style="width:100%">
-            <option value="">-- manuell eingeben --</option>
-          </select>
-        </div>
-        <div class="fl s2"><label>Titel</label><input type="text" id="t-title" placeholder="Tabellenstand Herren 40"></div>
-        <div class="fl s2"><label>CSV (erste Zeile = Spaltenköpfe)</label><textarea id="t-csv" placeholder="Platz,Team,Sp,S,U,N,Punkte&#10;1,TC Muster,8,7,0,1,14"></textarea></div>
-        <div class="fl"><label>Hintergrundfarbe</label><div class="cr"><input type="color" id="t-bg" value="#1a3a2a" oninput="cct('t-bg','t-bgt')"><input type="text" id="t-bgt" value="#1a3a2a" oninput="ctc('t-bg','t-bgt')"></div></div>
-        <div class="fl"><label>Akzentfarbe</label><div class="cr"><input type="color" id="t-ac" value="#f5c842" oninput="cct('t-ac','t-act')"><input type="text" id="t-act" value="#f5c842" oninput="ctc('t-ac','t-act')"></div></div>
-        <div class="fl"><label>Dauer Sek.</label><input type="number" id="t-dur" min="3" placeholder=""></div>
+        <div class="fl s2"><label>Ort</label><div style="display:flex;gap:7px"><input type="text" id="wt-loc" placeholder="z. B. Geldern" style="flex:1" onkeydown="if(event.key==='Enter')geoSearch('wt')"><button type="button" class="btn bp sm" onclick="geoSearch('wt')">&#128270; Suchen</button></div></div>
+        <div class="fl s2" id="wt-result" style="display:none;background:#f0fff4;border:1px solid #a8d5b5;border-radius:7px;padding:8px 12px"><div style="font-size:.8rem;font-weight:600;color:var(--gl);margin-bottom:3px">&#10003; Gefunden:</div><div id="wt-result-txt" style="font-size:.88rem"></div><input type="hidden" id="wt-lat"><input type="hidden" id="wt-lon"></div>
+        <div class="fl"><label>Hintergrundfarbe</label><div class="cr"><input type="color" id="wt-bg" value="#0d1a2e" oninput="cct('wt-bg','wt-bgt')"><input type="text" id="wt-bgt" value="#0d1a2e" oninput="ctc('wt-bg','wt-bgt')"></div></div>
+        <div class="fl"><label>Dauer Sek.</label><input type="number" id="wt-dur" min="20" placeholder="30"></div>
       </div>
     </div>
-    <div class="tf" id="tf-score">
-      <!-- Schritt 1: Mannschaft + Begegnung wählen -->
-      <div class="g2" style="margin-bottom:10px">
-        <div class="fl s2">
-          <label>Mannschaft</label>
-          <select id="s-team-sel" onchange="onTeamChange()" style="width:100%">
-            <option value="">-- Mannschaft wählen --</option>
-          </select>
-        </div>
-        <div class="fl s2">
-          <label>Begegnung</label>
-          <select id="s-match-sel" onchange="onMatchChange()" style="width:100%">
-            <option value="">-- Begegnung wählen --</option>
-          </select>
-        </div>
-        <div class="sf-match-sel s2" id="s-match-info" style="display:none">
-          <div class="sf-match-info" id="s-match-info-txt"></div>
-          <div class="sf-match-detail" id="s-match-info-detail"></div>
-        </div>
-        <div id="s-admin-colors" style="display:none">
-          <div class="fl"><label>Hintergrundfarbe</label><div class="cr"><input type="color" id="s-bg" value="#0f2a1c" oninput="cct('s-bg','s-bgt')"><input type="text" id="s-bgt" value="#0f2a1c" oninput="ctc('s-bg','s-bgt')"></div></div>
-          <div class="fl"><label>Akzentfarbe</label><div class="cr"><input type="color" id="s-ac" value="#f5c842" oninput="cct('s-ac','s-act')"><input type="text" id="s-act" value="#f5c842" oninput="ctc('s-ac','s-act')"></div></div>
-        </div>
-        <input type="hidden" id="s-gh">
-        <input type="hidden" id="s-gg">
-        <div class="fl"><label>Dauer Sek.</label><input type="number" id="s-dur" min="3" placeholder="" style="width:70px"></div>
+<div class="tf" id="tf-radar">
+      <div class="g2">
+        <div class="fl s2"><label>Ort</label><div style="display:flex;gap:7px"><input type="text" id="rd-loc" placeholder="z. B. Geldern" style="flex:1" onkeydown="if(event.key==='Enter')geoSearch('rd')"><button type="button" class="btn bp sm" onclick="geoSearch('rd')">&#128270; Suchen</button></div></div>
+        <div class="fl s2" id="rd-result" style="display:none;background:#f0fff4;border:1px solid #a8d5b5;border-radius:7px;padding:8px 12px"><div style="font-size:.8rem;font-weight:600;color:var(--gl);margin-bottom:3px">&#10003; Gefunden:</div><div id="rd-result-txt" style="font-size:.88rem"></div><input type="hidden" id="rd-lat"><input type="hidden" id="rd-lon"></div>
+        <div class="fl"><label>Zoom (3=Region, 5=Kreis, 7=Stadt)</label><select id="rd-zoom"><option value="3">3 – Kontinent</option><option value="4">4 – Region</option><option value="5" selected>5 – Bundesland</option><option value="6">6 – Landkreis</option><option value="7">7 – Stadt</option><option value="8">8 – Stadtgebiet</option><option value="9">9 – Stadtteil</option><option value="10">10 – Straße</option></select></div>
+        <div class="fl"><label>Umkreis km (0 = kein Kreis)</label><input type="number" id="rd-radius" min="0" max="200" value="20" style="width:90px"></div>
+        <div class="fl"><label>Hintergrundfarbe</label><div class="cr"><input type="color" id="rd-bg" value="#0d1a2e" oninput="cct('rd-bg','rd-bgt')"><input type="text" id="rd-bgt" value="#0d1a2e" oninput="ctc('rd-bg','rd-bgt')"></div></div>
+        <div class="fl"><label>Dauer Sek.</label><input type="number" id="rd-dur" min="20" placeholder="30"></div>
       </div>
-      <!-- Schritt 2: Spieler + Ergebnisse -->
-      <div id="s-matches-wrap" style="display:none">
-        <!-- Gesamtstand-Anzeige (automatisch) -->
-        <div class="sf-total-bar">
-          <div class="sf-tot-team">
-            <div class="sf-tot-name" id="sf-total-heim-name">Heim</div>
-            <div class="sf-tot-score" id="sf-total-heim-score">0</div>
-          </div>
-          <div class="sf-tot-vs">:</div>
-          <div class="sf-tot-team">
-            <div class="sf-tot-score" id="sf-total-gast-score">0</div>
-            <div class="sf-tot-name" id="sf-total-gast-name">Gast</div>
-          </div>
-        </div>
-        <div class="sf-section">
-          <div class="sf-section-title">Einzel E1–E6</div>
-          <div id="sf-sin"></div>
-        </div>
-        <div class="sf-section">
-          <div class="sf-section-title">Doppel D1–D3</div>
-          <div id="sf-dbl"></div>
-        </div>
-      </div>
-      <!-- Hidden fields für manuellen Modus -->
-      <input type="hidden" id="s-heim">
-      <input type="hidden" id="s-gast">
     </div>
-    <div class="tf" id="tf-image">
+<div class="tf" id="tf-rss">
+      <div class="g2">
+        <div class="fl s2"><label>Feed-URL</label><input type="url" id="rss-url" placeholder="https://www.beispiel.de/rss.xml"></div>
+        <div class="fl s2"><label>Ticker-Beschriftung</label><input type="text" id="rss-label" placeholder="NEWS"></div>
+        <div class="fl"><label>Anzahl Meldungen</label><input type="number" id="rss-count" min="1" max="30" value="10"></div>
+        <div class="fl s2"><label>Logo/Bild-URL links im Ticker (opt.)</label><input type="url" id="rss-logo" placeholder="https://...png"></div>
+        <div class="fl"><label>Ticker-Hintergrundfarbe</label><div class="cr"><input type="color" id="rss-bg" value="#1a3a2a" oninput="cct('rss-bg','rss-bgt')"><input type="text" id="rss-bgt" value="#1a3a2a" oninput="ctc('rss-bg','rss-bgt')"></div></div>
+        <div class="fl"><label>Textfarbe</label><div class="cr"><input type="color" id="rss-fg" value="#f5c842" oninput="cct('rss-fg','rss-fgt')"><input type="text" id="rss-fgt" value="#f5c842" oninput="ctc('rss-fg','rss-fgt')"></div></div>
+        <div class="fl"><label>Folienhintergrund</label><div class="cr"><input type="color" id="rss-slide-bg" value="#0f2a1c" oninput="cct('rss-slide-bg','rss-sbgt')"><input type="text" id="rss-sbgt" value="#0f2a1c" oninput="ctc('rss-slide-bg','rss-sbgt')"></div></div>
+        <div class="fl"><label>Geschwindigkeit</label><select id="rss-speed"><option value="80">Langsam</option><option value="120" selected>Normal</option><option value="180">Schnell</option></select></div>
+        <div class="fl"><label>Dauer Sek.</label><input type="number" id="rss-dur" min="10" placeholder="30"></div>
+        <div style="font-size:.75rem;color:var(--di)" class="s2">Der Feed wird über den Server abgerufen und alle 10 Minuten automatisch aktualisiert.</div>
+      </div>
+    </div>
+<div class="tf" id="tf-news">
+      <div class="g2">
+        <div class="fl s2"><label>Ticker-Text</label><textarea id="nw-text" style="font-family:'Inter',sans-serif;font-size:.88rem" placeholder="Herzlich willkommen! ++ Nächstes Heimspiel: Samstag 14 Uhr ++"></textarea></div>
+        <div class="fl s2"><label>Logo/Bild-URL links im Ticker (opt.)</label><input type="url" id="nw-logo" placeholder="https://...png"></div>
+        <div class="fl"><label>Ticker-Hintergrundfarbe</label><div class="cr"><input type="color" id="nw-bg" value="#1a3a2a" oninput="cct('nw-bg','nw-bgt')"><input type="text" id="nw-bgt" value="#1a3a2a" oninput="ctc('nw-bg','nw-bgt')"></div></div>
+        <div class="fl"><label>Textfarbe</label><div class="cr"><input type="color" id="nw-fg" value="#f5c842" oninput="cct('nw-fg','nw-fgt')"><input type="text" id="nw-fgt" value="#f5c842" oninput="ctc('nw-fg','nw-fgt')"></div></div>
+        <div class="fl"><label>Folienhintergrund</label><div class="cr"><input type="color" id="nw-slide-bg" value="#0f2a1c" oninput="cct('nw-slide-bg','nw-sbgt')"><input type="text" id="nw-sbgt" value="#0f2a1c" oninput="ctc('nw-slide-bg','nw-sbgt')"></div></div>
+        <div class="fl"><label>Geschwindigkeit</label><select id="nw-speed"><option value="80">Langsam</option><option value="120" selected>Normal</option><option value="180">Schnell</option></select></div>
+        <div class="fl"><label>Dauer Sek.</label><input type="number" id="nw-dur" min="3" placeholder="30"></div>
+      </div>
+    </div>
+<div class="tf" id="tf-menu">
+      <div class="g2">
+        <div class="fl s2"><label>Titel der Karte</label><input type="text" id="mn-title" placeholder="Unsere Speise- &amp; Getränkekarte"></div>
+        <div class="fl"><label>Hintergrundfarbe</label><div class="cr"><input type="color" id="mn-bg" value="#1a2e22" oninput="cct('mn-bg','mn-bgt')"><input type="text" id="mn-bgt" value="#1a2e22" oninput="ctc('mn-bg','mn-bgt')"></div></div>
+        <div class="fl"><label>Akzentfarbe</label><div class="cr"><input type="color" id="mn-ac" value="#f5c842" oninput="cct('mn-ac','mn-act')"><input type="text" id="mn-act" value="#f5c842" oninput="ctc('mn-ac','mn-act')"></div></div>
+        <div class="fl"><label>Dauer Sek.</label><input type="number" id="mn-dur" min="3" placeholder="20"></div>
+        <div class="s2">
+          <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--di);margin-bottom:6px">Kategorien &amp; Gerichte</div>
+          <div id="mn-cats"></div>
+          <button type="button" class="btn bo2 sm" style="margin-top:6px" onclick="addMenuCat('mn-cats')">+ Kategorie</button>
+        </div>
+      </div>
+    </div>
+<div class="tf" id="tf-booking">
+      <div class="g2">
+        <div class="fl s2">
+          <label>Buchungs-URL</label>
+          <input type="url" id="bk-url" value="https://booking.tennisclub-geldern.de" placeholder="https://booking.tennisclub-geldern.de">
+          <div style="font-size:.75rem;color:var(--di);margin-top:3px">Wird automatisch täglich aktualisiert. Datum wird vom Display gesetzt.</div>
+        </div>
+        <div class="fl s2"><label>Titel</label><input type="text" id="bk-title" value="Platzbelegung heute" placeholder="Platzbelegung heute"></div>
+        <div class="fl"><label>Hintergrundfarbe</label><div class="cr"><input type="color" id="bk-bg" value="#0d2010" oninput="cct('bk-bg','bk-bgt')"><input type="text" id="bk-bgt" value="#0d2010" oninput="ctc('bk-bg','bk-bgt')"></div></div>
+        <div class="fl"><label>Akzentfarbe</label><div class="cr"><input type="color" id="bk-ac" value="#f5c842" oninput="cct('bk-ac','bk-act')"><input type="text" id="bk-act" value="#f5c842" oninput="ctc('bk-ac','bk-act')"></div></div>
+        <div class="fl"><label>Dauer Sek.</label><input type="number" id="bk-dur" min="10" placeholder="30"></div>
+      </div>
+    </div>
+          <div style="display:flex;justify-content:flex-end;margin-top:12px" id="news-add-bar">
+            <button class="btn bp" onclick="addSlide()">+ Folie hinzufügen</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ MULTIMEDIA ══════════ -->
+      <section class="panel" id="panel-multimedia">
+        <div class="card">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:.1em;color:var(--gd);margin-bottom:14px">&#127916; Multimedia</div>
+          <div class="ttabs" id="media-tabs"></div>
+<div class="tf" id="tf-image">
       <div class="g2">
         <div class="fl s2"><label>Bild-URL</label><input type="url" id="i-url" placeholder="https://...jpg"></div>
         <div class="fl s2"><label>Titel (opt.)</label><input type="text" id="i-title"></div>
@@ -479,7 +499,7 @@ main{max-width:920px;margin:0 auto;padding:24px 16px 80px}
         <div class="fl"><label>Dauer Sek.</label><input type="number" id="i-dur" min="3" placeholder=""></div>
       </div>
     </div>
-    <div class="tf" id="tf-upload">
+<div class="tf" id="tf-upload">
       <div class="g2">
         <div class="fl s2"><label>Bild hochladen (JPG, PNG, WebP – max. 3 MB)</label>
           <div style="border:2px dashed var(--bo);border-radius:8px;padding:20px;text-align:center;background:var(--bg);cursor:pointer" id="up-dropzone" onclick="document.getElementById('up-file').click()" ondragover="event.preventDefault();this.style.borderColor='var(--gl)'" ondragleave="this.style.borderColor='var(--bo)'" ondrop="upHandleDrop(event)">
@@ -500,7 +520,7 @@ main{max-width:920px;margin:0 auto;padding:24px 16px 80px}
         <input type="hidden" id="up-data">
       </div>
     </div>
-    <div class="tf" id="tf-youtube">
+<div class="tf" id="tf-youtube">
       <div class="g2">
         <div class="fl s2"><label>YouTube-URL oder Video-ID</label><input type="text" id="y-url" placeholder="https://youtube.com/watch?v=..."></div>
         <div class="fl s2"><label>Titel (opt.)</label><input type="text" id="y-title"></div>
@@ -509,150 +529,118 @@ main{max-width:920px;margin:0 auto;padding:24px 16px 80px}
         <div class="fl"><label>Dauer Sek.</label><input type="number" id="y-dur" min="3" placeholder=""></div>
       </div>
     </div>
-    <div class="tf" id="tf-webpage">
+<div class="tf" id="tf-webpage">
       <div class="g2">
         <div class="fl s2"><label>Name</label><input type="text" id="wp-title" placeholder="z. B. Vereinshomepage"></div>
         <div class="fl s2"><label>Webseiten-URL</label><input type="url" id="wp-url" placeholder="https://..."></div>
         <div class="fl"><label>Dauer Sek.</label><input type="number" id="wp-dur" min="3" placeholder="30"></div>
       </div>
     </div>
-    <div class="tf" id="tf-news">
-      <div class="g2">
-        <div class="fl s2"><label>Ticker-Text</label><textarea id="nw-text" style="font-family:'Inter',sans-serif;font-size:.88rem" placeholder="Herzlich willkommen! ++ Nächstes Heimspiel: Samstag 14 Uhr ++"></textarea></div>
-        <div class="fl s2"><label>Logo/Bild-URL links im Ticker (opt.)</label><input type="url" id="nw-logo" placeholder="https://...png"></div>
-        <div class="fl"><label>Ticker-Hintergrundfarbe</label><div class="cr"><input type="color" id="nw-bg" value="#1a3a2a" oninput="cct('nw-bg','nw-bgt')"><input type="text" id="nw-bgt" value="#1a3a2a" oninput="ctc('nw-bg','nw-bgt')"></div></div>
-        <div class="fl"><label>Textfarbe</label><div class="cr"><input type="color" id="nw-fg" value="#f5c842" oninput="cct('nw-fg','nw-fgt')"><input type="text" id="nw-fgt" value="#f5c842" oninput="ctc('nw-fg','nw-fgt')"></div></div>
-        <div class="fl"><label>Folienhintergrund</label><div class="cr"><input type="color" id="nw-slide-bg" value="#0f2a1c" oninput="cct('nw-slide-bg','nw-sbgt')"><input type="text" id="nw-sbgt" value="#0f2a1c" oninput="ctc('nw-slide-bg','nw-sbgt')"></div></div>
-        <div class="fl"><label>Geschwindigkeit</label><select id="nw-speed"><option value="80">Langsam</option><option value="120" selected>Normal</option><option value="180">Schnell</option></select></div>
-        <div class="fl"><label>Dauer Sek.</label><input type="number" id="nw-dur" min="3" placeholder="30"></div>
-      </div>
-    </div>
-    <div class="tf" id="tf-rss">
-      <div class="g2">
-        <div class="fl s2"><label>Feed-URL</label><input type="url" id="rss-url" placeholder="https://www.beispiel.de/rss.xml"></div>
-        <div class="fl s2"><label>Ticker-Beschriftung</label><input type="text" id="rss-label" placeholder="NEWS"></div>
-        <div class="fl"><label>Anzahl Meldungen</label><input type="number" id="rss-count" min="1" max="30" value="10"></div>
-        <div class="fl s2"><label>Logo/Bild-URL links im Ticker (opt.)</label><input type="url" id="rss-logo" placeholder="https://...png"></div>
-        <div class="fl"><label>Ticker-Hintergrundfarbe</label><div class="cr"><input type="color" id="rss-bg" value="#1a3a2a" oninput="cct('rss-bg','rss-bgt')"><input type="text" id="rss-bgt" value="#1a3a2a" oninput="ctc('rss-bg','rss-bgt')"></div></div>
-        <div class="fl"><label>Textfarbe</label><div class="cr"><input type="color" id="rss-fg" value="#f5c842" oninput="cct('rss-fg','rss-fgt')"><input type="text" id="rss-fgt" value="#f5c842" oninput="ctc('rss-fg','rss-fgt')"></div></div>
-        <div class="fl"><label>Folienhintergrund</label><div class="cr"><input type="color" id="rss-slide-bg" value="#0f2a1c" oninput="cct('rss-slide-bg','rss-sbgt')"><input type="text" id="rss-sbgt" value="#0f2a1c" oninput="ctc('rss-slide-bg','rss-sbgt')"></div></div>
-        <div class="fl"><label>Geschwindigkeit</label><select id="rss-speed"><option value="80">Langsam</option><option value="120" selected>Normal</option><option value="180">Schnell</option></select></div>
-        <div class="fl"><label>Dauer Sek.</label><input type="number" id="rss-dur" min="10" placeholder="30"></div>
-        <div style="font-size:.75rem;color:var(--di)" class="s2">Der Feed wird über den Server abgerufen und alle 10 Minuten automatisch aktualisiert.</div>
-      </div>
-    </div>
-    <div class="tf" id="tf-menu">
-      <div class="g2">
-        <div class="fl s2"><label>Titel der Karte</label><input type="text" id="mn-title" placeholder="Unsere Speise- &amp; Getränkekarte"></div>
-        <div class="fl"><label>Hintergrundfarbe</label><div class="cr"><input type="color" id="mn-bg" value="#1a2e22" oninput="cct('mn-bg','mn-bgt')"><input type="text" id="mn-bgt" value="#1a2e22" oninput="ctc('mn-bg','mn-bgt')"></div></div>
-        <div class="fl"><label>Akzentfarbe</label><div class="cr"><input type="color" id="mn-ac" value="#f5c842" oninput="cct('mn-ac','mn-act')"><input type="text" id="mn-act" value="#f5c842" oninput="ctc('mn-ac','mn-act')"></div></div>
-        <div class="fl"><label>Dauer Sek.</label><input type="number" id="mn-dur" min="3" placeholder="20"></div>
-        <div class="s2">
-          <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--di);margin-bottom:6px">Kategorien &amp; Gerichte</div>
-          <div id="mn-cats"></div>
-          <button type="button" class="btn bo2 sm" style="margin-top:6px" onclick="addMenuCat('mn-cats')">+ Kategorie</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- BOOKING -->
-    <div class="tf" id="tf-booking">
-      <div class="g2">
-        <div class="fl s2">
-          <label>Buchungs-URL</label>
-          <input type="url" id="bk-url" value="https://booking.tennisclub-geldern.de" placeholder="https://booking.tennisclub-geldern.de">
-          <div style="font-size:.75rem;color:var(--di);margin-top:3px">Wird automatisch täglich aktualisiert. Datum wird vom Display gesetzt.</div>
-        </div>
-        <div class="fl s2"><label>Titel</label><input type="text" id="bk-title" value="Platzbelegung heute" placeholder="Platzbelegung heute"></div>
-        <div class="fl"><label>Hintergrundfarbe</label><div class="cr"><input type="color" id="bk-bg" value="#0d2010" oninput="cct('bk-bg','bk-bgt')"><input type="text" id="bk-bgt" value="#0d2010" oninput="ctc('bk-bg','bk-bgt')"></div></div>
-        <div class="fl"><label>Akzentfarbe</label><div class="cr"><input type="color" id="bk-ac" value="#f5c842" oninput="cct('bk-ac','bk-act')"><input type="text" id="bk-act" value="#f5c842" oninput="ctc('bk-ac','bk-act')"></div></div>
-        <div class="fl"><label>Dauer Sek.</label><input type="number" id="bk-dur" min="10" placeholder="30"></div>
-      </div>
-    </div>
-
-    <div class="tf" id="tf-weather">
-      <div class="g2">
-        <div class="fl s2"><label>Ort</label><div style="display:flex;gap:7px"><input type="text" id="wt-loc" placeholder="z. B. Geldern" style="flex:1" onkeydown="if(event.key==='Enter')geoSearch('wt')"><button type="button" class="btn bp sm" onclick="geoSearch('wt')">&#128270; Suchen</button></div></div>
-        <div class="fl s2" id="wt-result" style="display:none;background:#f0fff4;border:1px solid #a8d5b5;border-radius:7px;padding:8px 12px"><div style="font-size:.8rem;font-weight:600;color:var(--gl);margin-bottom:3px">&#10003; Gefunden:</div><div id="wt-result-txt" style="font-size:.88rem"></div><input type="hidden" id="wt-lat"><input type="hidden" id="wt-lon"></div>
-        <div class="fl"><label>Hintergrundfarbe</label><div class="cr"><input type="color" id="wt-bg" value="#0d1a2e" oninput="cct('wt-bg','wt-bgt')"><input type="text" id="wt-bgt" value="#0d1a2e" oninput="ctc('wt-bg','wt-bgt')"></div></div>
-        <div class="fl"><label>Dauer Sek.</label><input type="number" id="wt-dur" min="20" placeholder="30"></div>
-      </div>
-    </div>
-    <div class="tf" id="tf-radar">
-      <div class="g2">
-        <div class="fl s2"><label>Ort</label><div style="display:flex;gap:7px"><input type="text" id="rd-loc" placeholder="z. B. Geldern" style="flex:1" onkeydown="if(event.key==='Enter')geoSearch('rd')"><button type="button" class="btn bp sm" onclick="geoSearch('rd')">&#128270; Suchen</button></div></div>
-        <div class="fl s2" id="rd-result" style="display:none;background:#f0fff4;border:1px solid #a8d5b5;border-radius:7px;padding:8px 12px"><div style="font-size:.8rem;font-weight:600;color:var(--gl);margin-bottom:3px">&#10003; Gefunden:</div><div id="rd-result-txt" style="font-size:.88rem"></div><input type="hidden" id="rd-lat"><input type="hidden" id="rd-lon"></div>
-        <div class="fl"><label>Zoom (3=Region, 5=Kreis, 7=Stadt)</label><select id="rd-zoom"><option value="3">3 – Kontinent</option><option value="4">4 – Region</option><option value="5" selected>5 – Bundesland</option><option value="6">6 – Landkreis</option><option value="7">7 – Stadt</option><option value="8">8 – Stadtgebiet</option><option value="9">9 – Stadtteil</option><option value="10">10 – Straße</option></select></div>
-        <div class="fl"><label>Umkreis km (0 = kein Kreis)</label><input type="number" id="rd-radius" min="0" max="200" value="20" style="width:90px"></div>
-        <div class="fl"><label>Hintergrundfarbe</label><div class="cr"><input type="color" id="rd-bg" value="#0d1a2e" oninput="cct('rd-bg','rd-bgt')"><input type="text" id="rd-bgt" value="#0d1a2e" oninput="ctc('rd-bg','rd-bgt')"></div></div>
-        <div class="fl"><label>Dauer Sek.</label><input type="number" id="rd-dur" min="20" placeholder="30"></div>
-      </div>
-    </div>
-    <div class="tf" id="tf-html">
+<div class="tf" id="tf-html">
       <div class="g2">
         <div class="fl s2"><label>Titel</label><input type="text" id="h-title"></div>
         <div class="fl s2"><label>HTML-Code</label><textarea id="h-code" style="min-height:120px" placeholder="&lt;div style='...'&gt;Inhalt&lt;/div&gt;"></textarea></div>
         <div class="fl"><label>Dauer Sek.</label><input type="number" id="h-dur" min="3" placeholder=""></div>
       </div>
     </div>
-
-    <div class="tf" id="tf-bracket">
-      <div class="g2">
-        <div class="fl s2"><label>Titel</label><input type="text" id="br-title" placeholder="Herren"></div>
-        <div class="fl"><label>Anzahl Teilnehmer</label>
-          <select id="br-size" onchange="buildBracketEditor('br')">
-            <option value="4">4</option>
-            <option value="8" selected>8</option>
-            <option value="16">16</option>
-          </select>
+          <div style="display:flex;justify-content:flex-end;margin-top:12px" id="media-add-bar">
+            <button class="btn bp" onclick="addSlide()">+ Folie hinzufügen</button>
+          </div>
         </div>
-        <div class="fl"><label>Dauer Sek.</label><input type="number" id="br-dur" min="10" placeholder="30"></div>
-        <div class="fl"><label>Hintergrundfarbe</label><div class="cr"><input type="color" id="br-bg" value="#0d2b1a" oninput="cct('br-bg','br-bgt')"><input type="text" id="br-bgt" value="#0d2b1a" oninput="ctc('br-bg','br-bgt')"></div></div>
-        <div class="fl"><label>Akzentfarbe</label><div class="cr"><input type="color" id="br-ac" value="#c9db4d" oninput="cct('br-ac','br-act')"><input type="text" id="br-act" value="#c9db4d" oninput="ctc('br-ac','br-act')"></div></div>
-        <div class="s2" style="font-size:.72rem;color:var(--di)">Namen eintragen (leer lassen = Freilos/„Rast"). Sobald beide Seiten einer Begegnung feststehen, per Klick auf den Namen den Sieger markieren — die nächste Runde füllt sich automatisch.</div>
-      </div>
-      <div id="br-editor" style="margin-top:10px"></div>
-    </div>
+      </section>
 
-    <div class="tf" id="tf-spielplan">
-      <div class="g2">
-        <div class="fl s2"><label>Mannschaft</label>
-          <select id="sp-team-sel" style="width:100%"><option value="">-- Mannschaft wählen --</option></select>
+      <!-- ══════════ EINSTELLUNGEN ══════════ -->
+      <section class="panel" id="panel-einstellungen">
+        <div class="card" id="settings-card">
+          <div class="settings-sub">Cloudflare Worker</div>
+          <div class="api-bar uncfg" id="api-bar">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+              <div class="fl" style="flex:1;margin:0;min-width:200px"><label>Worker-URL</label><input type="url" id="cfg-url" value="https://vereinstv.marc-d55.workers.dev" readonly style="opacity:.6;cursor:default"></div>
+              <button class="btn bp sm" onclick="testConn()">Verbindung testen</button>
+            </div>
+          </div>
+          <div class="settings-sub">Darstellung</div>
+          <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end">
+            <div class="fl" style="margin:0"><label>Vereinsname</label><input type="text" id="cfg-club" value="TC Mein Verein" style="width:190px"></div>
+            <div class="fl" style="margin:0"><label>Standard-Dauer (Sek.)</label><input type="number" id="cfg-dur" min="3" max="600" value="10" style="width:75px"></div>
+            <div class="fl" style="margin:0">
+              <label>Schriftart</label>
+              <select id="cfg-font" style="width:160px" onchange="previewFont()">
+                <option value="Inter">Inter (Standard)</option>
+                <option value="Roboto">Roboto</option>
+                <option value="Open Sans">Open Sans</option>
+                <option value="Lato">Lato</option>
+                <option value="Montserrat">Montserrat</option>
+                <option value="Poppins">Poppins</option>
+                <option value="Nunito">Nunito</option>
+                <option value="Nunito Sans">Nunito Sans</option>
+                <option value="Raleway">Raleway</option>
+                <option value="Oswald">Oswald</option>
+                <option value="Ubuntu">Ubuntu</option>
+                <option value="Source Sans 3">Source Sans 3</option>
+                <option value="Barlow">Barlow</option>
+                <optgroup label="── Geschwungen / Script ──">
+                <option value="Pacifico">Pacifico (geschwungen, leserlich)</option>
+                <option value="Dancing Script">Dancing Script (elegant)</option>
+                <option value="Caveat">Caveat (handschriftlich)</option>
+                <option value="Satisfy">Satisfy (klassisch)</option>
+                <option value="Kaushan Script">Kaushan Script (sportlich)</option>
+                </optgroup>
+              </select>
+            </div>
+            <div class="fl" style="margin:0">
+              <label>Schriftgröße</label>
+              <select id="cfg-fontsize" style="width:120px">
+                <option value="0.8">Klein (80%)</option>
+                <option value="0.9">Etwas kleiner</option>
+                <option value="1" selected>Normal (100%)</option>
+                <option value="1.1">Etwas größer</option>
+                <option value="1.2">Groß (120%)</option>
+                <option value="1.35">Sehr groß</option>
+              </select>
+            </div>
+            <div class="fl" style="margin:0">
+              <label>Vorschau</label>
+              <div id="font-preview" style="padding:6px 12px;background:var(--gd);color:var(--ye);border-radius:6px;font-size:.95rem">Vereins-TV</div>
+            </div>
+            <div class="fl" style="margin:0">
+              <label>Folien-Titelfarbe</label>
+              <div style="display:flex;gap:6px;align-items:center">
+                <input type="color" id="cfg-stc" value="#f5c842" style="width:36px;height:32px;border:none;border-radius:4px;cursor:pointer;padding:1px" oninput="document.getElementById('cfg-stc-hex').value=this.value">
+                <input type="text" id="cfg-stc-hex" value="#f5c842" style="width:76px" oninput="document.getElementById('cfg-stc').value=this.value">
+              </div>
+            </div>
+            <div class="fl" style="margin:0">
+              <label>Folien-Titelschrift</label>
+              <select id="cfg-stf" style="width:160px">
+                <option value="">Wie Hauptschrift</option>
+                <option value="Bebas Neue">Bebas Neue</option>
+                <option value="Inter">Inter</option>
+                <option value="Roboto">Roboto</option>
+                <option value="Montserrat">Montserrat</option>
+                <option value="Oswald">Oswald</option>
+                <option value="Poppins">Poppins</option>
+                <option value="Raleway">Raleway</option>
+                <option value="Nunito">Nunito</option>
+              </select>
+            </div>
+          </div>
         </div>
-        <div class="fl s2"><label>Titel (optional)</label><input type="text" id="sp-title" placeholder="Spielplan"></div>
-        <div class="fl"><label>Dauer Sek.</label><input type="number" id="sp-dur" min="5" placeholder="30"></div>
-        <div class="fl"><label>Hintergrundfarbe</label><div class="cr"><input type="color" id="sp-bg" value="#0f2a1c" oninput="cct('sp-bg','sp-bgt')"><input type="text" id="sp-bgt" value="#0f2a1c" oninput="ctc('sp-bg','sp-bgt')"></div></div>
-        <div class="fl"><label>Akzentfarbe</label><div class="cr"><input type="color" id="sp-ac" value="#f5c842" oninput="cct('sp-ac','sp-act')"><input type="text" id="sp-act" value="#f5c842" oninput="ctc('sp-ac','sp-act')"></div></div>
-        <div class="s2" style="font-size:.72rem;color:var(--di)">Zeigt den Spielplan der gewählten Mannschaft (aus der Mannschaftsverwaltung) live an — Änderungen dort erscheinen automatisch auf dieser Folie.</div>
-      </div>
-    </div>
 
-    <div class="tf" id="tf-kader">
-      <div class="g2">
-        <div class="fl s2"><label>Mannschaft</label>
-          <select id="kd-team-sel" style="width:100%"><option value="">-- Mannschaft wählen --</option></select>
-        </div>
-        <div class="fl s2"><label>Titel (optional)</label><input type="text" id="kd-title" placeholder="Unsere Mannschaft"></div>
-        <div class="fl"><label>Dauer Sek.</label><input type="number" id="kd-dur" min="5" placeholder="20"></div>
-        <div class="fl"><label>Hintergrundfarbe</label><div class="cr"><input type="color" id="kd-bg" value="#0f2a1c" oninput="cct('kd-bg','kd-bgt')"><input type="text" id="kd-bgt" value="#0f2a1c" oninput="ctc('kd-bg','kd-bgt')"></div></div>
-        <div class="fl"><label>Akzentfarbe</label><div class="cr"><input type="color" id="kd-ac" value="#f5c842" oninput="cct('kd-ac','kd-act')"><input type="text" id="kd-act" value="#f5c842" oninput="ctc('kd-ac','kd-act')"></div></div>
-        <div class="s2" style="font-size:.72rem;color:var(--di)">Zeigt den Kader (eigene Spieler) der gewählten Mannschaft live an.</div>
-      </div>
+<div class="card" id="users-card" style="display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:.1em;color:var(--gd)">&#128100; Benutzerverwaltung</div>
+      <button class="btn bp sm" onclick="openAddUser()">+ Benutzer hinzufügen</button>
     </div>
+    <div id="users-list"></div>
+  </div>
+      </section>
 
-    <div style="display:flex;justify-content:flex-end;margin-top:12px" id="add-slide-bar">
-      <button class="btn bp" onclick="addSlide()">+ Folie hinzufügen</button>
     </div>
   </div>
 
-  <div style="font-family:'Bebas Neue',sans-serif;font-size:1.25rem;letter-spacing:.1em;color:var(--gd);margin-bottom:4px">Folien-Reihenfolge</div>
-  <div style="font-size:.78rem;color:var(--di);margin-bottom:10px" id="list-hint">Drag &amp; Drop zum Sortieren</div>
-  <div class="slist" id="slist"></div>
-  <div id="empty" style="display:none;text-align:center;padding:40px 20px;color:var(--di);background:var(--ca);border:1.5px solid var(--bo);border-radius:9px;margin-top:4px">
-    <div style="font-size:2.8rem;opacity:.3;margin-bottom:7px">&#127902;</div>
-    <div id="empty-msg">Noch keine Folien erstellt.</div>
-  </div>
 </main>
+
 
 <!-- Edit Modal -->
 <div class="mb" id="modal" onclick="if(event.target===this)closeModal()">
@@ -798,12 +786,10 @@ function showApp(){
   badge.className='role-badge '+role;
   document.getElementById('role-badge-text').textContent=LABELS[role]||'Verwaltung';
 
-  // Show/hide sections based on role
-  document.getElementById('settings-card').style.display = role==='admin'?'block':'none';
+  // Show/hide sections based on role — jetzt über die Seitenleiste gesteuert
   var adminColors=document.getElementById('s-admin-colors');if(adminColors)adminColors.style.display=role==='admin'?'block':'none';
-  document.getElementById('api-bar').style.display = role==='admin'?'block':'none';
+  document.getElementById('settings-card').style.display = role==='admin'?'block':'none';
   document.getElementById('users-card').style.display = role==='admin'?'block':'none';
-  document.getElementById('mgmt-card').style.display = role==='admin'?'block':'none';
 
   // Role info for non-admin
   var info=document.getElementById('role-info');
@@ -820,8 +806,8 @@ function showApp(){
   // Drag hint only for admin
   document.getElementById('list-hint').textContent = role==='admin' ? 'Drag & Drop zum Sortieren' : 'Folien ein-/ausblenden oder bearbeiten';
 
-  // Build type tabs for this role
-  buildTypeTabs();
+  // Seitenleiste passend zur Rolle aufbauen und Startbereich anzeigen
+  buildSidebarForRole();
 
   // Load config and users
   var wurl=getWurl();
@@ -830,27 +816,75 @@ function showApp(){
     loadFromWorker();
     if(role==='admin'){ loadUsers(); loadTeams(); loadMasterMenu(); loadTabellen(); }
     else if(role==='wirtin'){ loadMasterMenu(); }
+    else if(role==='teamleader'){ loadTeams(); }
   }
   if(role==='admin') setTimeout(previewFont,100);
 }
 
 // ══════════════════════════════════════════════════════════════
-// TYPE TABS (filtered by role)
+// SIDEBAR-NAVIGATION
 // ══════════════════════════════════════════════════════════════
-var TAB_LABELS = {
-  booking:'&#127931; Platzbelegung',announce:'&#128226; Ankündigung', table:'&#128202; Tabelle', score:'&#127934; Spielstand',
-  image:'&#128247; Bild', upload:'&#128444; Bild-Upload', youtube:'&#9654; YouTube',
-  webpage:'&#127760; Webseite', news:'&#128241; News-Ticker', rss:'&#128225; RSS-Feed', menu:'&#127869; Speisekarte',
-  weather:'&#127780; Wettervorhersage', radar:'&#127782; Regenradar', html:'&#128187; HTML', bracket:'&#127942; Turnierbaum',
-  spielplan:'&#128197; Spielplan', kader:'&#128101; Kader'
+var NEWS_TYPES=['announce','weather','radar','rss','news','menu','booking'];
+var MEDIA_TYPES=['image','upload','youtube','webpage','html'];
+var SIDEBAR_ROLE_PANELS={
+  admin:['folien','mannschaften','begegnungen','turnier','news','multimedia','einstellungen'],
+  wirtin:['news'],
+  teamleader:['begegnungen']
 };
 
-function buildTypeTabs(){
+function selSidebar(panel){
+  document.querySelectorAll('.nav-item').forEach(function(x){x.classList.toggle('on',x.dataset.panel===panel);});
+  document.querySelectorAll('.panel').forEach(function(x){x.classList.toggle('on',x.id==='panel-'+panel);});
+  if(panel==='news'){
+    if(!document.getElementById('news-tabs').children.length)buildSubTabs('news-tabs',NEWS_TYPES,'news-add-bar');
+    else reassertSubTab('news-tabs');
+  }
+  if(panel==='multimedia'){
+    if(!document.getElementById('media-tabs').children.length)buildSubTabs('media-tabs',MEDIA_TYPES,'media-add-bar');
+    else reassertSubTab('media-tabs');
+  }
+  if(panel==='turnier'){curTab='bracket';var brTf=document.getElementById('tf-bracket');if(brTf)brTf.classList.add('on');if(!_brState)buildBracketEditor('br');}
+  if(panel==='mannschaften'&&!document.getElementById('mannschaften-team-list').children.length)renderMannschaftenList();
+  if(panel==='begegnungen'&&!document.getElementById('begegnungen-team-list').children.length)renderBegegnungenList();
+}
+
+// selTab schaltet .tf/.tt global um (ein Formular pro Typ, eindeutige IDs) —
+// dadurch "vergisst" ein anderes Panel (z.B. News) seinen aktiven Unterreiter,
+// sobald irgendwo anders ein Typ wechselt. Beim erneuten Betreten des Panels
+// wird der zuletzt aktive Unterreiter deshalb einfach erneut ausgewählt.
+function reassertSubTab(containerId){
+  var container=document.getElementById(containerId);
+  if(!container)return;
+  var activeBtn=container.querySelector('.tt.on')||container.children[0];
+  if(activeBtn)selTab(activeBtn,activeBtn.dataset.t);
+}
+
+function buildSidebarForRole(){
   var role=SESSION?SESSION.role:'admin';
-  var allowed=ROLE_TABS[role]||ROLE_TABS.admin;
-  var container=document.getElementById('type-tabs');
+  var allowed=SIDEBAR_ROLE_PANELS[role]||SIDEBAR_ROLE_PANELS.admin;
+  document.querySelectorAll('.nav-item').forEach(function(x){x.style.display=allowed.includes(x.dataset.panel)?'flex':'none';});
+  document.getElementById('app-sidebar').style.display=allowed.length>1?'flex':'none';
+  selSidebar(allowed[0]);
+}
+
+// ══════════════════════════════════════════════════════════════
+// TYPE TABS (filtered by role) — verwendet für News- und Multimedia-Unterreiter
+// ══════════════════════════════════════════════════════════════
+var TAB_LABELS = {
+  booking:'&#127931; Platzbelegung',announce:'&#128226; Ankündigung',
+  image:'&#128247; Bild', upload:'&#128444; Bild-Upload', youtube:'&#9654; YouTube',
+  webpage:'&#127760; Webseite', news:'&#128241; News-Ticker', rss:'&#128225; RSS-Feed', menu:'&#127869; Speisekarte',
+  weather:'&#127780; Wettervorhersage', radar:'&#127782; Regenradar', html:'&#128187; HTML', bracket:'&#127942; Turnierbaum'
+};
+
+function buildSubTabs(containerId,types,addBarId){
+  var role=SESSION?SESSION.role:'admin';
+  var allowedTypes=ROLE_TABS[role]||ROLE_TABS.admin;
+  var list=types.filter(function(t){return allowedTypes.includes(t);});
+  var container=document.getElementById(containerId);
+  if(!container)return;
   container.innerHTML='';
-  allowed.forEach(function(t,i){
+  list.forEach(function(t,i){
     var btn=document.createElement('div');
     btn.className='tt'+(i===0?' on':'');
     btn.dataset.t=t;
@@ -858,17 +892,15 @@ function buildTypeTabs(){
     btn.onclick=function(){selTab(this,t);};
     container.appendChild(btn);
   });
-  if(allowed.length>0) selTab(container.children[0], allowed[0]);
+  var addBar=document.getElementById(addBarId);
+  if(addBar)addBar.style.display=list.length?'flex':'none';
+  if(list.length>0) selTab(container.children[0], list[0]);
 }
 
 function selTab(el,t){
   curTab=t;
   document.querySelectorAll('.tt').forEach(function(x){x.classList.toggle('on',x.dataset.t===t);});
   document.querySelectorAll('.tf').forEach(function(x){x.classList.toggle('on',x.id==='tf-'+t);});
-  // Score-Tab: kein manueller "Hinzufügen"-Button — Folie wird automatisch angelegt
-  var addBar=document.getElementById('add-slide-bar');
-  if(addBar)addBar.style.display=t==='score'?'none':'flex';
-  if(t==='score'){initScoreForm();}
   if(t==='menu'&&!document.getElementById('mn-cats').children.length){
     if(masterMenu&&masterMenu.categories&&masterMenu.categories.length)fillMenuCats('mn-cats',masterMenu.categories);
     else addMenuCat('mn-cats');
@@ -1264,14 +1296,20 @@ function renderList(){
   var list=document.getElementById('slist'),empty=document.getElementById('empty');
   list.innerHTML='';
   var role=SESSION?SESSION.role:'admin';
-  if(!slides.length){
+  // Ausgeblendete Spielstand-Folien werden hier nicht mehr aufgeführt (sonst
+  // sammeln sich über eine Saison dutzende deaktivierte Begegnungen an) —
+  // sie bleiben über "📺 Einblenden" in der Mannschaftsverwaltung steuerbar,
+  // die Daten bleiben dabei natürlich vollständig erhalten.
+  var visible=slides.filter(function(s){return !(s.type==='score'&&s.enabled===false);});
+  var hiddenCount=slides.length-visible.length;
+  if(!visible.length){
     empty.style.display='block';
     document.getElementById('empty-msg').textContent=role==='wirtin'?'Noch keine Speisekarten-Folien.':role==='teamleader'?'Noch keine Spielstand-Folien.':'Noch keine Folien.';
     return;
   }
   empty.style.display='none';
   var dd=parseInt(gv('cfg-dur'))||10;
-  slides.forEach(function(s,i){
+  visible.forEach(function(s,i){
     var c=document.createElement('div');
     c.className='sc2'+(s.enabled===false?' off':'');
     c.dataset.id=String(s.id);
@@ -1293,9 +1331,27 @@ function renderList(){
     if(role==='admin') setupDrag(c);
     list.appendChild(c);
   });
+  if(hiddenCount>0){
+    var note=document.createElement('div');
+    note.style.cssText='text-align:center;font-size:.78rem;color:var(--di);padding:10px 0';
+    note.textContent=hiddenCount+' ausgeblendete Spielstand-Folie'+(hiddenCount===1?'':'n')+' — verwaltbar über "Mannschaften, Tabellen & Begegnungen".';
+    list.appendChild(note);
+  }
 }
 
-function toggleSlide(id,v){var s=slides.find(function(x){return x.id===id;});if(s)s.enabled=v;document.querySelector('.sc2[data-id="'+id+'"]').classList.toggle('off',!v);}
+function toggleSlide(id,v){
+  var s=slides.find(function(x){return x.id===id;});
+  if(!s)return;
+  s.enabled=v;
+  if(s.type==='score'){
+    // Spielstand-Folien sofort speichern (nicht erst auf "Speichern" warten) und
+    // die Liste neu aufbauen, damit eine ausgeblendete Begegnung sofort verschwindet.
+    scoreUpsert(s,null).then(function(){renderList();});
+  } else {
+    var el=document.querySelector('.sc2[data-id="'+id+'"]');
+    if(el)el.classList.toggle('off',!v);
+  }
+}
 function delSlide(id){
   var s=slides.find(function(x){return x.id===id;});
   if(s&&s.type==='score'){
@@ -1327,14 +1383,15 @@ function openEdit(id){
   if(s.type==='score'){
     // Spielstand-Folien werden nicht mehr im Modal bearbeitet (das führte zu doppelten
     // Feld-IDs und damit zu einer abweichenden/kaputten Maske), sondern springen zur
-    // exakt selben Eingabemaske wie beim Erstellen über die Mannschaftsverwaltung.
+    // exakt selben Eingabemaske wie beim Erstellen über "Begegnungen & Tabellen".
     var team=allTeams.find(function(t){return t.id===s.teamId;});
     var matchIdx=team?team.matches.findIndex(function(m){return m.id===s.data.matchId;}):-1;
     if(team&&matchIdx>-1){
+      selSidebar('begegnungen');
       mgmtOpenScore(team.id,matchIdx);
       return;
     }
-    toast('Diese Spielstand-Folie ist keiner Begegnung mehr zugeordnet. Bitte über "Mannschaften, Tabellen & Begegnungen" öffnen.','err');
+    toast('Diese Spielstand-Folie ist keiner Begegnung mehr zugeordnet. Bitte über "Begegnungen & Tabellen" öffnen.','err');
     return;
   }
   editId=id;
@@ -1484,7 +1541,12 @@ function toast(m,type){var e=document.getElementById('toast');e.textContent=m;e.
 // ══════════════════════════════════════════════════════════
 async function loadTeams(){
   var wurl=getWurl();if(!wurl)return;
-  try{var r=await fetch(wurl+'/teams',{cache:'no-store'});var d=await r.json();if(d.ok){allTeams=d.teams||[];mgmtSelectedTeamIdx=null;renderMgmtTeamList();populateTeamSelects();}}catch(e){}
+  try{var r=await fetch(wurl+'/teams',{cache:'no-store'});var d=await r.json();if(d.ok){
+    allTeams=d.teams||[];
+    mannschaftenSelectedIdx=null;begegnungenSelectedIdx=null;
+    renderMannschaftenList();renderBegegnungenList();
+    populateTeamSelects();
+  }}catch(e){}
 }
 
 // Befüllt alle einfachen "Mannschaft wählen"-Dropdowns (Spielplan-/Kader-Folie,
@@ -1556,7 +1618,7 @@ var allTabellen=[];
 
 async function loadTabellen(){
   var wurl=getWurl();if(!wurl)return;
-  try{var r=await fetch(wurl+'/tabellen',{cache:'no-store'});var d=await r.json();if(d.ok){allTabellen=d.tabellen||[];populateTabelleSelects();if(mgmtSelectedTeamIdx!==null)renderMgmtTeamDetail();else renderMgmtTeamList();}}catch(e){}
+  try{var r=await fetch(wurl+'/tabellen',{cache:'no-store'});var d=await r.json();if(d.ok){allTabellen=d.tabellen||[];populateTabelleSelects();if(begegnungenSelectedIdx!==null)renderBegegnungenDetail();else renderBegegnungenList();}}catch(e){}
 }
 
 async function saveTabellen(){
@@ -1623,7 +1685,7 @@ function buildTabelleGrid(tab){
     });
     var tdDel=document.createElement('td');
     var delB=document.createElement('button');delB.type='button';delB.className='btn bd sm';delB.textContent='×';
-    delB.onclick=function(){row.splice(0,row.length);tab.rows.splice(ri,1);if(mgmtSelectedTeamIdx!==null)renderMgmtTeamDetail();};
+    delB.onclick=function(){row.splice(0,row.length);tab.rows.splice(ri,1);if(begegnungenSelectedIdx!==null)renderBegegnungenDetail();};
     tdDel.appendChild(delB);tr.appendChild(tdDel);
     tbody.appendChild(tr);
   });
@@ -1632,26 +1694,15 @@ function buildTabelleGrid(tab){
 }
 
 // ══════════════════════════════════════════════════════════
-// NEUE VEREINHEITLICHTE VERWALTUNG: Mannschaften → Tabelle & Begegnungen → Spielstand
+// MANNSCHAFTEN-/BEGEGNUNGEN-VERWALTUNG (aufgeteilt auf zwei Panels)
 // ══════════════════════════════════════════════════════════
-var mgmtSelectedTeamIdx=null;
 function genMatchId(){return 'm_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);}
-
-function mgmtRefresh(){loadTeams();loadTabellen();toast('Aktualisiert.');}
 
 async function mgmtSaveAll(){
   // Änderungen sind bereits laufend in allTeams/allTabellen gespiegelt (oninput-Bindung) —
   // beides einfach nacheinander persistieren.
   await saveTeams();
   await saveTabellen();
-}
-
-function mgmtAddTeam(){
-  var team={id:'team_'+Date.now(),name:'Neue Mannschaft',ownPlayers:[{name:''},{name:''},{name:''},{name:''},{name:''},{name:''}],matches:[]};
-  allTeams.push(team);
-  renderMgmtTeamList();
-  mgmtOpenTeam(allTeams.length-1);
-  mgmtCreateTeamLogin(team);
 }
 
 // Erzeugt einen lesbaren Zufallscode (ohne verwechselbare Zeichen wie 0/O, 1/l).
@@ -1698,7 +1749,7 @@ async function mgmtCreateTeamLogin(team){
 
 // Zeigt die neu erzeugten Zugangsdaten einmalig gut sichtbar in der Team-Detailansicht an.
 function mgmtShowNewLoginInfo(teamName,username,password){
-  var detail=document.getElementById('mgmt-team-detail');if(!detail)return;
+  var detail=document.getElementById('mannschaften-team-detail');if(!detail)return;
   var old=detail.querySelector('.mgmt-login-info');if(old)old.remove();
   var box=document.createElement('div');box.className='mgmt-login-info';
   box.innerHTML='<div class="mgmt-login-info-title">🔑 Mannschaftslogin für „'+esc(teamName)+'" angelegt</div>'
@@ -1712,9 +1763,22 @@ function mgmtShowNewLoginInfo(teamName,username,password){
   else detail.appendChild(box);
 }
 
-function renderMgmtTeamList(){
-  var cont=document.getElementById('mgmt-team-list');if(!cont)return;
-  if(mgmtSelectedTeamIdx!==null)return; // Detailansicht ist gerade offen
+// ── MANNSCHAFTEN-PANEL: nur Name + Kader ────────────────────
+var mannschaftenSelectedIdx=null;
+
+function mannschaftenRefresh(){loadTeams();toast('Aktualisiert.');}
+
+function mannschaftenAddTeam(){
+  var team={id:'team_'+Date.now(),name:'Neue Mannschaft',ownPlayers:[{name:''},{name:''},{name:''},{name:''},{name:''},{name:''}],matches:[]};
+  allTeams.push(team);
+  renderMannschaftenList();
+  mannschaftenOpenTeam(allTeams.length-1);
+  mgmtCreateTeamLogin(team);
+}
+
+function renderMannschaftenList(){
+  var cont=document.getElementById('mannschaften-team-list');if(!cont)return;
+  if(mannschaftenSelectedIdx!==null)return;
   cont.innerHTML='';
   cont.style.display='block';
   if(!allTeams.length){
@@ -1724,40 +1788,38 @@ function renderMgmtTeamList(){
   allTeams.forEach(function(team,ti){
     var row=document.createElement('div');row.className='mgmt-team-row';
     var playerCount=(team.ownPlayers||[]).filter(function(p){return p.name;}).length;
-    var matchCount=(team.matches||[]).filter(function(m){return m.opponent;}).length;
-    var tabCount=allTabellen.filter(function(t){return t.teamId===team.id;}).length;
     var info=document.createElement('div');info.className='mgmt-team-info';
     info.innerHTML='<div class="mgmt-team-name">'+esc(team.name||'(ohne Namen)')+'</div>'
-      +'<div class="mgmt-team-meta">'+playerCount+' Spieler · '+matchCount+' Begegnungen · '+tabCount+' Tabelle(n)</div>';
-    info.onclick=function(){mgmtOpenTeam(ti);};
+      +'<div class="mgmt-team-meta">'+playerCount+' Spieler</div>';
+    info.onclick=function(){mannschaftenOpenTeam(ti);};
     var btnWrap=document.createElement('div');btnWrap.style.cssText='display:flex;gap:6px;flex-shrink:0';
     var openBtn=document.createElement('button');openBtn.type='button';openBtn.className='btn bp sm';openBtn.textContent='Öffnen →';
-    openBtn.onclick=function(){mgmtOpenTeam(ti);};
+    openBtn.onclick=function(){mannschaftenOpenTeam(ti);};
     var delBtn=document.createElement('button');delBtn.type='button';delBtn.className='btn bd sm';delBtn.textContent='×';
-    delBtn.onclick=function(e){e.stopPropagation();if(confirm('Mannschaft "'+(team.name||'')+'" wirklich löschen? (Zugehörige Tabellen bleiben erhalten.)')){allTeams.splice(ti,1);renderMgmtTeamList();}};
+    delBtn.onclick=function(e){e.stopPropagation();if(confirm('Mannschaft "'+(team.name||'')+'" wirklich löschen? (Zugehörige Tabellen/Begegnungen bleiben erhalten.)')){allTeams.splice(ti,1);renderMannschaftenList();}};
     btnWrap.appendChild(openBtn);btnWrap.appendChild(delBtn);
     row.appendChild(info);row.appendChild(btnWrap);
     cont.appendChild(row);
   });
 }
 
-function mgmtOpenTeam(ti){
-  mgmtSelectedTeamIdx=ti;
-  document.getElementById('mgmt-team-list').style.display='none';
-  document.getElementById('mgmt-toolbar').style.display='none';
-  document.getElementById('mgmt-hint').style.display='none';
-  var detail=document.getElementById('mgmt-team-detail');
+function mannschaftenOpenTeam(ti){
+  mannschaftenSelectedIdx=ti;
+  document.getElementById('mannschaften-team-list').style.display='none';
+  document.getElementById('mannschaften-toolbar').style.display='none';
+  document.getElementById('mannschaften-hint').style.display='none';
+  var detail=document.getElementById('mannschaften-team-detail');
   detail.style.display='block';
-  renderMgmtTeamDetail();
+  renderMannschaftenDetail();
 }
 
-function mgmtBackToList(){
-  mgmtSelectedTeamIdx=null;
-  document.getElementById('mgmt-toolbar').style.display='flex';
-  document.getElementById('mgmt-hint').style.display='block';
-  document.getElementById('mgmt-team-detail').style.display='none';
-  document.getElementById('mgmt-team-detail').innerHTML='';
-  renderMgmtTeamList();
+function mannschaftenBackToList(){
+  mannschaftenSelectedIdx=null;
+  document.getElementById('mannschaften-toolbar').style.display='flex';
+  document.getElementById('mannschaften-hint').style.display='block';
+  document.getElementById('mannschaften-team-detail').style.display='none';
+  document.getElementById('mannschaften-team-detail').innerHTML='';
+  renderMannschaftenList();
   populateTeamSelects();
 }
 
@@ -1765,14 +1827,14 @@ function mgmtSectionTitle(txt,mt){
   var d=document.createElement('div');d.className='mgmt-section-title';if(mt)d.style.marginTop=mt;d.textContent=txt;return d;
 }
 
-function renderMgmtTeamDetail(){
-  var team=allTeams[mgmtSelectedTeamIdx];
-  var detail=document.getElementById('mgmt-team-detail');
+function renderMannschaftenDetail(){
+  var team=allTeams[mannschaftenSelectedIdx];
+  var detail=document.getElementById('mannschaften-team-detail');
   if(!team){detail.innerHTML='';return;}
   detail.innerHTML='';
 
   var backBtn=document.createElement('button');backBtn.type='button';backBtn.className='btn bo2 sm';backBtn.textContent='← Zurück zu Mannschaften';backBtn.style.marginBottom='14px';
-  backBtn.onclick=mgmtBackToList;
+  backBtn.onclick=mannschaftenBackToList;
   detail.appendChild(backBtn);
 
   // ── Login-Status ──────────────────────────────────────────
@@ -1781,7 +1843,7 @@ function renderMgmtTeamDetail(){
   if(linkedUser){
     loginBar.innerHTML='<span>🔑 Mannschaftslogin: <b>'+esc(linkedUser.username)+'</b></span>';
     var manageBtn=document.createElement('button');manageBtn.type='button';manageBtn.className='btn bo2 sm';manageBtn.textContent='Passwort zurücksetzen (in Benutzerverwaltung)';
-    manageBtn.onclick=function(){var el=document.getElementById('users-card');if(el)el.scrollIntoView({behavior:'smooth'});};
+    manageBtn.onclick=function(){selSidebar('einstellungen');var el=document.getElementById('users-card');if(el)el.scrollIntoView({behavior:'smooth'});};
     loginBar.appendChild(manageBtn);
   } else {
     loginBar.innerHTML='<span style="color:var(--di)">🔑 Noch kein Mannschaftslogin für diese Mannschaft.</span>';
@@ -1808,14 +1870,90 @@ function renderMgmtTeamDetail(){
   var addPBtn=document.createElement('button');addPBtn.type='button';addPBtn.className='btn bo2 sm';addPBtn.textContent='+ Spieler';
   addPBtn.onclick=function(){team.ownPlayers.push({name:''});plList.appendChild(mgmtPlayerRow(team,team.ownPlayers[team.ownPlayers.length-1],team.ownPlayers.length-1));};
   detail.appendChild(addPBtn);
+}
 
+// ── BEGEGNUNGEN & TABELLEN-PANEL: Live-Tabelle + Begegnungen ─
+var begegnungenSelectedIdx=null;
+
+function begegnungenRefresh(){loadTeams();loadTabellen();toast('Aktualisiert.');}
+
+function renderBegegnungenList(){
+  var cont=document.getElementById('begegnungen-team-list');if(!cont)return;
+  if(begegnungenSelectedIdx!==null)return;
+  cont.innerHTML='';
+  cont.style.display='block';
+
+  var role=SESSION?SESSION.role:'admin';
+  var teamsToShow=allTeams;
+  if(role==='teamleader'&&SESSION.teamId){
+    teamsToShow=allTeams.filter(function(t){return t.id===SESSION.teamId||t.name===SESSION.teamId;});
+    if(teamsToShow.length===1){
+      var onlyIdx=allTeams.indexOf(teamsToShow[0]);
+      begegnungenOpenTeam(onlyIdx);
+      return;
+    }
+  }
+  if(!teamsToShow.length){
+    cont.innerHTML='<div style="color:var(--di);font-size:.85rem;padding:8px 0">Noch keine Mannschaften angelegt — bitte zuerst im Bereich "Mannschaften" anlegen.</div>';
+    return;
+  }
+  teamsToShow.forEach(function(team){
+    var ti=allTeams.indexOf(team);
+    var row=document.createElement('div');row.className='mgmt-team-row';
+    var matchCount=(team.matches||[]).filter(function(m){return m.opponent;}).length;
+    var tabCount=allTabellen.filter(function(t){return t.teamId===team.id;}).length;
+    var info=document.createElement('div');info.className='mgmt-team-info';
+    info.innerHTML='<div class="mgmt-team-name">'+esc(team.name||'(ohne Namen)')+'</div>'
+      +'<div class="mgmt-team-meta">'+matchCount+' Begegnungen · '+tabCount+' Tabelle(n)</div>';
+    info.onclick=function(){begegnungenOpenTeam(ti);};
+    var openBtn=document.createElement('button');openBtn.type='button';openBtn.className='btn bp sm';openBtn.textContent='Öffnen →';
+    openBtn.onclick=function(){begegnungenOpenTeam(ti);};
+    row.appendChild(info);row.appendChild(openBtn);
+    cont.appendChild(row);
+  });
+}
+
+function begegnungenOpenTeam(ti){
+  begegnungenSelectedIdx=ti;
+  document.getElementById('begegnungen-team-list').style.display='none';
+  document.getElementById('begegnungen-toolbar').style.display='none';
+  document.getElementById('begegnungen-hint').style.display='none';
+  var detail=document.getElementById('begegnungen-team-detail');
+  detail.style.display='block';
+  renderBegegnungenDetail();
+}
+
+function begegnungenBackToList(){
+  begegnungenSelectedIdx=null;
+  document.getElementById('begegnungen-toolbar').style.display='flex';
+  document.getElementById('begegnungen-hint').style.display='block';
+  document.getElementById('begegnungen-team-detail').style.display='none';
+  document.getElementById('begegnungen-team-detail').innerHTML='';
+  renderBegegnungenList();
+}
+
+function renderBegegnungenDetail(){
+  var team=allTeams[begegnungenSelectedIdx];
+  var detail=document.getElementById('begegnungen-team-detail');
+  if(!team){detail.innerHTML='';return;}
+  detail.innerHTML='';
+
+  var backBtn=document.createElement('button');backBtn.type='button';backBtn.className='btn bo2 sm';backBtn.textContent='← Zurück zu Mannschaften';backBtn.style.marginBottom='14px';
+  backBtn.onclick=begegnungenBackToList;
+  detail.appendChild(backBtn);
+
+  var titleRow=document.createElement('div');titleRow.style.cssText='font-weight:700;font-size:.95rem;margin-bottom:4px';titleRow.textContent=team.name||'(ohne Namen)';
+  detail.appendChild(titleRow);
+
+  var role=SESSION?SESSION.role:'admin';
+  if(role==='admin'){
   // ── Tabelle ───────────────────────────────────────────────
   var tabHd=document.createElement('div');tabHd.style.cssText='display:flex;align-items:center;justify-content:space-between;margin-top:18px';
-  tabHd.appendChild(mgmtSectionTitle('Tabelle'));
+  tabHd.appendChild(mgmtSectionTitle('Tabelle (auch NU-Liga/Tennis.de-Import)'));
   var addTabBtn=document.createElement('button');addTabBtn.type='button';addTabBtn.className='btn bo2 sm';addTabBtn.textContent='+ Tabelle';
   addTabBtn.onclick=function(){
     allTabellen.push({id:'tab_'+Date.now(),teamId:team.id,name:team.name||'Tabelle',sourceUrl:'',headers:['Platz','Team','Sp','S','U','N','Punkte'],rows:[]});
-    renderMgmtTeamDetail();
+    renderBegegnungenDetail();
   };
   tabHd.appendChild(addTabBtn);
   detail.appendChild(tabHd);
@@ -1828,25 +1966,30 @@ function renderMgmtTeamDetail(){
   linkedTabellen.forEach(function(tab){
     detail.appendChild(mgmtTabelleCard(tab));
   });
+  }
 
   // ── Begegnungen ───────────────────────────────────────────
   var mHd=document.createElement('div');mHd.style.cssText='display:flex;align-items:center;justify-content:space-between;margin-top:18px';
   mHd.appendChild(mgmtSectionTitle('Begegnungen (Spielplan)'));
-  var spFolieBtn=document.createElement('button');spFolieBtn.type='button';spFolieBtn.className='btn bp sm';spFolieBtn.textContent='📺 Spielplan auf Folie';
-  spFolieBtn.onclick=function(){mgmtPushSpielplanSlide(team);};
-  mHd.appendChild(spFolieBtn);
+  if(role==='admin'){
+    var spFolieBtn=document.createElement('button');spFolieBtn.type='button';spFolieBtn.className='btn bp sm';spFolieBtn.textContent='📺 Spielplan auf Folie';
+    spFolieBtn.onclick=function(){mgmtPushSpielplanSlide(team);};
+    mHd.appendChild(spFolieBtn);
+  }
   detail.appendChild(mHd);
 
   var mList=document.createElement('div');mList.className='match-list';
   if(!team.matches)team.matches=[];
   team.matches.forEach(function(m,mi){mList.appendChild(mgmtMatchRow(team,m,mi));});
   detail.appendChild(mList);
-  var addMBtn=document.createElement('button');addMBtn.type='button';addMBtn.className='btn bo2 sm';addMBtn.style.marginTop='6px';addMBtn.textContent='+ Begegnung';
-  addMBtn.onclick=function(){
-    team.matches.push({id:genMatchId(),date:'',opponent:'',homeAway:'home'});
-    mList.appendChild(mgmtMatchRow(team,team.matches[team.matches.length-1],team.matches.length-1));
-  };
-  detail.appendChild(addMBtn);
+  if(role==='admin'){
+    var addMBtn=document.createElement('button');addMBtn.type='button';addMBtn.className='btn bo2 sm';addMBtn.style.marginTop='6px';addMBtn.textContent='+ Begegnung';
+    addMBtn.onclick=function(){
+      team.matches.push({id:genMatchId(),date:'',opponent:'',homeAway:'home'});
+      mList.appendChild(mgmtMatchRow(team,team.matches[team.matches.length-1],team.matches.length-1));
+    };
+    detail.appendChild(addMBtn);
+  }
 }
 
 function mgmtPlayerRow(team,player,pi){
@@ -1919,26 +2062,60 @@ function findScoreSlideForMatch(team,m){
 }
 
 // Blendet die Live-Ergebnis-Folie einer Begegnung ein/aus, OHNE sie zu löschen —
-// alle bereits eingetragenen Ergebnisse bleiben dabei immer erhalten.
+// alle bereits eingetragenen Ergebnisse bleiben dabei immer erhalten. Läuft über
+// den atomaren /score-upsert-Endpunkt, damit garantiert nur eine Folie pro
+// Begegnung existiert, auch wenn mehrere Personen gleichzeitig arbeiten.
 async function mgmtToggleScoreSlide(team,m){
   var existing=findScoreSlideForMatch(team,m);
+  var slideToSend;
   if(existing){
-    existing.enabled=existing.enabled===false;
-    if(!existing.data.matchId&&m.id)existing.data.matchId=m.id;
-    if(!existing.teamId&&team.id)existing.teamId=team.id;
+    slideToSend=JSON.parse(JSON.stringify(existing));
+    slideToSend.enabled=existing.enabled===false;
+    if(!slideToSend.data.matchId&&m.id)slideToSend.data.matchId=m.id;
+    if(!slideToSend.teamId&&team.id)slideToSend.teamId=team.id;
   } else {
     var isHome=m.homeAway==='home';
     var heim=isHome?team.name:m.opponent;
     var gast=isHome?m.opponent:team.name;
-    slides.push({
+    slideToSend={
       id:Date.now(),type:'score',teamId:team.id||null,
       name:heim+' vs '+gast,enabled:true,duration:30,
       data:{heimTeam:heim,gastTeam:gast,mannschaft:team.name||'',matchId:m.id||null,gesamtHeim:'0',gesamtGast:'0',bg:'#0f2a1c',accent:'#f5c842',matches:[]}
-    });
+    };
   }
-  await doSave();
-  renderList();
-  renderMgmtTeamDetail();
+  var ok=await scoreUpsert(slideToSend,null);
+  if(ok){renderList();renderBegegnungenDetail();}
+}
+
+// Gemeinsamer Helfer: legt eine Spielstand-Folie über den Worker gezielt an/aktualisiert
+// sie (Server verhindert Duplikate) und hält den lokalen slides[]-Stand synchron.
+async function scoreUpsert(slide,touched){
+  var wurl=getWurl();
+  var role=SESSION?SESSION.role:'admin';
+  var headers={'Content-Type':'application/json'};
+  if(role==='admin'){
+    var pw=localStorage.getItem('vtv_admin_pw')||'';
+    if(!pw){pw=prompt('Admin-Passwort:','');if(!pw)return false;localStorage.setItem('vtv_admin_pw',pw);}
+    headers['X-Admin-Password']=pw;
+  } else {
+    headers['X-Role-Token']=SESSION.token;
+  }
+  try{
+    var r=await fetch(wurl+'/score-upsert',{method:'POST',headers:headers,body:JSON.stringify({slide:slide,touched:touched||[]})});
+    var d=await r.json();
+    if(!d.ok){toast(d.error||'Fehler.','err');if(d.error&&d.error.includes('Passwort'))localStorage.removeItem('vtv_admin_pw');return false;}
+    if(d.slide){
+      var idx=slides.findIndex(function(s){return s.id===slide.id||(d.slide.data&&s.data&&s.data.matchId&&s.data.matchId===d.slide.data.matchId&&(s.teamId||null)===(d.slide.teamId||null));});
+      if(idx!==-1)slides[idx]=d.slide;else slides.push(d.slide);
+      // Etwaiges lokales Duplikat mit abweichender ID (vor dem Upsert lokal angelegt) entfernen
+      slides=slides.filter(function(s,i){
+        if(s.type!=='score'||!s.data||!d.slide.data)return true;
+        if(s.id===d.slide.id)return true;
+        return !(s.data.matchId&&d.slide.data.matchId&&s.data.matchId===d.slide.data.matchId&&(s.teamId||null)===(d.slide.teamId||null));
+      });
+    }
+    return true;
+  }catch(e){toast('Fehler: '+e.message,'err');return false;}
 }
 
 function mgmtTabelleCard(tab){
@@ -1950,7 +2127,7 @@ function mgmtTabelleCard(tab){
   var folieBtn=document.createElement('button');folieBtn.type='button';folieBtn.className='btn bp sm';folieBtn.textContent='📺 Auf Folie';
   folieBtn.onclick=function(){mgmtPushTabelleSlide(tab);};
   var delBtn=document.createElement('button');delBtn.type='button';delBtn.className='btn bd sm';delBtn.textContent='Tabelle ×';
-  delBtn.onclick=function(){if(confirm('Tabelle löschen?')){var idx=allTabellen.indexOf(tab);if(idx>-1)allTabellen.splice(idx,1);renderMgmtTeamDetail();}};
+  delBtn.onclick=function(){if(confirm('Tabelle löschen?')){var idx=allTabellen.indexOf(tab);if(idx>-1)allTabellen.splice(idx,1);renderBegegnungenDetail();}};
   headRow.appendChild(ni);headRow.appendChild(folieBtn);headRow.appendChild(delBtn);
   card.appendChild(headRow);
 
@@ -1972,9 +2149,9 @@ function mgmtTabelleCard(tab){
 
   var gridBtns=document.createElement('div');gridBtns.style.cssText='display:flex;gap:6px;margin-top:8px';
   var addRowBtn=document.createElement('button');addRowBtn.type='button';addRowBtn.className='btn bo2 sm';addRowBtn.textContent='+ Zeile';
-  addRowBtn.onclick=function(){tab.rows.push(tab.headers.map(function(){return '';}));renderMgmtTeamDetail();};
+  addRowBtn.onclick=function(){tab.rows.push(tab.headers.map(function(){return '';}));renderBegegnungenDetail();};
   var addColBtn=document.createElement('button');addColBtn.type='button';addColBtn.className='btn bo2 sm';addColBtn.textContent='+ Spalte';
-  addColBtn.onclick=function(){tab.headers.push('Spalte');tab.rows.forEach(function(r){r.push('');});renderMgmtTeamDetail();};
+  addColBtn.onclick=function(){tab.headers.push('Spalte');tab.rows.forEach(function(r){r.push('');});renderBegegnungenDetail();};
   gridBtns.appendChild(addRowBtn);gridBtns.appendChild(addColBtn);
   card.appendChild(gridBtns);
 
@@ -1984,20 +2161,79 @@ function mgmtTabelleCard(tab){
 // Springt zum Spielstand-Tab und wählt dort automatisch Mannschaft + Begegnung
 // vor — nutzt exakt denselben, bereits bewährten Mechanismus wie bisher.
 function mgmtOpenScore(teamId,matchIdx){
-  var btn=document.querySelector('.tt[data-t="score"]');
-  if(btn)selTab(btn,'score');
-  setTimeout(function(){
-    var teamSel=document.getElementById('s-team-sel');
-    if(!teamSel)return;
-    teamSel.value=teamId;
-    onTeamChange();
-    setTimeout(function(){
-      var matchSel=document.getElementById('s-match-sel');
-      if(matchSel){matchSel.value=String(matchIdx);onMatchChange();}
-      var wrap=document.getElementById('s-matches-wrap');
-      if(wrap)wrap.scrollIntoView({behavior:'smooth',block:'start'});
-    },80);
-  },80);
+  var team=allTeams.find(function(t){return t.id===teamId;});if(!team)return;
+  var match=team.matches[matchIdx];if(!match)return;
+
+  document.getElementById('begegnungen-team-list').style.display='none';
+  document.getElementById('begegnungen-team-detail').style.display='none';
+  document.getElementById('begegnungen-toolbar').style.display='none';
+  document.getElementById('begegnungen-hint').style.display='none';
+  document.getElementById('begegnungen-score-detail').style.display='block';
+
+  var isHome=match.homeAway==='home';
+  var heim=isHome?team.name:match.opponent;
+  var gast=isHome?match.opponent:team.name;
+
+  document.getElementById('sc-match-info-txt').textContent=heim+' vs. '+gast;
+  var dt=match.date?new Date(match.date+'T12:00:00').toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long',year:'numeric'}):'Kein Datum';
+  document.getElementById('sc-match-info-detail').textContent=dt+(isHome?' · Heimspiel':' · Auswärtsspiel');
+  var hn=document.getElementById('sf-total-heim-name');if(hn)hn.textContent=heim;
+  var gn=document.getElementById('sf-total-gast-name');if(gn)gn.textContent=gast;
+
+  // Vorhandene Score-Folie für diese Begegnung suchen — primär über die stabile
+  // matchId, ersatzweise über Heim-/Gastmannschaft (Rückwärtskompatibilität).
+  _activeScoreId=null;
+  var existingSlide=findScoreSlideForMatch(team,match);
+
+  var ownPlayers=team.ownPlayers||[];
+  _sfState={};_sfTouched={};
+  buildSFRows('sf-sin','E',6,ownPlayers,match.opponent,isHome);
+  buildSFRows('sf-dbl','D',3,ownPlayers,match.opponent,isHome,true);
+
+  if(existingSlide){
+    _activeScoreId=existingSlide.id;
+    if(!existingSlide.data.mannschaft&&team.name)existingSlide.data.mannschaft=team.name;
+    if(!existingSlide.data.matchId&&match.id)existingSlide.data.matchId=match.id;
+    if(!existingSlide.teamId&&team.id)existingSlide.teamId=team.id;
+    if(existingSlide.data&&existingSlide.data.matches){
+      setTimeout(function(){
+        var ms=existingSlide.data.matches||[];
+        fillMatch('E',ms.slice(0,6),false);
+        fillMatch('D',ms.slice(6,9),true);
+        var hs=document.getElementById('sf-total-heim-score');
+        var gs=document.getElementById('sf-total-gast-score');
+        if(hs)hs.textContent=existingSlide.data.gesamtHeim||0;
+        if(gs)gs.textContent=existingSlide.data.gesamtGast||0;
+      },50);
+    }
+  } else {
+    // Folie existiert noch nicht → automatisch anlegen (Sichtbarkeit bewusst
+    // deaktiviert, bis über "📺 Einblenden" bestätigt wird)
+    var newSlide={
+      id:Date.now(),type:'score',teamId:team.id||null,
+      name:heim+' vs '+gast,enabled:false,duration:30,
+      data:{
+        heimTeam:heim,gastTeam:gast,mannschaft:team.name||'',matchId:match.id||null,
+        gesamtHeim:'0',gesamtGast:'0',bg:'#0f2a1c',accent:'#f5c842',matches:[]
+      }
+    };
+    _activeScoreId=newSlide.id;
+    scoreUpsert(newSlide,null).then(function(ok){
+      if(ok){
+        renderList();
+        var found=slides.find(function(s){return s.data&&s.data.matchId===match.id&&(s.teamId||null)===(team.id||null);});
+        if(found)_activeScoreId=found.id;
+      }
+    });
+  }
+}
+
+function begegnungenScoreBack(){
+  document.getElementById('begegnungen-score-detail').style.display='none';
+  document.getElementById('begegnungen-toolbar').style.display='flex';
+  document.getElementById('begegnungen-hint').style.display='block';
+  document.getElementById('begegnungen-team-detail').style.display='block';
+  renderBegegnungenDetail();
 }
 
 function mgmtFindOrCreateSlide(type,matchFn,buildFn){
@@ -2053,7 +2289,7 @@ async function tabImportById(tab,previewId,srcUrl){
         var t=d.tables[parseInt(opt.dataset.tix)];if(!t)return;
         tab.headers=t.headers.slice();tab.rows=t.rows.map(function(r){return r.slice();});
         previewWrap.innerHTML='<div style="font-size:.75rem;color:#1e8449;padding:4px 0">Übernommen — bitte prüfen und „Speichern" klicken.</div>';
-        renderMgmtTeamDetail();
+        renderBegegnungenDetail();
       };
     });
   }catch(e){previewWrap.innerHTML='<div style="font-size:.78rem;color:#c0392b;padding:6px 0">Fehler: '+esc(e.message)+'</div>';}
@@ -2230,12 +2466,17 @@ function onMatchChange(){
         matches:[]
       }
     };
-    slides.push(newSlide);
-    renderList();
     _activeScoreId=newSlide.id;
-    // Daten werden ab jetzt live mitgespeichert, aber die Folie ist noch NICHT
-    // eingeblendet — das erfolgt bewusst über den "📺 Einblenden"-Button.
-    doSave();
+    // Über den Worker anlegen (der prüft dabei selbst, ob für diese Begegnung
+    // nicht doch schon eine Folie existiert — verhindert Duplikate, auch wenn
+    // mehrere Personen gleichzeitig dieselbe Begegnung zum ersten Mal öffnen).
+    scoreUpsert(newSlide,null).then(function(ok){
+      if(ok){
+        renderList();
+        var found=slides.find(function(s){return s.data&&s.data.matchId===match.id&&(s.teamId||null)===(teamId||null);});
+        _activeScoreId=found?found.id:newSlide.id;
+      }
+    });
     toast('Begegnung angelegt — zum Anzeigen auf dem Display bitte "📺 Einblenden" nutzen.');
   }
 }
@@ -2416,62 +2657,23 @@ async function pushScoreNow(allowPrompt){
 
   // Aktuelle Werte aus der offenen Maske lesen (nur wenn Score-Tab offen ist)
   var formEl=document.getElementById('sf-E1-hp');
-  var localMatches=null;
+  var touched=[];
   if(formEl){
     var sin2=readSFMatches('E',6);
     var dbl2=readSFMatches('D',3,true);
-    localMatches=sin2.concat(dbl2);
+    localSlide.data.matches=sin2.concat(dbl2);
+    var gh=0,gg=0;
+    localSlide.data.matches.forEach(function(m){if(m.winner==='heim')gh++;else if(m.winner==='gast')gg++;});
+    localSlide.data.gesamtHeim=String(gh);
+    localSlide.data.gesamtGast=String(gg);
+    touched=Object.keys(_sfTouched).filter(function(k){return _sfTouched[k];});
   }
 
   setSt('busy','⚡...');
   try{
     var role=SESSION?SESSION.role:'admin';
-
-    // Immer zuerst den aktuellen Serverstand holen: mehrere Personen können
-    // gleichzeitig verschiedene Partien derselben Begegnung eintragen. Nur die
-    // auf DIESEM Gerät tatsächlich berührten Partien werden überschrieben —
-    // alle anderen werden unverändert vom aktuellen Serverstand übernommen,
-    // damit sich parallele Eingaben nicht gegenseitig überschreiben.
-    var gr=await fetch(wurl+'/config',{cache:'no-store'});
-    var gc=await gr.json();
-    var cfg=gc.ok&&gc.config?gc.config:{slides:[]};
-    var as=cfg.slides||[];
-    var ei=as.findIndex(function(s){return s.id===_activeScoreId;});
-    var serverSlide=ei!==-1?as[ei]:null;
-
-    var mergedSlide=JSON.parse(JSON.stringify(serverSlide||localSlide));
-    if(!mergedSlide.data)mergedSlide.data={};
-
-    if(localMatches){
-      var byType={};
-      (mergedSlide.data.matches||[]).forEach(function(m){if(m&&m.type)byType[m.type]=m;});
-      mergedSlide.data.matches=localMatches.map(function(m){
-        return _sfTouched[m.type]?m:(byType[m.type]||m);
-      });
-      var gh=0,gg=0;
-      mergedSlide.data.matches.forEach(function(m){if(m.winner==='heim')gh++;else if(m.winner==='gast')gg++;});
-      mergedSlide.data.gesamtHeim=String(gh);
-      mergedSlide.data.gesamtGast=String(gg);
-    }
-    // Stammdaten der Folie (Namen, Verknüpfung, Design, Sichtbarkeit) immer vom
-    // lokalen Stand übernehmen — die werden nicht partienweise zusammengeführt.
-    mergedSlide.enabled=localSlide.enabled;
-    mergedSlide.duration=localSlide.duration;
-    mergedSlide.name=localSlide.name;
-    mergedSlide.teamId=localSlide.teamId;
-    if(localSlide.data){
-      mergedSlide.data.heimTeam=localSlide.data.heimTeam;
-      mergedSlide.data.gastTeam=localSlide.data.gastTeam;
-      mergedSlide.data.mannschaft=localSlide.data.mannschaft||mergedSlide.data.mannschaft;
-      mergedSlide.data.matchId=localSlide.data.matchId||mergedSlide.data.matchId;
-      mergedSlide.data.bg=mergedSlide.data.bg||localSlide.data.bg;
-      mergedSlide.data.accent=mergedSlide.data.accent||localSlide.data.accent;
-    }
-    slides[si]=mergedSlide; // lokalen Stand aktualisieren
-
-    var postBody,headers={'Content-Type':'application/json'};
+    var headers={'Content-Type':'application/json'};
     if(role==='admin'){
-      // Admin: kompletten Config holen, zusammengeführte Folie patchen, zurückschicken
       var pw=localStorage.getItem('vtv_admin_pw')||'';
       if(!pw){
         if(!allowPrompt)return; // kein Auto-Prompt beim Auto-Save
@@ -2479,19 +2681,20 @@ async function pushScoreNow(allowPrompt){
         if(!pw){setSt('err','Abgebrochen');return;}
         localStorage.setItem('vtv_admin_pw',pw);
       }
-      if(ei!==-1)as[ei]=mergedSlide;else as.push(mergedSlide);
-      cfg.slides=as;
-      postBody=JSON.stringify(cfg);
       headers['X-Admin-Password']=pw;
     } else {
-      // Teamleader/Wirtin: nur eigene (bereits zusammengeführte) Folie schicken, Worker merged
-      postBody=JSON.stringify({slides:[mergedSlide]});
       headers['X-Role-Token']=SESSION.token;
     }
 
-    var r=await fetch(wurl+'/config',{method:'POST',headers:headers,body:postBody});
+    // Der Worker findet/aktualisiert die Folie für diese Begegnung jetzt selbst,
+    // in einem einzigen atomaren Schritt (statt komplette Konfiguration hin- und
+    // herzuschicken). Dadurch entsteht pro Begegnung garantiert nur noch eine
+    // einzige Folie, auch wenn mehrere Personen gleichzeitig speichern — und nur
+    // die tatsächlich berührten Partien ("touched") werden überschrieben.
+    var r=await fetch(wurl+'/score-upsert',{method:'POST',headers:headers,body:JSON.stringify({slide:localSlide,touched:touched})});
     var d=await r.json();
     if(d.ok){
+      if(d.slide){slides[si]=d.slide;_activeScoreId=d.slide.id;}
       setSt('ok','✓ Live');
       if(!pushScoreNow._t||Date.now()-pushScoreNow._t>4000){
         toast('⚡ Live übertragen');pushScoreNow._t=Date.now();
