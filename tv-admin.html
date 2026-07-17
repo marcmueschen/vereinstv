@@ -325,15 +325,17 @@ main{max-width:1180px;margin:0 auto;padding:24px 16px 80px}
       <!-- ══════════ MANNSCHAFTEN ══════════ -->
       <section class="panel" id="panel-mannschaften">
         <div class="card">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px" id="mannschaften-toolbar">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px" id="mannschaften-toolbar">
             <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:.1em;color:var(--gd)">&#128101; Mannschaften</div>
-            <div style="display:flex;gap:7px">
+            <div style="display:flex;gap:7px;flex-wrap:wrap">
               <button class="btn bo2 sm" onclick="mannschaftenRefresh()">&#8635; Aktualisieren</button>
+              <button class="btn bo2 sm" onclick="toggleClubImport()">🏆 Verein importieren</button>
               <button class="btn bp sm" onclick="mannschaftenAddTeam()">+ Mannschaft</button>
               <button class="btn bp sm" onclick="mgmtSaveAll()">&#9729; Speichern</button>
             </div>
           </div>
-          <div style="font-size:.78rem;color:var(--di);margin-bottom:10px" id="mannschaften-hint">Mannschaft öffnen, um Namen und Kader zu bearbeiten.</div>
+          <div style="font-size:.78rem;color:var(--di);margin-bottom:10px" id="mannschaften-hint">Mannschaft öffnen, um Namen und Kader zu bearbeiten, oder direkt einen ganzen Verein importieren.</div>
+          <div id="club-import-wrap" style="display:none;margin-bottom:14px"></div>
           <div id="mannschaften-team-list"></div>
           <div id="mannschaften-team-detail" style="display:none"></div>
         </div>
@@ -358,6 +360,7 @@ main{max-width:1180px;margin:0 auto;padding:24px 16px 80px}
               <div class="sf-match-info" id="sc-match-info-txt"></div>
               <div class="sf-match-detail" id="sc-match-info-detail"></div>
             </div>
+            <div id="sc-opponent-import-wrap" style="margin-bottom:10px"></div>
             <div class="fl" style="max-width:220px;margin-bottom:14px">
               <label>Anzeigedauer pro Seite (Sekunden)</label>
               <input type="number" id="sc-dur" min="3" max="600" value="30" oninput="mgmtOnDurationChange()">
@@ -1828,16 +1831,20 @@ function mannschaftenAddTeam(){
   mgmtCreateTeamLogin(team);
 }
 
+var showArchivedMannschaften=false;
 function renderMannschaftenList(){
   var cont=document.getElementById('mannschaften-team-list');if(!cont)return;
   if(mannschaftenSelectedIdx!==null)return;
   cont.innerHTML='';
   cont.style.display='block';
-  if(!allTeams.length){
+  var active=allTeams.filter(function(t){return !t.archived;});
+  var archived=allTeams.filter(function(t){return t.archived;});
+  if(!active.length&&!archived.length){
     cont.innerHTML='<div style="color:var(--di);font-size:.85rem;padding:8px 0">Noch keine Mannschaften angelegt. Auf "+ Mannschaft" klicken.</div>';
     return;
   }
-  allTeams.forEach(function(team,ti){
+  active.forEach(function(team){
+    var ti=allTeams.indexOf(team);
     var row=document.createElement('div');row.className='mgmt-team-row';
     var playerCount=(team.ownPlayers||[]).filter(function(p){return p.name;}).length;
     var info=document.createElement('div');info.className='mgmt-team-info';
@@ -1847,12 +1854,33 @@ function renderMannschaftenList(){
     var btnWrap=document.createElement('div');btnWrap.style.cssText='display:flex;gap:6px;flex-shrink:0';
     var openBtn=document.createElement('button');openBtn.type='button';openBtn.className='btn bp sm';openBtn.textContent='Öffnen →';
     openBtn.onclick=function(){mannschaftenOpenTeam(ti);};
+    var archBtn=document.createElement('button');archBtn.type='button';archBtn.className='btn bo2 sm';archBtn.title='In Archiv verschieben';archBtn.textContent='🗄';
+    archBtn.onclick=function(e){e.stopPropagation();team.archived=true;renderMannschaftenList();};
     var delBtn=document.createElement('button');delBtn.type='button';delBtn.className='btn bd sm';delBtn.textContent='×';
-    delBtn.onclick=function(e){e.stopPropagation();if(confirm('Mannschaft "'+(team.name||'')+'" wirklich löschen? (Zugehörige Tabellen/Begegnungen bleiben erhalten.)')){allTeams.splice(ti,1);renderMannschaftenList();}};
-    btnWrap.appendChild(openBtn);btnWrap.appendChild(delBtn);
+    delBtn.onclick=function(e){e.stopPropagation();if(confirm('Mannschaft "'+(team.name||'')+'" wirklich endgültig löschen? (Zugehörige Tabellen/Begegnungen bleiben erhalten. Tipp: Für "nicht mehr gebraucht" lieber 🗄 Archivieren nutzen.)')){allTeams.splice(ti,1);renderMannschaftenList();}};
+    btnWrap.appendChild(openBtn);btnWrap.appendChild(archBtn);btnWrap.appendChild(delBtn);
     row.appendChild(info);row.appendChild(btnWrap);
     cont.appendChild(row);
   });
+  if(archived.length){
+    var togBtn=document.createElement('div');
+    togBtn.style.cssText='text-align:center;font-size:.78rem;color:var(--gl);padding:10px 0;cursor:pointer;text-decoration:underline';
+    togBtn.textContent=(showArchivedMannschaften?'Archiv ausblenden':archived.length+' archivierte Mannschaft'+(archived.length===1?'':'en')+' — Archiv anzeigen');
+    togBtn.onclick=function(){showArchivedMannschaften=!showArchivedMannschaften;renderMannschaftenList();};
+    cont.appendChild(togBtn);
+    if(showArchivedMannschaften){
+      archived.forEach(function(team){
+        var ti=allTeams.indexOf(team);
+        var row=document.createElement('div');row.className='mgmt-team-row';row.style.opacity='.6';
+        var info=document.createElement('div');info.className='mgmt-team-info';
+        info.innerHTML='<div class="mgmt-team-name">'+esc(team.name||'(ohne Namen)')+'</div><div class="mgmt-team-meta">Archiviert</div>';
+        var restoreBtn=document.createElement('button');restoreBtn.type='button';restoreBtn.className='btn bp sm';restoreBtn.textContent='Wiederherstellen';
+        restoreBtn.onclick=function(){team.archived=false;renderMannschaftenList();};
+        row.appendChild(info);row.appendChild(restoreBtn);
+        cont.appendChild(row);
+      });
+    }
+  }
 }
 
 function mannschaftenOpenTeam(ti){
@@ -1941,9 +1969,9 @@ function renderBegegnungenList(){
   cont.style.display='block';
 
   var role=SESSION?SESSION.role:'admin';
-  var teamsToShow=allTeams;
+  var teamsToShow=allTeams.filter(function(t){return !t.archived;});
   if(role==='teamleader'&&SESSION.teamId){
-    teamsToShow=allTeams.filter(function(t){return t.id===SESSION.teamId||t.name===SESSION.teamId;});
+    teamsToShow=teamsToShow.filter(function(t){return t.id===SESSION.teamId||t.name===SESSION.teamId;});
     if(teamsToShow.length===1){
       var onlyIdx=allTeams.indexOf(teamsToShow[0]);
       begegnungenOpenTeam(onlyIdx);
@@ -2129,6 +2157,20 @@ function parseGermanDate(str){
   var dd=('0'+m[1]).slice(-2),mm=('0'+m[2]).slice(-2),yyyy=m[3].length===2?'20'+m[3]:m[3];
   return yyyy+'-'+mm+'-'+dd;
 }
+// Liga-Seiten wie nuLiga verteilen "Datum" manchmal auf mehrere Spalten
+// (Wochentag | Datum+Uhrzeit) — daher nicht blind der Überschrift vertrauen,
+// sondern die Spalte suchen, in der tatsächlich Datumswerte (TT.MM.JJJJ) stehen.
+function detectDateColIdx(headers,rows){
+  var best=-1,bestHits=0;
+  for(var c=0;c<headers.length;c++){
+    var hits=0;
+    for(var r=0;r<rows.length;r++){
+      if(/\d{1,2}\.\d{1,2}\.\d{2,4}/.test(rows[r][c]||''))hits++;
+    }
+    if(hits>bestHits){bestHits=hits;best=c;}
+  }
+  return best;
+}
 
 function toggleBegegnungenImport(team){
   var wrap=document.getElementById('begegnungen-import-wrap');if(!wrap)return;
@@ -2189,7 +2231,8 @@ async function begegnungenImportSearch(team,srcUrl,clubName,previewWrap){
 }
 
 function begegnungenImportPreview(team,table,clubName,previewWrap){
-  var dateIdx=detectColIdx(table.headers,['datum']);
+  var dateIdx=detectDateColIdx(table.headers,table.rows);
+  if(dateIdx===-1)dateIdx=detectColIdx(table.headers,['datum','termin']);
   var heimIdx=detectColIdx(table.headers,['heim']);
   var gastIdx=detectColIdx(table.headers,['gast']);
   if(dateIdx===-1||heimIdx===-1||gastIdx===-1){
@@ -2201,12 +2244,21 @@ function begegnungenImportPreview(team,table,clubName,previewWrap){
     return;
   }
   var clubLower=clubName.toLowerCase();
-  var parsed=table.rows.map(function(row){
+  var hrefRows=table.hrefs||[];
+  // Manche Liga-Seiten zeigen das Datum nur einmal pro Spieltag und lassen es bei
+  // weiteren Begegnungen desselben Tages leer — daher das zuletzt gültige Datum
+  // fortlaufend übernehmen (unabhängig davon, ob die Zeile später zu uns gehört).
+  var lastDate='';
+  var parsed=table.rows.map(function(row,ri){
     var dateStr=row[dateIdx]||'',heimStr=row[heimIdx]||'',gastStr=row[gastIdx]||'';
+    var parsedDate=parseGermanDate(dateStr);
+    if(parsedDate)lastDate=parsedDate;else parsedDate=lastDate;
     var isHome=heimStr.toLowerCase().indexOf(clubLower)!==-1;
     var isAway=gastStr.toLowerCase().indexOf(clubLower)!==-1;
     if(!isHome&&!isAway)return null; // Zeile betrifft nicht unsere Mannschaft
-    return{date:parseGermanDate(dateStr),opponent:isHome?gastStr.trim():heimStr.trim(),homeAway:isHome?'home':'away'};
+    var hrefRow=hrefRows[ri]||[];
+    var opponentUrl=isHome?hrefRow[gastIdx]:hrefRow[heimIdx];
+    return{date:parsedDate,opponent:isHome?gastStr.trim():heimStr.trim(),homeAway:isHome?'home':'away',opponentUrl:opponentUrl||''};
   }).filter(Boolean).filter(function(m){return m.date&&m.opponent;});
 
   if(!parsed.length){
@@ -2226,7 +2278,7 @@ function begegnungenImportPreview(team,table,clubName,previewWrap){
     var commitBtn=document.createElement('button');commitBtn.type='button';commitBtn.className='btn bp sm';commitBtn.style.marginTop='10px';
     commitBtn.textContent=neu.length+' Begegnung'+(neu.length===1?'':'en')+' übernehmen';
     commitBtn.onclick=function(){
-      neu.forEach(function(m){team.matches.push({id:genMatchId(),date:m.date,opponent:m.opponent,homeAway:m.homeAway});});
+      neu.forEach(function(m){team.matches.push({id:genMatchId(),date:m.date,opponent:m.opponent,homeAway:m.homeAway,opponentUrl:m.opponentUrl});});
       toast(neu.length+' Begegnung'+(neu.length===1?'':'en')+' importiert — bitte „Speichern" nicht vergessen.');
       document.getElementById('begegnungen-import-wrap').style.display='none';
       document.getElementById('begegnungen-import-wrap').innerHTML='';
@@ -2252,6 +2304,10 @@ function toggleKaderImport(team){
   var searchBtn=document.createElement('button');searchBtn.type='button';searchBtn.className='btn bo2 sm';searchBtn.textContent='Suchen';
   urlRow.appendChild(urlInp);urlRow.appendChild(searchBtn);
   card.appendChild(urlRow);
+
+  var hint=document.createElement('div');hint.style.cssText='font-size:.72rem;color:var(--di);margin:-4px 0 8px';
+  hint.textContent='Wichtig: nicht die Liga-/Gruppenübersicht verwenden, sondern die "Mannschaftsportrait"-Seite der einzelnen Mannschaft (auf nuLiga: in der Tabelle auf den eigenen Mannschaftsnamen klicken) — dort steht der Kader.';
+  card.appendChild(hint);
 
   var previewWrap=document.createElement('div');
   card.appendChild(previewWrap);
@@ -2289,10 +2345,20 @@ async function kaderImportSearch(team,srcUrl,previewWrap){
   }catch(e){previewWrap.innerHTML='<div style="color:var(--re);font-size:.8rem">Fehler: '+esc(e.message)+'</div>';}
 }
 
+// nuLiga hängt an den sichtbaren Namen oft versteckten Zusatztext an (Profil-Links,
+// Geburtsjahr in Klammern) — beim Scrapen landet das im selben Zellinhalt. Wir
+// schneiden daher alles ab dem ersten "(", "http…" oder einer nuLiga-Profil-ID ab.
+function cleanPlayerName(raw){
+  var s=(raw||'').trim();
+  var cut=s.search(/\(|https?:\/\/|NU\d{5,}/);
+  if(cut>0)s=s.slice(0,cut).trim();
+  return s.replace(/\s{2,}/g,' ').trim();
+}
+
 function kaderImportPreview(team,table,previewWrap){
   var nameIdx=detectColIdx(table.headers,['name','spieler']);
   if(nameIdx===-1)nameIdx=0; // Fallback: erste Spalte
-  var names=table.rows.map(function(row){return (row[nameIdx]||'').trim();}).filter(Boolean);
+  var names=table.rows.map(function(row){return cleanPlayerName(row[nameIdx]);}).filter(Boolean);
   var existingNames=(team.ownPlayers||[]).map(function(p){return (p.name||'').toLowerCase();});
   var neu=names.filter(function(n){return existingNames.indexOf(n.toLowerCase())===-1;});
   var dup=names.length-neu.length;
@@ -2316,6 +2382,229 @@ function kaderImportPreview(team,table,previewWrap){
   };
   previewWrap.appendChild(commitBtn);
 }
+
+// ══════════════════════════════════════════════════════════
+// VEREIN/SAISON-IMPORT: importiert alle gemeldeten Mannschaften eines Vereins
+// für die gewählte(n) Saison(en) und lädt danach automatisch pro Mannschaft
+// auch Spieler und Begegnungen von der jeweiligen Mannschaftsportrait-Seite nach.
+// ══════════════════════════════════════════════════════════
+function toggleClubImport(){
+  var wrap=document.getElementById('club-import-wrap');if(!wrap)return;
+  if(wrap.style.display!=='none'){wrap.style.display='none';wrap.innerHTML='';return;}
+  wrap.style.display='block';wrap.innerHTML='';
+  var card=document.createElement('div');card.className='tabelle-card';
+
+  var urlRow=document.createElement('div');urlRow.className='tabelle-import-row';
+  var urlInp=document.createElement('input');urlInp.type='url';urlInp.placeholder='nuLiga-URL "Mannschaften" des Vereins (z. B. …/clubTeams?club=35749)';
+  var searchBtn=document.createElement('button');searchBtn.type='button';searchBtn.className='btn bo2 sm';searchBtn.textContent='Suchen';
+  urlRow.appendChild(urlInp);urlRow.appendChild(searchBtn);
+  card.appendChild(urlRow);
+
+  var hint=document.createElement('div');hint.style.cssText='font-size:.72rem;color:var(--di);margin:-4px 0 8px';
+  hint.textContent='Auf nuLiga: Vereinssuche → Verein wählen → "Mannschaften". Diese Seiten-URL hier eintragen. Für jede ausgewählte Mannschaft werden anschließend automatisch auch Spieler und Begegnungen von deren eigener Mannschaftsseite geladen.';
+  card.appendChild(hint);
+
+  var previewWrap=document.createElement('div');
+  card.appendChild(previewWrap);
+
+  var closeBtn=document.createElement('button');closeBtn.type='button';closeBtn.className='btn bo2 sm';closeBtn.style.marginTop='8px';closeBtn.textContent='Schließen';
+  closeBtn.onclick=function(){wrap.style.display='none';wrap.innerHTML='';};
+  card.appendChild(closeBtn);
+
+  wrap.appendChild(card);
+  searchBtn.onclick=function(){clubImportSearch(urlInp.value.trim(),previewWrap);};
+}
+
+async function clubImportSearch(srcUrl,previewWrap){
+  if(!srcUrl){toast('Bitte URL eintragen.','err');return;}
+  var wurl=getWurl();
+  previewWrap.innerHTML='<div style="color:var(--di);font-size:.8rem">Lade Vereinsseite…</div>';
+  try{
+    var r=await fetch(wurl+'/tabelle-scrape?url='+encodeURIComponent(srcUrl));
+    var d=await r.json();
+    if(!d.ok){previewWrap.innerHTML='<div style="color:var(--re);font-size:.8rem">'+esc(d.error||'Fehler.')+'</div>';return;}
+    // Die Mannschaftstabelle erkennen: Zeilen mit Link auf eine Mannschaftsportrait-Seite
+    var teamsTable=null,bestHits=0;
+    d.tables.forEach(function(t){
+      var hits=(t.hrefs||[]).filter(function(hr){return hr[0]&&hr[0].indexOf('teamPortrait')!==-1;}).length;
+      if(hits>bestHits){bestHits=hits;teamsTable=t;}
+    });
+    if(!teamsTable){previewWrap.innerHTML='<div style="color:var(--re);font-size:.8rem">Konnte auf dieser Seite keine Mannschaftsliste finden. Bitte die "Mannschaften"-Seite des Vereins verlinken (nicht die allgemeine Vereinsinfo).</div>';return;}
+    clubImportRenderSeasons(teamsTable,previewWrap);
+  }catch(e){previewWrap.innerHTML='<div style="color:var(--re);font-size:.8rem">Fehler: '+esc(e.message)+'</div>';}
+}
+
+// Gruppiert die Mannschaftsliste nach Saison/Wettbewerb: Zeilen ohne Link auf eine
+// Mannschaftsportrait-Seite gelten als Abschnitts-Überschrift (z.B. "Sommer 2026"),
+// alle folgenden Zeilen MIT Link gehören zu diesem Abschnitt.
+function clubImportRenderSeasons(table,previewWrap){
+  var hrefRows=table.hrefs||[];
+  var seasons=[];
+  var currentSeason=null;
+  table.rows.forEach(function(row,ri){
+    var hrefRow=hrefRows[ri]||[];
+    var name=(row[0]||'').trim();
+    if(!name)return;
+    if(hrefRow[0]&&hrefRow[0].indexOf('teamPortrait')!==-1){
+      if(!currentSeason){currentSeason={label:'(ohne Saison-Angabe)',teams:[]};seasons.push(currentSeason);}
+      currentSeason.teams.push({name:name,url:hrefRow[0]});
+    } else {
+      currentSeason={label:name,teams:[]};
+      seasons.push(currentSeason);
+    }
+  });
+  seasons=seasons.filter(function(s){return s.teams.length>0;});
+  if(!seasons.length){previewWrap.innerHTML='<div style="color:var(--re);font-size:.8rem">Keine Mannschaften gefunden.</div>';return;}
+
+  previewWrap.innerHTML='<div style="font-size:.75rem;font-weight:700;color:var(--di);margin:8px 0 4px">Saison(en) und Mannschaften auswählen:</div>';
+  var checkboxes=[];
+  seasons.forEach(function(season){
+    var secDiv=document.createElement('div');secDiv.style.cssText='margin:8px 0;padding:8px;background:var(--bg);border-radius:8px';
+    var secHd=document.createElement('label');secHd.style.cssText='display:flex;align-items:center;gap:8px;font-weight:700;font-size:.85rem;cursor:pointer';
+    var allCb=document.createElement('input');allCb.type='checkbox';
+    var lblTxt=document.createElement('span');lblTxt.textContent=season.label+' ('+season.teams.length+' Mannschaft'+(season.teams.length===1?'':'en')+')';
+    secHd.appendChild(allCb);secHd.appendChild(lblTxt);
+    secDiv.appendChild(secHd);
+    var teamCbs=[];
+    season.teams.forEach(function(team){
+      var row=document.createElement('label');row.style.cssText='display:flex;align-items:center;gap:8px;padding:3px 0 3px 26px;font-size:.8rem;cursor:pointer';
+      var cb=document.createElement('input');cb.type='checkbox';cb.dataset.name=team.name;cb.dataset.url=team.url;
+      var lbl=document.createElement('span');lbl.textContent=team.name;
+      row.appendChild(cb);row.appendChild(lbl);
+      secDiv.appendChild(row);
+      teamCbs.push(cb);
+      checkboxes.push(cb);
+    });
+    allCb.onchange=function(){teamCbs.forEach(function(cb){cb.checked=allCb.checked;});};
+    previewWrap.appendChild(secDiv);
+  });
+
+  var commitBtn=document.createElement('button');commitBtn.type='button';commitBtn.className='btn bp sm';commitBtn.style.marginTop='10px';
+  commitBtn.textContent='Ausgewählte Mannschaften importieren';
+  commitBtn.onclick=function(){
+    var selected=checkboxes.filter(function(cb){return cb.checked;}).map(function(cb){return{name:cb.dataset.name,url:cb.dataset.url};});
+    if(!selected.length){toast('Bitte mindestens eine Mannschaft auswählen.','err');return;}
+    clubImportCommit(selected,previewWrap);
+  };
+  previewWrap.appendChild(commitBtn);
+}
+
+// Sucht in den Tabellen der Mannschaftsportrait-Seite die kleine Infobox-Tabelle
+// (Zeile "Mannschaft: <Anzeigename>") — liefert den Namen, wie er in Tabelle/
+// Spielplan verwendet wird (z.B. "GW Geldern 1"), damit Heim/Auswärts automatisch
+// erkannt werden kann, ohne dass der Name manuell eingetragen werden muss.
+function extractOwnTeamName(tables){
+  for(var i=0;i<tables.length;i++){
+    var all=[tables[i].headers].concat(tables[i].rows);
+    for(var j=0;j<all.length;j++){
+      if((all[j][0]||'').trim().toLowerCase()==='mannschaft'&&all[j][1])return all[j][1].trim();
+    }
+  }
+  return '';
+}
+
+// Importiert für EINE Mannschaft automatisch (ohne Nachfrage) den eigenen
+// Anzeigenamen, alle Begegnungen und alle Spieler von deren Mannschaftsportrait-
+// Seite — wird für jede im Verein-Import ausgewählte Mannschaft aufgerufen.
+async function clubImportCascadeOne(team){
+  var wurl=getWurl();
+  try{
+    var r=await fetch(wurl+'/tabelle-scrape?url='+encodeURIComponent(team.nuligaUrl));
+    var d=await r.json();
+    if(!d.ok)return{ok:false,msg:d.error};
+    var tables=d.tables;
+
+    var ownName=extractOwnTeamName(tables);
+    if(ownName)team.nuligaClub=ownName;
+
+    // Begegnungen
+    var fixtureTable=null;
+    tables.forEach(function(t){
+      var h=detectColIdx(t.headers,['heim']),g=detectColIdx(t.headers,['gast']);
+      var dIdx=detectDateColIdx(t.headers,t.rows);
+      if(h!==-1&&g!==-1&&dIdx!==-1&&(!fixtureTable||t.rows.length>fixtureTable.rows.length))fixtureTable=t;
+    });
+    var addedFixtures=0;
+    if(fixtureTable&&ownName){
+      var dateIdx=detectDateColIdx(fixtureTable.headers,fixtureTable.rows);
+      var heimIdx=detectColIdx(fixtureTable.headers,['heim']);
+      var gastIdx=detectColIdx(fixtureTable.headers,['gast']);
+      var hrefRows=fixtureTable.hrefs||[];
+      var clubLower=ownName.toLowerCase();
+      var lastDate='';
+      if(!team.matches)team.matches=[];
+      fixtureTable.rows.forEach(function(row,ri){
+        var dateStr=row[dateIdx]||'',heimStr=row[heimIdx]||'',gastStr=row[gastIdx]||'';
+        var parsedDate=parseGermanDate(dateStr);
+        if(parsedDate)lastDate=parsedDate;else parsedDate=lastDate;
+        var isHome=heimStr.toLowerCase().indexOf(clubLower)!==-1;
+        var isAway=gastStr.toLowerCase().indexOf(clubLower)!==-1;
+        if(!isHome&&!isAway)return;
+        if(!parsedDate)return;
+        var opponent=(isHome?gastStr:heimStr).trim();
+        if(!opponent)return;
+        if(team.matches.some(function(e){return e.date===parsedDate&&e.opponent===opponent;}))return;
+        var hrefRow=hrefRows[ri]||[];
+        var opponentUrl=isHome?hrefRow[gastIdx]:hrefRow[heimIdx];
+        team.matches.push({id:genMatchId(),date:parsedDate,opponent:opponent,homeAway:isHome?'home':'away',opponentUrl:opponentUrl||''});
+        addedFixtures++;
+      });
+    }
+
+    // Spieler
+    var playerTable=null,nameIdx=-1;
+    tables.forEach(function(t){
+      var idx=detectColIdx(t.headers,['name','spieler']);
+      if(idx!==-1&&(!playerTable||t.rows.length>playerTable.rows.length)){playerTable=t;nameIdx=idx;}
+    });
+    var addedPlayers=0;
+    if(playerTable){
+      if(!team.ownPlayers)team.ownPlayers=[];
+      var existingNames=team.ownPlayers.map(function(p){return (p.name||'').toLowerCase();});
+      playerTable.rows.forEach(function(row){
+        var n=cleanPlayerName(row[nameIdx]);
+        if(!n||existingNames.indexOf(n.toLowerCase())!==-1)return;
+        team.ownPlayers.push({name:n});
+        existingNames.push(n.toLowerCase());
+        addedPlayers++;
+      });
+    }
+
+    return{ok:true,fixtures:addedFixtures,players:addedPlayers,ownName:ownName};
+  }catch(e){return{ok:false,msg:e.message};}
+}
+
+async function clubImportCommit(selectedRows,wrapEl){
+  wrapEl.innerHTML='';
+  var progressList=document.createElement('div');
+  wrapEl.appendChild(progressList);
+  for(var i=0;i<selectedRows.length;i++){
+    var row=selectedRows[i];
+    var line=document.createElement('div');line.style.cssText='font-size:.8rem;padding:4px 0;border-bottom:1px solid var(--bo)';
+    line.textContent='⏳ '+row.name+' …';
+    progressList.appendChild(line);
+
+    var team=allTeams.find(function(t){return t.nuligaUrl===row.url;});
+    if(!team){
+      team={id:'team_'+Date.now()+'_'+i,name:row.name,ownPlayers:[],matches:[],nuligaUrl:row.url};
+      allTeams.push(team);
+    }
+    var res=await clubImportCascadeOne(team);
+    if(res.ok){
+      line.textContent='✅ '+row.name+(res.ownName?' (als „'+res.ownName+'“)':'')+' — '+res.fixtures+' neue Begegnung(en), '+res.players+' neue Spieler';
+    } else {
+      line.textContent='⚠️ '+row.name+' — Fehler: '+(res.msg||'unbekannt');
+    }
+  }
+  renderMannschaftenList();
+  var doneMsg=document.createElement('div');doneMsg.style.cssText='margin-top:10px;font-weight:700;font-size:.85rem;color:#1e8449';
+  doneMsg.textContent='Import abgeschlossen — bitte „☁ Speichern" nicht vergessen.';
+  wrapEl.appendChild(doneMsg);
+  var closeBtn=document.createElement('button');closeBtn.type='button';closeBtn.className='btn bo2 sm';closeBtn.style.marginTop='8px';closeBtn.textContent='Schließen';
+  closeBtn.onclick=function(){document.getElementById('club-import-wrap').style.display='none';document.getElementById('club-import-wrap').innerHTML='';};
+  wrapEl.appendChild(closeBtn);
+}
+
 
 
 // bereits vorhandene Folien nicht gefunden und stattdessen leere Duplikate angelegt wurden.
@@ -2448,6 +2737,15 @@ function mgmtOpenScore(teamId,matchIdx){
   document.getElementById('sc-match-info-detail').textContent=dt+(isHome?' · Heimspiel':' · Auswärtsspiel');
   var hn=document.getElementById('sf-total-heim-name');if(hn)hn.textContent=heim;
   var gn=document.getElementById('sf-total-gast-name');if(gn)gn.textContent=gast;
+
+  var oppWrap=document.getElementById('sc-opponent-import-wrap');
+  oppWrap.innerHTML='';
+  if(match.opponentUrl){
+    var oppBtn=document.createElement('button');oppBtn.type='button';oppBtn.className='btn bo2 sm';oppBtn.textContent='📥 Gegner-Kader importieren ('+esc(match.opponent)+')';
+    oppBtn.onclick=function(){opponentKaderImport(match.opponentUrl,isHome,oppWrap);};
+    oppWrap.appendChild(oppBtn);
+  }
+  _opponentPlayers=[]; // wird beim Import befüllt, dient als Namensvorschlag für die Gast-Felder
 
   // Vorhandene Score-Folie für diese Begegnung suchen — primär über die stabile
   // matchId, ersatzweise über Heim-/Gastmannschaft (Rückwärtskompatibilität).
@@ -3062,15 +3360,16 @@ function appendSFPlayerRow(block,label,ownPlayers,isOwn,id){
   var row=document.createElement('div');row.className='sf-player-row';
   var nameEl=document.createElement('span');nameEl.className='sf-pname';nameEl.textContent=label;
   row.appendChild(nameEl);
-  row.appendChild(makeSFPlayerInput(ownPlayers,isOwn,id));
+  row.appendChild(makeSFPlayerInput(isOwn?ownPlayers:_opponentPlayers,isOwn,id));
   block.appendChild(row);
   return row;
 }
 
 // Immer ein normales Textfeld (bleibt leer, wenn kein Spieler eingetragen ist).
-// Für Spieler der eigenen Mannschaft gibt es zusätzlich eine Auswahlliste (Datalist)
-// zum schnellen Antippen — der Name kann aber auch frei getippt werden.
-function makeSFPlayerInput(ownPlayers,isOwn,id){
+// Für Spieler der eigenen Mannschaft (und, falls importiert, der gegnerischen
+// Mannschaft) gibt es zusätzlich eine Auswahlliste (Datalist) zum schnellen
+// Antippen — der Name kann aber auch frei getippt werden.
+function makeSFPlayerInput(suggestList,isOwn,id){
   var frag=document.createDocumentFragment();
   var inp=document.createElement('input');
   inp.type='text';inp.id=id;inp.className='sf-player-inp';inp.autocomplete='off';
@@ -3080,16 +3379,55 @@ function makeSFPlayerInput(ownPlayers,isOwn,id){
     if(m)sfMarkTouched(m[1]);
     scheduleScorePush();
   };
-  if(isOwn && ownPlayers && ownPlayers.length){
+  var names=(suggestList||[]).map(function(p){return typeof p==='string'?p:p.name;}).filter(Boolean);
+  if(names.length){
     var listId=id+'-dl';
     var dl=document.createElement('datalist');dl.id=listId;
-    ownPlayers.forEach(function(p){if(p.name)dl.appendChild(new Option(p.name));});
+    names.forEach(function(n){dl.appendChild(new Option(n));});
     inp.setAttribute('list',listId);
     frag.appendChild(dl);
   }
   frag.appendChild(inp);
   return frag;
 }
+
+// ── Gegner-Kader-Import (aus der Spielstand-Ansicht heraus) ─
+var _opponentPlayers=[];
+function attachOpponentDatalist(isHome){
+  var suffixes=isHome?['gp','gp1','gp2']:['hp','hp1','hp2'];
+  var names=_opponentPlayers;
+  ['E1','E2','E3','E4','E5','E6','D1','D2','D3'].forEach(function(lbl){
+    suffixes.forEach(function(suf){
+      var inp=document.getElementById('sf-'+lbl+'-'+suf);
+      if(!inp)return;
+      var listId='sf-'+lbl+'-'+suf+'-dl';
+      var dl=document.getElementById(listId);
+      if(!dl){dl=document.createElement('datalist');dl.id=listId;inp.parentNode.insertBefore(dl,inp);}
+      dl.innerHTML='';
+      names.forEach(function(n){dl.appendChild(new Option(n));});
+      inp.setAttribute('list',listId);
+    });
+  });
+}
+async function opponentKaderImport(url,isHome,wrapEl){
+  wrapEl.innerHTML='<div style="color:var(--di);font-size:.8rem">Lade Kader der Gegnermannschaft…</div>';
+  var wurl=getWurl();
+  try{
+    var r=await fetch(wurl+'/tabelle-scrape?url='+encodeURIComponent(url));
+    var d=await r.json();
+    if(!d.ok){wrapEl.innerHTML='<div style="color:var(--re);font-size:.8rem">'+esc(d.error||'Fehler.')+'</div>';return;}
+    var best=null,bestIdx=-1;
+    d.tables.forEach(function(t){
+      var idx=detectColIdx(t.headers,['name','spieler']);
+      if(idx!==-1&&t.rows.length>(best?best.rows.length:0)){best=t;bestIdx=idx;}
+    });
+    if(!best){wrapEl.innerHTML='<div style="color:var(--re);font-size:.8rem">Konnte auf der Gegnerseite keine Spielerliste finden.</div>';return;}
+    _opponentPlayers=best.rows.map(function(row){return cleanPlayerName(row[bestIdx]);}).filter(Boolean);
+    attachOpponentDatalist(isHome);
+    wrapEl.innerHTML='<div style="color:#1e8449;font-size:.8rem">'+_opponentPlayers.length+' Gegner-Spieler geladen — beim Eintragen des Namens erscheinen jetzt Vorschläge.</div>';
+  }catch(e){wrapEl.innerHTML='<div style="color:var(--re);font-size:.8rem">Fehler: '+esc(e.message)+'</div>';}
+}
+
 
 
 function readSFMatches(prefix,count,isDbl){
