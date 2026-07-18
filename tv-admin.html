@@ -2121,6 +2121,10 @@ function mgmtMatchRow(team,m,mi){
   });
   ha.onchange=function(){m.homeAway=ha.value;};
   top.appendChild(di);top.appendChild(oi);top.appendChild(ha);
+  if(m.result){
+    var resSpan=document.createElement('span');resSpan.style.cssText='font-weight:700;font-size:.85rem;color:var(--gd);flex:0 0 auto;padding:0 4px';resSpan.textContent=m.result;resSpan.title='Ergebnis (aus NU-Liga-Import)';
+    top.appendChild(resSpan);
+  }
   row.appendChild(top);
 
   var actions=document.createElement('div');actions.className='mgmt-match-row-actions';
@@ -2278,11 +2282,12 @@ async function begegnungenQuickRefresh(team,btnEl){
     var dateIdx=detectDateColIdx(fixtureTable.headers,fixtureTable.rows);
     var heimIdx=alignedColIdx(fixtureTable.headers,fixtureTable.rows,detectColIdx(fixtureTable.headers,['heim']));
     var gastIdx=alignedColIdx(fixtureTable.headers,fixtureTable.rows,detectColIdx(fixtureTable.headers,['gast']));
+    var mpIdx=alignedColIdx(fixtureTable.headers,fixtureTable.rows,detectColIdx(fixtureTable.headers,['matchpunkte']));
     var hrefRows=fixtureTable.hrefs||[];
     var clubLower=team.nuligaClub.toLowerCase();
     var lastDate='';
     if(!team.matches)team.matches=[];
-    var added=0;
+    var added=0,updated=0;
     fixtureTable.rows.forEach(function(row,ri){
       var dateStr=row[dateIdx]||'',heimStr=row[heimIdx]||'',gastStr=row[gastIdx]||'';
       var parsedDate=parseGermanDate(dateStr);
@@ -2293,14 +2298,31 @@ async function begegnungenQuickRefresh(team,btnEl){
       if(!parsedDate)return;
       var opponent=(isHome?gastStr:heimStr).trim();
       if(!opponent)return;
-      if(team.matches.some(function(e){return e.date===parsedDate&&e.opponent===opponent;}))return;
+      var result='';
+      if(mpIdx!==-1){
+        var mpStr=(row[mpIdx]||'').trim();
+        if(/^\d+\s*:\s*\d+$/.test(mpStr))result=mpStr.replace(/\s+/g,'');
+      }
+      var match=team.matches.find(function(e){return e.date===parsedDate&&e.opponent===opponent;});
+      if(match){
+        if(result&&match.result!==result){match.result=result;updated++;}
+        return;
+      }
       var hrefRow=hrefRows[ri]||[];
       var opponentUrl=isHome?hrefRow[gastIdx]:hrefRow[heimIdx];
-      team.matches.push({id:genMatchId(),date:parsedDate,opponent:opponent,homeAway:isHome?'home':'away',opponentUrl:opponentUrl||''});
+      team.matches.push({id:genMatchId(),date:parsedDate,opponent:opponent,homeAway:isHome?'home':'away',opponentUrl:opponentUrl||'',result:result});
       added++;
     });
-    toast(added>0?added+' neue Begegnung'+(added===1?'':'en')+' gefunden — bitte „Speichern" nicht vergessen.':'Keine neuen Begegnungen gefunden — bereits aktuell.');
-    if(added>0)renderBegegnungenDetail();
+    if(added>0||updated>0){
+      await saveTeams();
+      var parts=[];
+      if(added>0)parts.push(added+' neue Begegnung'+(added===1?'':'en'));
+      if(updated>0)parts.push(updated+' Ergebnis'+(updated===1?'':'se')+' aktualisiert');
+      toast(parts.join(', ')+' — gespeichert.');
+      renderBegegnungenDetail();
+    } else {
+      toast('Keine neuen Begegnungen oder Ergebnisse gefunden — bereits aktuell.');
+    }
   }catch(e){toast('Fehler: '+e.message,'err');}
   finally{if(btnEl){btnEl.disabled=false;btnEl.textContent=origText;}}
 }
@@ -2320,6 +2342,7 @@ function begegnungenImportPreview(team,table,clubName,previewWrap){
   }
   var clubLower=clubName.toLowerCase();
   var hrefRows=table.hrefs||[];
+  var mpIdx=alignedColIdx(table.headers,table.rows,detectColIdx(table.headers,['matchpunkte']));
   // Manche Liga-Seiten zeigen das Datum nur einmal pro Spieltag und lassen es bei
   // weiteren Begegnungen desselben Tages leer — daher das zuletzt gültige Datum
   // fortlaufend übernehmen (unabhängig davon, ob die Zeile später zu uns gehört).
@@ -2333,7 +2356,14 @@ function begegnungenImportPreview(team,table,clubName,previewWrap){
     if(!isHome&&!isAway)return null; // Zeile betrifft nicht unsere Mannschaft
     var hrefRow=hrefRows[ri]||[];
     var opponentUrl=isHome?hrefRow[gastIdx]:hrefRow[heimIdx];
-    return{date:parsedDate,opponent:isHome?gastStr.trim():heimStr.trim(),homeAway:isHome?'home':'away',opponentUrl:opponentUrl||''};
+    // Ergebnis (z.B. "2:7") direkt aus der Matchpunkte-Spalte übernehmen, falls
+    // die Begegnung schon gespielt wurde (nuLiga zeigt sonst "offen" oder leer).
+    var result='';
+    if(mpIdx!==-1){
+      var mpStr=(row[mpIdx]||'').trim();
+      if(/^\d+\s*:\s*\d+$/.test(mpStr))result=mpStr.replace(/\s+/g,'');
+    }
+    return{date:parsedDate,opponent:isHome?gastStr.trim():heimStr.trim(),homeAway:isHome?'home':'away',opponentUrl:opponentUrl||'',result:result};
   }).filter(Boolean).filter(function(m){return m.date&&m.opponent;});
 
   if(!parsed.length){
@@ -2341,26 +2371,39 @@ function begegnungenImportPreview(team,table,clubName,previewWrap){
     return;
   }
   var existing=team.matches||[];
-  var neu=parsed.filter(function(m){return !existing.some(function(e){return e.date===m.date&&e.opponent===m.opponent;});});
-  var dup=parsed.length-neu.length;
+  var neu=[],resultUpdates=[];
+  parsed.forEach(function(m){
+    var match=existing.find(function(e){return e.date===m.date&&e.opponent===m.opponent;});
+    if(!match)neu.push(m);
+    else if(m.result&&match.result!==m.result)resultUpdates.push({match:match,result:m.result});
+  });
 
-  var html='<div style="font-size:.78rem;color:var(--tx);margin:10px 0 6px">'+neu.length+' neue Begegnung'+(neu.length===1?'':'en')+' gefunden'+(dup>0?' ('+dup+' bereits vorhanden, werden übersprungen)':'')+':</div>';
+  if(!neu.length&&!resultUpdates.length){
+    previewWrap.innerHTML='<div style="color:var(--di);font-size:.8rem">Keine neuen Begegnungen oder Ergebnisse gefunden — bereits aktuell.</div>';
+    return;
+  }
+  var html='';
+  if(neu.length)html+='<div style="font-size:.78rem;color:var(--tx);margin:10px 0 6px">'+neu.length+' neue Begegnung'+(neu.length===1?'':'en')+' gefunden:</div>';
   neu.forEach(function(m){
-    html+='<div class="glist-row" style="display:flex;justify-content:space-between;padding:5px 8px;font-size:.78rem;border-bottom:1px solid var(--bo)"><span>'+esc(m.date)+' · '+esc(m.opponent)+'</span><span style="color:var(--di)">'+(m.homeAway==='home'?'Heim':'Auswärts')+'</span></div>';
+    html+='<div class="glist-row" style="display:flex;justify-content:space-between;padding:5px 8px;font-size:.78rem;border-bottom:1px solid var(--bo)"><span>'+esc(m.date)+' · '+esc(m.opponent)+(m.result?' · '+esc(m.result):'')+'</span><span style="color:var(--di)">'+(m.homeAway==='home'?'Heim':'Auswärts')+'</span></div>';
+  });
+  if(resultUpdates.length)html+='<div style="font-size:.78rem;color:var(--tx);margin:10px 0 6px">'+resultUpdates.length+' Ergebnis'+(resultUpdates.length===1?'':'se')+' aktualisiert:</div>';
+  resultUpdates.forEach(function(u){
+    html+='<div class="glist-row" style="display:flex;justify-content:space-between;padding:5px 8px;font-size:.78rem;border-bottom:1px solid var(--bo)"><span>'+esc(u.match.date)+' · '+esc(u.match.opponent)+'</span><span style="color:var(--di)">'+esc(u.result)+'</span></div>';
   });
   previewWrap.innerHTML=html;
-  if(neu.length){
-    var commitBtn=document.createElement('button');commitBtn.type='button';commitBtn.className='btn bp sm';commitBtn.style.marginTop='10px';
-    commitBtn.textContent=neu.length+' Begegnung'+(neu.length===1?'':'en')+' übernehmen';
-    commitBtn.onclick=function(){
-      neu.forEach(function(m){team.matches.push({id:genMatchId(),date:m.date,opponent:m.opponent,homeAway:m.homeAway,opponentUrl:m.opponentUrl});});
-      toast(neu.length+' Begegnung'+(neu.length===1?'':'en')+' importiert — bitte „Speichern" nicht vergessen.');
-      document.getElementById('begegnungen-import-wrap').style.display='none';
-      document.getElementById('begegnungen-import-wrap').innerHTML='';
-      renderBegegnungenDetail();
-    };
-    previewWrap.appendChild(commitBtn);
-  }
+  var commitBtn=document.createElement('button');commitBtn.type='button';commitBtn.className='btn bp sm';commitBtn.style.marginTop='10px';
+  commitBtn.textContent='Übernehmen';
+  commitBtn.onclick=async function(){
+    neu.forEach(function(m){team.matches.push({id:genMatchId(),date:m.date,opponent:m.opponent,homeAway:m.homeAway,opponentUrl:m.opponentUrl,result:m.result});});
+    resultUpdates.forEach(function(u){u.match.result=u.result;});
+    await saveTeams();
+    toast('Begegnungen aktualisiert und gespeichert.');
+    document.getElementById('begegnungen-import-wrap').style.display='none';
+    document.getElementById('begegnungen-import-wrap').innerHTML='';
+    renderBegegnungenDetail();
+  };
+  previewWrap.appendChild(commitBtn);
 }
 
 // ══════════════════════════════════════════════════════════
@@ -2447,10 +2490,11 @@ function kaderImportPreview(team,table,previewWrap){
   previewWrap.innerHTML=html;
   var commitBtn=document.createElement('button');commitBtn.type='button';commitBtn.className='btn bp sm';commitBtn.style.marginTop='10px';
   commitBtn.textContent=neu.length+' Spieler übernehmen';
-  commitBtn.onclick=function(){
+  commitBtn.onclick=async function(){
     if(!team.ownPlayers)team.ownPlayers=[];
     neu.forEach(function(n){team.ownPlayers.push({name:n});});
-    toast(neu.length+' Spieler importiert — bitte „Speichern" nicht vergessen.');
+    await saveTeams();
+    toast(neu.length+' Spieler importiert und gespeichert.');
     document.getElementById('mannschaften-import-wrap').style.display='none';
     document.getElementById('mannschaften-import-wrap').innerHTML='';
     renderMannschaftenDetail();
@@ -2619,11 +2663,12 @@ async function clubImportCascadeOne(team){
       var dIdx=detectDateColIdx(t.headers,t.rows);
       if(h!==-1&&g!==-1&&dIdx!==-1&&(!fixtureTable||t.rows.length>fixtureTable.rows.length))fixtureTable=t;
     });
-    var addedFixtures=0;
+    var addedFixtures=0,updatedResults=0;
     if(fixtureTable&&ownName){
       var dateIdx=detectDateColIdx(fixtureTable.headers,fixtureTable.rows);
       var heimIdx=alignedColIdx(fixtureTable.headers,fixtureTable.rows,detectColIdx(fixtureTable.headers,['heim']));
       var gastIdx=alignedColIdx(fixtureTable.headers,fixtureTable.rows,detectColIdx(fixtureTable.headers,['gast']));
+      var mpIdx=alignedColIdx(fixtureTable.headers,fixtureTable.rows,detectColIdx(fixtureTable.headers,['matchpunkte']));
       var hrefRows=fixtureTable.hrefs||[];
       var clubLower=ownName.toLowerCase();
       var lastDate='';
@@ -2638,10 +2683,19 @@ async function clubImportCascadeOne(team){
         if(!parsedDate)return;
         var opponent=(isHome?gastStr:heimStr).trim();
         if(!opponent)return;
-        if(team.matches.some(function(e){return e.date===parsedDate&&e.opponent===opponent;}))return;
+        var result='';
+        if(mpIdx!==-1){
+          var mpStr=(row[mpIdx]||'').trim();
+          if(/^\d+\s*:\s*\d+$/.test(mpStr))result=mpStr.replace(/\s+/g,'');
+        }
+        var match=team.matches.find(function(e){return e.date===parsedDate&&e.opponent===opponent;});
+        if(match){
+          if(result&&match.result!==result){match.result=result;updatedResults++;}
+          return;
+        }
         var hrefRow=hrefRows[ri]||[];
         var opponentUrl=isHome?hrefRow[gastIdx]:hrefRow[heimIdx];
-        team.matches.push({id:genMatchId(),date:parsedDate,opponent:opponent,homeAway:isHome?'home':'away',opponentUrl:opponentUrl||''});
+        team.matches.push({id:genMatchId(),date:parsedDate,opponent:opponent,homeAway:isHome?'home':'away',opponentUrl:opponentUrl||'',result:result});
         addedFixtures++;
       });
     }
@@ -2666,7 +2720,7 @@ async function clubImportCascadeOne(team){
       });
     }
 
-    return{ok:true,fixtures:addedFixtures,players:addedPlayers,ownName:ownName};
+    return{ok:true,fixtures:addedFixtures,resultsUpdated:updatedResults,players:addedPlayers,ownName:ownName};
   }catch(e){return{ok:false,msg:e.message};}
 }
 
@@ -2687,14 +2741,15 @@ async function clubImportCommit(selectedRows,wrapEl){
     }
     var res=await clubImportCascadeOne(team);
     if(res.ok){
-      line.textContent='✅ '+row.name+(res.ownName?' (als „'+res.ownName+'“)':'')+' — '+res.fixtures+' neue Begegnung(en), '+res.players+' neue Spieler';
+      line.textContent='✅ '+row.name+(res.ownName?' (als „'+res.ownName+'“)':'')+' — '+res.fixtures+' neue Begegnung(en), '+res.resultsUpdated+' Ergebnis(se) aktualisiert, '+res.players+' neue Spieler';
     } else {
       line.textContent='⚠️ '+row.name+' — Fehler: '+(res.msg||'unbekannt');
     }
   }
   renderMannschaftenList();
+  await saveTeams();
   var doneMsg=document.createElement('div');doneMsg.style.cssText='margin-top:10px;font-weight:700;font-size:.85rem;color:#1e8449';
-  doneMsg.textContent='Import abgeschlossen — bitte „☁ Speichern" nicht vergessen.';
+  doneMsg.textContent='Import abgeschlossen und gespeichert.';
   wrapEl.appendChild(doneMsg);
   var closeBtn=document.createElement('button');closeBtn.type='button';closeBtn.className='btn bo2 sm';closeBtn.style.marginTop='8px';closeBtn.textContent='Schließen';
   closeBtn.onclick=function(){document.getElementById('club-import-wrap').style.display='none';document.getElementById('club-import-wrap').innerHTML='';};
@@ -2798,7 +2853,8 @@ async function tabelleQuickRefresh(tab,btnEl){
     if(!best){toast('Keine Tabelle gefunden.','err');return;}
     tab.headers=best.headers.slice();
     tab.rows=best.rows.map(function(row){return row.slice();});
-    toast('Tabelle aktualisiert — bitte „Speichern" nicht vergessen.');
+    await saveTabellen();
+    toast('Tabelle aktualisiert und gespeichert.');
     renderBegegnungenDetail();
   }catch(e){toast('Fehler: '+e.message,'err');}
   finally{if(btnEl){btnEl.disabled=false;btnEl.textContent=origText;}}
@@ -3008,14 +3064,15 @@ async function tabImportById(tab,previewId,srcUrl){
     });
     previewWrap.innerHTML=html;
     previewWrap.querySelectorAll('.tab-preview-opt').forEach(function(opt){
-      opt.onclick=function(){
+      opt.onclick=async function(){
         var t=d.tables[parseInt(opt.dataset.tix)];if(!t)return;
         if(t.headers.length<=2){
           var ok=confirm('Diese Tabelle hat nur 2 Spalten — das sieht eher nach einer kurzen Infobox als nach einer echten Ergebnistabelle mit mehreren Mannschaften aus. Trotzdem übernehmen?\n\nTipp: Für die vollständige Tabelle meist die Liga-/Gruppenseite verwenden, nicht die einzelne Mannschaftsseite.');
           if(!ok)return;
         }
         tab.headers=t.headers.slice();tab.rows=t.rows.map(function(r){return r.slice();});
-        previewWrap.innerHTML='<div style="font-size:.75rem;color:#1e8449;padding:4px 0">Übernommen — bitte prüfen und „Speichern" klicken.</div>';
+        await saveTabellen();
+        previewWrap.innerHTML='<div style="font-size:.75rem;color:#1e8449;padding:4px 0">Übernommen und gespeichert.</div>';
         renderBegegnungenDetail();
       };
     });
