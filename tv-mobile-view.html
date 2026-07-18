@@ -194,16 +194,27 @@ function bracketCardHtml(s){
   }
   return genericCard(d.title||'Turnierbaum',html);
 }
-function spielplanCardHtml(s,team){
+function spielplanCardHtml(s,team,allSlides){
   var d=s.data||{};
   if(!team)return genericCard(d.title||'Spielplan','<span style="opacity:.5">Mannschaft nicht gefunden.</span>');
   var matches=(team.matches||[]).slice().sort(function(a,b){return (a.date||'').localeCompare(b.date||'');});
   if(!matches.length)return genericCard(d.title||'Spielplan','<span style="opacity:.5">Keine Begegnungen.</span>');
+  function findResult(m){
+    var sc=(allSlides||[]).find(function(sl){
+      return sl.type==='score'&&sl.data&&sl.teamId===team.id&&sl.data.matchId&&sl.data.matchId===m.id;
+    });
+    if(!sc)return null;
+    var gh=sc.data.gesamtHeim,gg=sc.data.gesamtGast;
+    if(gh==null||gg==null)return null;
+    if((parseInt(gh)||0)===0&&(parseInt(gg)||0)===0&&!(sc.data.matches||[]).some(function(x){return x.winner;}))return null;
+    return gh+':'+gg;
+  }
   var html='';
   matches.forEach(function(m){
     var isHome=m.homeAway==='home';
     var dt=m.date?new Date(m.date+'T12:00:00').toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'}):'–';
-    html+='<div class="glist-row"><span>'+es(dt)+' · '+es(m.opponent||'')+'</span><span class="gbadge'+(isHome?' h':'')+'">'+(isHome?'Heim':'Auswärts')+'</span></div>';
+    var result=findResult(m);
+    html+='<div class="glist-row"><span>'+es(dt)+' · '+es(m.opponent||'')+'</span>'+(result?'<b style="margin:0 8px">'+es(result)+'</b>':'')+'<span class="gbadge'+(isHome?' h':'')+'">'+(isHome?'Heim':'Auswärts')+'</span></div>';
   });
   return genericCard(d.title||team.name||'Spielplan',html);
 }
@@ -248,7 +259,7 @@ async function loadAll(manual){
         else if(s.type==='bracket')html+=bracketCardHtml(s);
         else if(s.type==='spielplan'){
           var t1=(_teamsCache||[]).find(function(t){return t.id===s.data.teamId;});
-          html+=spielplanCardHtml(s,t1);
+          html+=spielplanCardHtml(s,t1,slides);
         }
         else if(s.type==='kader'){
           var t2=(_teamsCache||[]).find(function(t){return t.id===s.data.teamId;});
