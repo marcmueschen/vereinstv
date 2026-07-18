@@ -658,11 +658,15 @@ function renderSpielplanBody(el,team){
     var s=(slides||[]).find(function(sl){
       return sl.type==='score'&&sl.data&&sl.teamId===team.id&&sl.data.matchId&&sl.data.matchId===m.id;
     });
-    if(!s)return null;
-    var gh=s.data.gesamtHeim,gg=s.data.gesamtGast;
-    if(gh==null||gg==null)return null;
-    if((parseInt(gh)||0)===0&&(parseInt(gg)||0)===0&&!(s.data.matches||[]).some(function(x){return x.winner;}))return null;
-    return gh+':'+gg;
+    if(s){
+      var gh=s.data.gesamtHeim,gg=s.data.gesamtGast;
+      if(gh!=null&&gg!=null&&!((parseInt(gh)||0)===0&&(parseInt(gg)||0)===0&&!(s.data.matches||[]).some(function(x){return x.winner;}))){
+        return gh+':'+gg;
+      }
+    }
+    // Kein lokal erfasster Spielstand — auf das beim Import übernommene
+    // Ergebnis (nuLiga-Spalte "Matchpunkte") zurückfallen, falls vorhanden.
+    return m.result||null;
   }
   body.innerHTML=matches.map(function(m,i){
     var dt=m.date?new Date(m.date+'T12:00:00').toLocaleDateString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'}):'Kein Datum';
