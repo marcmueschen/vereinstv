@@ -176,6 +176,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a3a2a;font-family:
 .sp-badge{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(.8rem,1.5vw,1.05rem);letter-spacing:.08em;text-transform:uppercase;padding:.4% 3%;border-radius:20px;flex-shrink:0}
 .sp-badge.h{background:var(--ac,#f5c842);color:#0f2a1c}
 .sp-badge.a{background:rgba(255,255,255,.12);color:#fff}
+.sp-result{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(1.2rem,2.4vw,1.8rem);font-weight:700;color:var(--ac,#f5c842);flex-shrink:0;min-width:2.5em;text-align:center}
 .sp-empty,.sp-loading{opacity:.4;text-align:center;font-size:1.1rem;margin:auto}
 /* KADER */
 .kd{flex-direction:column;padding:30px 46px 22px;color:#f2f5ea}
@@ -651,14 +652,28 @@ function renderSpielplanBody(el,team){
   var todayStr=new Date().toISOString().slice(0,10);
   var nextIdx=-1;
   matches.forEach(function(m,i){if(nextIdx===-1&&m.date&&m.date>=todayStr)nextIdx=i;});
+  // Ergebnis suchen, falls für diese Begegnung bereits eine Spielstand-Folie
+  // existiert (unabhängig davon, ob diese gerade ein-/ausgeblendet ist).
+  function findResult(m){
+    var s=(slides||[]).find(function(sl){
+      return sl.type==='score'&&sl.data&&sl.teamId===team.id&&sl.data.matchId&&sl.data.matchId===m.id;
+    });
+    if(!s)return null;
+    var gh=s.data.gesamtHeim,gg=s.data.gesamtGast;
+    if(gh==null||gg==null)return null;
+    if((parseInt(gh)||0)===0&&(parseInt(gg)||0)===0&&!(s.data.matches||[]).some(function(x){return x.winner;}))return null;
+    return gh+':'+gg;
+  }
   body.innerHTML=matches.map(function(m,i){
     var dt=m.date?new Date(m.date+'T12:00:00').toLocaleDateString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'}):'Kein Datum';
     var isHome=m.homeAway==='home';
     var heim=isHome?team.name:m.opponent;
     var gast=isHome?m.opponent:team.name;
+    var result=findResult(m);
     return '<div class="sp-row'+(i===nextIdx?' next':'')+'">'
       +'<div class="sp-date">'+es(dt)+'</div>'
       +'<div class="sp-teams"><span class="'+(isHome?'own':'')+'">'+es(heim)+'</span><span class="sp-vs">vs</span><span class="'+(!isHome?'own':'')+'">'+es(gast)+'</span></div>'
+      +(result?'<div class="sp-result">'+es(result)+'</div>':'')
       +'<div class="sp-badge '+(isHome?'h':'a')+'">'+(isHome?'Heim':'Auswärts')+'</div>'
     +'</div>';
   }).join('');
