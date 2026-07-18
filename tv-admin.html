@@ -2049,7 +2049,7 @@ function renderBegegnungenDetail(){
     detail.appendChild(noTab);
   }
   linkedTabellen.forEach(function(tab){
-    detail.appendChild(mgmtTabelleCard(tab));
+    detail.appendChild(mgmtTabelleCard(tab,team));
   });
   }
 
@@ -2058,6 +2058,12 @@ function renderBegegnungenDetail(){
   mHd.appendChild(mgmtSectionTitle('Begegnungen (Spielplan)'));
   if(role==='admin'){
     var mBtnWrap=document.createElement('div');mBtnWrap.style.cssText='display:flex;gap:6px';
+    if(team.nuligaUrl&&team.nuligaClub){
+      var refreshMBtn=document.createElement('button');refreshMBtn.type='button';refreshMBtn.className='btn bo2 sm';refreshMBtn.textContent='🔄 Aktualisieren';
+      refreshMBtn.title='Neue Begegnungen von NU-Liga nachladen (ohne erneute Auswahl)';
+      refreshMBtn.onclick=function(){begegnungenQuickRefresh(team,refreshMBtn);};
+      mBtnWrap.appendChild(refreshMBtn);
+    }
     var impBtn=document.createElement('button');impBtn.type='button';impBtn.className='btn bo2 sm';impBtn.textContent='📥 Begegnungen importieren';
     impBtn.onclick=function(){toggleBegegnungenImport(team);};
     var spFolieBtn=document.createElement('button');spFolieBtn.type='button';spFolieBtn.className='btn bp sm';spFolieBtn.textContent='📺 Spielplan auf Folie';
@@ -2248,6 +2254,55 @@ async function begegnungenImportSearch(team,srcUrl,previewWrap){
       };
     });
   }catch(e){previewWrap.innerHTML='<div style="color:var(--re);font-size:.8rem">Fehler: '+esc(e.message)+'</div>';}
+}
+
+// "Aktualisieren"-Kurzweg: nutzt die beim letzten Import gespeicherte URL und
+// den Mannschaftsnamen erneut, erkennt die Spielplan-Tabelle automatisch (wie
+// beim Verein-Import) und fügt nur neue Begegnungen hinzu — ohne dass die
+// Tabelle erneut manuell ausgewählt werden muss.
+async function begegnungenQuickRefresh(team,btnEl){
+  var wurl=getWurl();
+  var origText=btnEl?btnEl.textContent:'';
+  if(btnEl){btnEl.disabled=true;btnEl.textContent='⏳ Lade…';}
+  try{
+    var r=await fetch(wurl+'/tabelle-scrape?url='+encodeURIComponent(team.nuligaUrl));
+    var d=await r.json();
+    if(!d.ok){toast(d.error||'Fehler beim Aktualisieren.','err');return;}
+    var fixtureTable=null;
+    d.tables.forEach(function(t){
+      var h=detectColIdx(t.headers,['heim']),g=detectColIdx(t.headers,['gast']);
+      var dIdx=detectDateColIdx(t.headers,t.rows);
+      if(h!==-1&&g!==-1&&dIdx!==-1&&(!fixtureTable||t.rows.length>fixtureTable.rows.length))fixtureTable=t;
+    });
+    if(!fixtureTable){toast('Konnte keine Spielplan-Tabelle finden.','err');return;}
+    var dateIdx=detectDateColIdx(fixtureTable.headers,fixtureTable.rows);
+    var heimIdx=alignedColIdx(fixtureTable.headers,fixtureTable.rows,detectColIdx(fixtureTable.headers,['heim']));
+    var gastIdx=alignedColIdx(fixtureTable.headers,fixtureTable.rows,detectColIdx(fixtureTable.headers,['gast']));
+    var hrefRows=fixtureTable.hrefs||[];
+    var clubLower=team.nuligaClub.toLowerCase();
+    var lastDate='';
+    if(!team.matches)team.matches=[];
+    var added=0;
+    fixtureTable.rows.forEach(function(row,ri){
+      var dateStr=row[dateIdx]||'',heimStr=row[heimIdx]||'',gastStr=row[gastIdx]||'';
+      var parsedDate=parseGermanDate(dateStr);
+      if(parsedDate)lastDate=parsedDate;else parsedDate=lastDate;
+      var isHome=heimStr.toLowerCase().indexOf(clubLower)!==-1;
+      var isAway=gastStr.toLowerCase().indexOf(clubLower)!==-1;
+      if(!isHome&&!isAway)return;
+      if(!parsedDate)return;
+      var opponent=(isHome?gastStr:heimStr).trim();
+      if(!opponent)return;
+      if(team.matches.some(function(e){return e.date===parsedDate&&e.opponent===opponent;}))return;
+      var hrefRow=hrefRows[ri]||[];
+      var opponentUrl=isHome?hrefRow[gastIdx]:hrefRow[heimIdx];
+      team.matches.push({id:genMatchId(),date:parsedDate,opponent:opponent,homeAway:isHome?'home':'away',opponentUrl:opponentUrl||''});
+      added++;
+    });
+    toast(added>0?added+' neue Begegnung'+(added===1?'':'en')+' gefunden — bitte „Speichern" nicht vergessen.':'Keine neuen Begegnungen gefunden — bereits aktuell.');
+    if(added>0)renderBegegnungenDetail();
+  }catch(e){toast('Fehler: '+e.message,'err');}
+  finally{if(btnEl){btnEl.disabled=false;btnEl.textContent=origText;}}
 }
 
 function begegnungenImportPreview(team,table,clubName,previewWrap){
@@ -2523,6 +2578,24 @@ function extractOwnTeamName(tables){
   return '';
 }
 
+// Findet auf der Mannschaftsportrait-Seite den Link zur Liga-/Gruppenseite (Zeile
+// "Liga: …"). Wichtig, weil die Mannschaftsseite selbst KEINE echte Tabelle mit
+// allen Mannschaften enthält, nur eine kurze Infobox — die richtige Tabelle steht
+// auf der Gruppenseite, die hier ermittelt wird.
+function extractLigaUrl(tables){
+  for(var i=0;i<tables.length;i++){
+    var allRows=[tables[i].headers].concat(tables[i].rows);
+    var allHrefs=[null].concat(tables[i].hrefs||[]);
+    for(var j=0;j<allRows.length;j++){
+      if((allRows[j][0]||'').trim().toLowerCase()==='liga'){
+        var hrefRow=allHrefs[j];
+        if(hrefRow&&hrefRow[1])return hrefRow[1];
+      }
+    }
+  }
+  return '';
+}
+
 // Importiert für EINE Mannschaft automatisch (ohne Nachfrage) den eigenen
 // Anzeigenamen, alle Begegnungen und alle Spieler von deren Mannschaftsportrait-
 // Seite — wird für jede im Verein-Import ausgewählte Mannschaft aufgerufen.
@@ -2536,6 +2609,8 @@ async function clubImportCascadeOne(team){
 
     var ownName=extractOwnTeamName(tables);
     if(ownName)team.nuligaClub=ownName;
+    var ligaUrl=extractLigaUrl(tables);
+    if(ligaUrl)team.nuligaGroupUrl=ligaUrl;
 
     // Begegnungen
     var fixtureTable=null;
@@ -2697,7 +2772,39 @@ async function scoreUpsert(slide,touched){
   }catch(e){toast('Fehler: '+e.message,'err');return false;}
 }
 
-function mgmtTabelleCard(tab){
+// "Aktualisieren"-Kurzweg für die Tabelle: lädt dieselbe Quelle erneut und
+// erkennt automatisch die Tabelle, deren Spaltenüberschriften am besten zur
+// bisher gespeicherten Struktur passen — ohne erneute manuelle Auswahl.
+function headerSimilarity(a,b){
+  var setB=(b||[]).map(function(h){return (h||'').toLowerCase().trim();});
+  var matches=0;
+  (a||[]).forEach(function(h){h=(h||'').toLowerCase().trim();if(h&&setB.indexOf(h)!==-1)matches++;});
+  return matches;
+}
+async function tabelleQuickRefresh(tab,btnEl){
+  if(!tab.sourceUrl){toast('Keine Quelle hinterlegt.','err');return;}
+  var wurl=getWurl();
+  var origText=btnEl?btnEl.textContent:'';
+  if(btnEl){btnEl.disabled=true;btnEl.textContent='⏳ Lade…';}
+  try{
+    var r=await fetch(wurl+'/tabelle-scrape?url='+encodeURIComponent(tab.sourceUrl));
+    var d=await r.json();
+    if(!d.ok){toast(d.error||'Fehler beim Aktualisieren.','err');return;}
+    var best=d.tables[0],bestScore=-1;
+    d.tables.forEach(function(t){
+      var score=headerSimilarity(tab.headers,t.headers);
+      if(score>bestScore){bestScore=score;best=t;}
+    });
+    if(!best){toast('Keine Tabelle gefunden.','err');return;}
+    tab.headers=best.headers.slice();
+    tab.rows=best.rows.map(function(row){return row.slice();});
+    toast('Tabelle aktualisiert — bitte „Speichern" nicht vergessen.');
+    renderBegegnungenDetail();
+  }catch(e){toast('Fehler: '+e.message,'err');}
+  finally{if(btnEl){btnEl.disabled=false;btnEl.textContent=origText;}}
+}
+
+function mgmtTabelleCard(tab,team){
   var card=document.createElement('div');card.className='tabelle-card';card.dataset.tabId=tab.id;
 
   var headRow=document.createElement('div');headRow.className='tabelle-head';
@@ -2710,13 +2817,28 @@ function mgmtTabelleCard(tab){
   headRow.appendChild(ni);headRow.appendChild(folieBtn);headRow.appendChild(delBtn);
   card.appendChild(headRow);
 
+  if(team&&team.nuligaGroupUrl&&!tab.sourceUrl){
+    var ligaHint=document.createElement('div');ligaHint.style.cssText='font-size:.72rem;color:var(--di);margin-bottom:6px';
+    ligaHint.textContent='Tipp: Für die echte Tabelle bitte die Liga-/Gruppenseite verwenden (nicht die Mannschaftsseite, die hat nur eine kurze Infobox statt der vollständigen Tabelle).';
+    var useLigaBtn=document.createElement('button');useLigaBtn.type='button';useLigaBtn.className='btn bo2 sm';useLigaBtn.style.marginLeft='6px';useLigaBtn.textContent='Liga-Seite übernehmen';
+    useLigaBtn.onclick=function(){tab.sourceUrl=team.nuligaGroupUrl;renderBegegnungenDetail();};
+    ligaHint.appendChild(useLigaBtn);
+    card.appendChild(ligaHint);
+  }
+
   var impRow=document.createElement('div');impRow.className='tabelle-import-row';
-  var urlInp=document.createElement('input');urlInp.type='url';urlInp.className='tabelle-url-inp';urlInp.placeholder='Tennis.de- oder nuLiga-Tabellen-URL';urlInp.value=tab.sourceUrl||'';
+  var urlInp=document.createElement('input');urlInp.type='url';urlInp.className='tabelle-url-inp';urlInp.placeholder='Tennis.de- oder nuLiga-Tabellen-URL (Liga-/Gruppenseite)';urlInp.value=tab.sourceUrl||(team?team.nuligaGroupUrl||'':'')||'';
   urlInp.oninput=function(){tab.sourceUrl=urlInp.value;};
   var impBtn=document.createElement('button');impBtn.type='button';impBtn.className='btn bo2 sm';impBtn.textContent='Importieren';
   var previewId='tab-preview-'+tab.id;
   impBtn.onclick=function(){tabImportById(tab,previewId,urlInp.value.trim());};
   impRow.appendChild(urlInp);impRow.appendChild(impBtn);
+  if(tab.sourceUrl){
+    var refreshTBtn=document.createElement('button');refreshTBtn.type='button';refreshTBtn.className='btn bo2 sm';refreshTBtn.textContent='🔄 Aktualisieren';
+    refreshTBtn.title='Aktuellen Tabellenstand von derselben Quelle nachladen';
+    refreshTBtn.onclick=function(){tabelleQuickRefresh(tab,refreshTBtn);};
+    impRow.appendChild(refreshTBtn);
+  }
   card.appendChild(impRow);
 
   var previewWrap=document.createElement('div');previewWrap.className='tabelle-preview-wrap';previewWrap.id=previewId;
@@ -2888,6 +3010,10 @@ async function tabImportById(tab,previewId,srcUrl){
     previewWrap.querySelectorAll('.tab-preview-opt').forEach(function(opt){
       opt.onclick=function(){
         var t=d.tables[parseInt(opt.dataset.tix)];if(!t)return;
+        if(t.headers.length<=2){
+          var ok=confirm('Diese Tabelle hat nur 2 Spalten — das sieht eher nach einer kurzen Infobox als nach einer echten Ergebnistabelle mit mehreren Mannschaften aus. Trotzdem übernehmen?\n\nTipp: Für die vollständige Tabelle meist die Liga-/Gruppenseite verwenden, nicht die einzelne Mannschaftsseite.');
+          if(!ok)return;
+        }
         tab.headers=t.headers.slice();tab.rows=t.rows.map(function(r){return r.slice();});
         previewWrap.innerHTML='<div style="font-size:.75rem;color:#1e8449;padding:4px 0">Übernommen — bitte prüfen und „Speichern" klicken.</div>';
         renderBegegnungenDetail();
