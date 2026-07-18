@@ -2160,9 +2160,13 @@ function parseGermanDate(str){
 // Liga-Seiten wie nuLiga verteilen "Datum" manchmal auf mehrere Spalten
 // (Wochentag | Datum+Uhrzeit) — daher nicht blind der Überschrift vertrauen,
 // sondern die Spalte suchen, in der tatsächlich Datumswerte (TT.MM.JJJJ) stehen.
+// Wichtig: über die tatsächliche Spaltenzahl der DATENZEILEN scannen, nicht nur
+// bis zur (möglicherweise kürzeren) Kopfzeilenlänge.
 function detectDateColIdx(headers,rows){
+  var maxCols=headers.length;
+  rows.forEach(function(r){if(r.length>maxCols)maxCols=r.length;});
   var best=-1,bestHits=0;
-  for(var c=0;c<headers.length;c++){
+  for(var c=0;c<maxCols;c++){
     var hits=0;
     for(var r=0;r<rows.length;r++){
       if(/\d{1,2}\.\d{1,2}\.\d{2,4}/.test(rows[r][c]||''))hits++;
@@ -2170,6 +2174,19 @@ function detectDateColIdx(headers,rows){
     if(hits>bestHits){bestHits=hits;best=c;}
   }
   return best;
+}
+// Manche nuLiga-Ansichten lassen führende Spalten (Wochentag/Uhrzeit-Icon) in der
+// Kopfzeile komplett weg, obwohl die Datenzeilen sie enthalten — dadurch verschieben
+// sich alle über die Kopfzeile gefundenen Spaltenindizes. Diese Funktion gleicht das
+// aus, indem sie die häufigste tatsächliche Zeilenlänge ermittelt und den Index um
+// die Differenz zur (kürzeren) Kopfzeile nach hinten verschiebt.
+function alignedColIdx(headers,rows,headerIdx){
+  if(headerIdx===-1)return -1;
+  var lens={},modeLen=headers.length,modeCount=0;
+  rows.forEach(function(r){lens[r.length]=(lens[r.length]||0)+1;});
+  Object.keys(lens).forEach(function(l){if(lens[l]>modeCount){modeCount=lens[l];modeLen=parseInt(l,10);}});
+  var offset=modeLen-headers.length;
+  return offset>0?headerIdx+offset:headerIdx;
 }
 
 function toggleBegegnungenImport(team){
@@ -2235,9 +2252,9 @@ async function begegnungenImportSearch(team,srcUrl,previewWrap){
 
 function begegnungenImportPreview(team,table,clubName,previewWrap){
   var dateIdx=detectDateColIdx(table.headers,table.rows);
-  if(dateIdx===-1)dateIdx=detectColIdx(table.headers,['datum','termin']);
-  var heimIdx=detectColIdx(table.headers,['heim']);
-  var gastIdx=detectColIdx(table.headers,['gast']);
+  if(dateIdx===-1)dateIdx=alignedColIdx(table.headers,table.rows,detectColIdx(table.headers,['datum','termin']));
+  var heimIdx=alignedColIdx(table.headers,table.rows,detectColIdx(table.headers,['heim']));
+  var gastIdx=alignedColIdx(table.headers,table.rows,detectColIdx(table.headers,['gast']));
   if(dateIdx===-1||heimIdx===-1||gastIdx===-1){
     previewWrap.innerHTML='<div style="color:var(--re);font-size:.8rem">Konnte Datum/Heim/Gast-Spalten in dieser Tabelle nicht erkennen. Bitte eine andere Tabelle wählen oder die Begegnungen manuell eintragen.</div>';
     return;
@@ -2359,7 +2376,7 @@ function cleanPlayerName(raw){
 }
 
 function kaderImportPreview(team,table,previewWrap){
-  var nameIdx=detectColIdx(table.headers,['name','spieler']);
+  var nameIdx=alignedColIdx(table.headers,table.rows,detectColIdx(table.headers,['name','spieler']));
   if(nameIdx===-1)nameIdx=0; // Fallback: erste Spalte
   var names=table.rows.map(function(row){return cleanPlayerName(row[nameIdx]);}).filter(Boolean);
   var existingNames=(team.ownPlayers||[]).map(function(p){return (p.name||'').toLowerCase();});
@@ -2530,8 +2547,8 @@ async function clubImportCascadeOne(team){
     var addedFixtures=0;
     if(fixtureTable&&ownName){
       var dateIdx=detectDateColIdx(fixtureTable.headers,fixtureTable.rows);
-      var heimIdx=detectColIdx(fixtureTable.headers,['heim']);
-      var gastIdx=detectColIdx(fixtureTable.headers,['gast']);
+      var heimIdx=alignedColIdx(fixtureTable.headers,fixtureTable.rows,detectColIdx(fixtureTable.headers,['heim']));
+      var gastIdx=alignedColIdx(fixtureTable.headers,fixtureTable.rows,detectColIdx(fixtureTable.headers,['gast']));
       var hrefRows=fixtureTable.hrefs||[];
       var clubLower=ownName.toLowerCase();
       var lastDate='';
@@ -2562,6 +2579,7 @@ async function clubImportCascadeOne(team){
     });
     var addedPlayers=0;
     if(playerTable){
+      nameIdx=alignedColIdx(playerTable.headers,playerTable.rows,nameIdx);
       if(!team.ownPlayers)team.ownPlayers=[];
       var existingNames=team.ownPlayers.map(function(p){return (p.name||'').toLowerCase();});
       playerTable.rows.forEach(function(row){
@@ -3425,6 +3443,7 @@ async function opponentKaderImport(url,isHome,wrapEl){
       if(idx!==-1&&t.rows.length>(best?best.rows.length:0)){best=t;bestIdx=idx;}
     });
     if(!best){wrapEl.innerHTML='<div style="color:var(--re);font-size:.8rem">Konnte auf der Gegnerseite keine Spielerliste finden.</div>';return;}
+    bestIdx=alignedColIdx(best.headers,best.rows,bestIdx);
     _opponentPlayers=best.rows.map(function(row){return cleanPlayerName(row[bestIdx]);}).filter(Boolean);
     attachOpponentDatalist(isHome);
     wrapEl.innerHTML='<div style="color:#1e8449;font-size:.8rem">'+_opponentPlayers.length+' Gegner-Spieler geladen — beim Eintragen des Namens erscheinen jetzt Vorschläge.</div>';
