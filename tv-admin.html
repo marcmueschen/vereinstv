@@ -2202,10 +2202,10 @@ function toggleBegegnungenImport(team){
 
   wrap.appendChild(card);
 
-  searchBtn.onclick=function(){begegnungenImportSearch(team,urlInp.value.trim(),clubInp.value.trim(),previewWrap);};
+  searchBtn.onclick=function(){begegnungenImportSearch(team,urlInp.value.trim(),previewWrap);};
 }
 
-async function begegnungenImportSearch(team,srcUrl,clubName,previewWrap){
+async function begegnungenImportSearch(team,srcUrl,previewWrap){
   if(!srcUrl){toast('Bitte URL eintragen.','err');return;}
   var wurl=getWurl();
   previewWrap.innerHTML='<div style="color:var(--di);font-size:.8rem;padding:6px 0">Lade Seite…</div>';
@@ -2224,7 +2224,10 @@ async function begegnungenImportSearch(team,srcUrl,clubName,previewWrap){
     previewWrap.querySelectorAll('.tab-preview-opt').forEach(function(opt){
       opt.onclick=function(){
         var t=d.tables[parseInt(opt.dataset.tix)];if(!t)return;
-        begegnungenImportPreview(team,t,clubName,previewWrap);
+        // Mannschaftsname jetzt frisch lesen (nicht mehr den Stand vom "Suchen"-Klick
+        // verwenden) — sonst blieb die Fehlermeldung bestehen, selbst wenn der Name
+        // nachträglich eingetragen wurde.
+        begegnungenImportPreview(team,t,(team.nuligaClub||'').trim(),previewWrap);
       };
     });
   }catch(e){previewWrap.innerHTML='<div style="color:var(--re);font-size:.8rem">Fehler: '+esc(e.message)+'</div>';}
