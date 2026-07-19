@@ -165,8 +165,13 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a3a2a;font-family:
 .sp-hd{text-align:center;flex-shrink:0}
 .sp-title{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(2rem,4.5vw,3.4rem);letter-spacing:.05em;text-transform:uppercase;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.4)}
 .sp-dv{height:2px;background:linear-gradient(90deg,transparent,var(--ac,#f5c842),transparent);opacity:.6;margin:10px 0 14px;flex-shrink:0}
-.sp-body{flex:1;display:flex;flex-direction:column;justify-content:center;gap:1.4%;min-height:0;overflow:hidden}
-.sp-row{display:grid;grid-template-columns:1fr 2.4fr auto;align-items:center;gap:18px;background:rgba(255,255,255,.05);border-radius:12px;padding:1.6% 2.4%}
+.sp-body{flex:1;min-height:0;overflow:hidden;position:relative}
+.sp-page{display:none;flex-direction:column;justify-content:center;gap:1.6%;height:100%}
+.sp-page.on{display:flex}
+.sp-dots{display:flex;justify-content:center;gap:8px;flex-shrink:0;margin-top:1%}
+.sp-dot{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.25)}
+.sp-dot.on{background:var(--ac,#f5c842)}
+.sp-row{display:grid;grid-template-columns:auto 1fr auto auto;align-items:center;gap:14px;background:rgba(255,255,255,.05);border-radius:12px;padding:1.6% 2.4%}
 .sp-row.next{background:rgba(245,200,66,.16);box-shadow:inset 0 0 0 2px var(--ac,#f5c842)}
 .sp-date{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(1.1rem,2.2vw,1.6rem);opacity:.8;letter-spacing:.03em}
 .sp-teams{display:flex;align-items:center;gap:12px;font-size:clamp(1.2rem,2.6vw,1.9rem);font-weight:600;min-width:0}
@@ -177,7 +182,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a3a2a;font-family:
 .sp-badge.h{background:var(--ac,#f5c842);color:#0f2a1c}
 .sp-badge.a{background:rgba(255,255,255,.12);color:#fff}
 .sp-result{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(1.2rem,2.4vw,1.8rem);font-weight:700;color:var(--ac,#f5c842);flex-shrink:0;min-width:2.5em;text-align:center}
-.sp-empty,.sp-loading{opacity:.4;text-align:center;font-size:1.1rem;margin:auto}
+.sp-empty,.sp-loading{opacity:.4;text-align:center;font-size:1.1rem;height:100%;display:flex;align-items:center;justify-content:center}
 /* KADER */
 .kd{flex-direction:column;padding:30px 46px 22px;color:#f2f5ea}
 .kd-hd{text-align:center;flex-shrink:0}
@@ -634,41 +639,45 @@ function fetchTeamsShared(cb){
 }
 
 // ── SPIELPLAN
+var SP_PER_PAGE=4;
+var _spPageTimers={};
 function buildSpielplan(s,div){
   var d=s.data||{},ac=d.accent||'#f5c842';
   div.style.setProperty('--ac',ac);
   div.style.background=d.bg||'#0f2a1c';
   div.dataset.teamId=d.teamId||'';
+  div.dataset.spId=String(s.id);
   div.innerHTML='<div class="sp-hd"><div class="sp-title">'+es(d.title||'Spielplan')+'</div></div>'
     +'<div class="sp-dv" style="background:'+es(ac)+'"></div>'
-    +'<div class="sp-body"><div class="sp-loading">Lade Spielplan &hellip;</div></div>';
+    +'<div class="sp-body"><div class="sp-loading">Lade Spielplan &hellip;</div></div>'
+    +'<div class="sp-dots"></div>';
 }
-function renderSpielplanBody(el,team){
+function renderSpielplanBody(el,team,s){
   var body=el.querySelector('.sp-body');if(!body)return;
-  if(!team){body.innerHTML='<div class="sp-empty">Mannschaft nicht gefunden.</div>';return;}
+  var dotsEl=el.querySelector('.sp-dots');
+  if(!team){body.innerHTML='<div class="sp-empty">Mannschaft nicht gefunden.</div>';if(dotsEl)dotsEl.innerHTML='';return;}
   var matches=(team.matches||[]).slice();
-  if(!matches.length){body.innerHTML='<div class="sp-empty">Noch keine Begegnungen eingetragen.</div>';return;}
+  if(!matches.length){body.innerHTML='<div class="sp-empty">Noch keine Begegnungen eingetragen.</div>';if(dotsEl)dotsEl.innerHTML='';return;}
   matches.sort(function(a,b){return (a.date||'').localeCompare(b.date||'');});
   var todayStr=new Date().toISOString().slice(0,10);
   var nextIdx=-1;
   matches.forEach(function(m,i){if(nextIdx===-1&&m.date&&m.date>=todayStr)nextIdx=i;});
   // Ergebnis suchen, falls für diese Begegnung bereits eine Spielstand-Folie
-  // existiert (unabhängig davon, ob diese gerade ein-/ausgeblendet ist).
+  // existiert (unabhängig davon, ob diese gerade ein-/ausgeblendet ist), sonst
+  // auf das beim Import übernommene Ergebnis (nuLiga-Spalte "Matchpunkte") zurückfallen.
   function findResult(m){
-    var s=(slides||[]).find(function(sl){
+    var sc=(slides||[]).find(function(sl){
       return sl.type==='score'&&sl.data&&sl.teamId===team.id&&sl.data.matchId&&sl.data.matchId===m.id;
     });
-    if(s){
-      var gh=s.data.gesamtHeim,gg=s.data.gesamtGast;
-      if(gh!=null&&gg!=null&&!((parseInt(gh)||0)===0&&(parseInt(gg)||0)===0&&!(s.data.matches||[]).some(function(x){return x.winner;}))){
+    if(sc){
+      var gh=sc.data.gesamtHeim,gg=sc.data.gesamtGast;
+      if(gh!=null&&gg!=null&&!((parseInt(gh)||0)===0&&(parseInt(gg)||0)===0&&!(sc.data.matches||[]).some(function(x){return x.winner;}))){
         return gh+':'+gg;
       }
     }
-    // Kein lokal erfasster Spielstand — auf das beim Import übernommene
-    // Ergebnis (nuLiga-Spalte "Matchpunkte") zurückfallen, falls vorhanden.
     return m.result||null;
   }
-  body.innerHTML=matches.map(function(m,i){
+  var rowsHtml=matches.map(function(m,i){
     var dt=m.date?new Date(m.date+'T12:00:00').toLocaleDateString('de-DE',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'}):'Kein Datum';
     var isHome=m.homeAway==='home';
     var heim=isHome?team.name:m.opponent;
@@ -677,16 +686,60 @@ function renderSpielplanBody(el,team){
     return '<div class="sp-row'+(i===nextIdx?' next':'')+'">'
       +'<div class="sp-date">'+es(dt)+'</div>'
       +'<div class="sp-teams"><span class="'+(isHome?'own':'')+'">'+es(heim)+'</span><span class="sp-vs">vs</span><span class="'+(!isHome?'own':'')+'">'+es(gast)+'</span></div>'
-      +(result?'<div class="sp-result">'+es(result)+'</div>':'')
+      +(result?'<div class="sp-result">'+es(result)+'</div>':'<div></div>')
       +'<div class="sp-badge '+(isHome?'h':'a')+'">'+(isHome?'Heim':'Auswärts')+'</div>'
     +'</div>';
-  }).join('');
+  });
+
+  var pageCount=Math.max(1,Math.ceil(rowsHtml.length/SP_PER_PAGE));
+  var startPage=nextIdx>-1?Math.floor(nextIdx/SP_PER_PAGE):0;
+  var pagesHtml='';
+  for(var p=0;p<pageCount;p++){
+    var chunk=rowsHtml.slice(p*SP_PER_PAGE,(p+1)*SP_PER_PAGE);
+    pagesHtml+='<div class="sp-page'+(p===startPage?' on':'')+'" data-page="'+p+'">'+chunk.join('')+'</div>';
+  }
+  body.innerHTML=pagesHtml;
+
+  if(dotsEl){
+    if(pageCount>1){
+      var dots='';
+      for(var pd=0;pd<pageCount;pd++)dots+='<span class="sp-dot'+(pd===startPage?' on':'')+'"></span>';
+      dotsEl.innerHTML=dots;
+    } else {
+      dotsEl.innerHTML='';
+    }
+  }
+
+  if(s&&pageCount>1){
+    startSpielplanRotation(el,String(s.id),pageCount,startPage,Math.max(4000,Math.round((s.duration||DD||10)*1000/pageCount)));
+  } else if(_spPageTimers[String(s&&s.id)]){
+    clearInterval(_spPageTimers[String(s.id)].iv);
+    delete _spPageTimers[String(s.id)];
+  }
+}
+function setSpielplanPage(el,pageIdx){
+  el.querySelectorAll('.sp-page').forEach(function(p){p.classList.toggle('on',parseInt(p.dataset.page)===pageIdx);});
+  var dotsEl=el.querySelector('.sp-dots');
+  if(dotsEl)dotsEl.querySelectorAll('.sp-dot').forEach(function(d,i){d.classList.toggle('on',i===pageIdx);});
+}
+function startSpielplanRotation(el,key,pageCount,startPage,perPageMs){
+  if(_spPageTimers[key])clearInterval(_spPageTimers[key].iv);
+  var rec={pageCount:pageCount,pageIdx:startPage,iv:null};
+  rec.iv=setInterval(function(){
+    rec.pageIdx=(rec.pageIdx+1)%pageCount;
+    var freshEl=document.querySelector('.sl[data-sp-id="'+key+'"]');
+    if(!freshEl){clearInterval(rec.iv);delete _spPageTimers[key];return;}
+    setSpielplanPage(freshEl,rec.pageIdx);
+  },perPageMs);
+  _spPageTimers[key]=rec;
 }
 function initSpielplan(el){
   var teamId=el.dataset.teamId;
+  var spId=el.dataset.spId;
+  var s=slides.find(function(x){return String(x.id)===spId;});
   fetchTeamsShared(function(teams){
     var team=(teams||[]).find(function(t){return t.id===teamId;});
-    renderSpielplanBody(el,team);
+    renderSpielplanBody(el,team,s);
   });
 }
 
@@ -1799,6 +1852,9 @@ function rebuildSlides(){
   // Score-Seitenwechsel-Timer stoppen (Elemente werden gleich entfernt)
   Object.keys(_scPageTimers).forEach(function(k){clearInterval(_scPageTimers[k].iv);});
   _scPageTimers={};
+  // Spielplan-Seitenwechsel-Timer ebenfalls stoppen
+  Object.keys(_spPageTimers).forEach(function(k){clearInterval(_spPageTimers[k].iv);});
+  _spPageTimers={};
   // Stop radar animations (map instances are gone)
   Object.keys(_wRadarAnims).forEach(function(k){clearInterval(_wRadarAnims[k]);});
   _wRadarAnims={};
