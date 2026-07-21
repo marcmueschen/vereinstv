@@ -162,9 +162,15 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a3a2a;font-family:
 /* Stadtmeisterschaften-Turnierbaum: Boxhöhe ist über alle Runden hinweg fix
    (bestimmt durch die Runde mit den meisten Partien), statt pro Runde zu
    wachsen. Wird per JS als --br-match-h gesetzt. */
-.sm-br .br-match-wrap{flex:0 0 auto;height:var(--br-match-h,60px);align-items:stretch;padding:3px 0;box-sizing:border-box}
-.sm-br .br-round-body{justify-content:space-around}
-.sm-br .br-pair{justify-content:space-around;flex:0 0 auto}
+/* Stadtmeisterschaften-Turnierbaum: Boxhöhe ist über alle Runden hinweg fix
+   (bestimmt durch die Runde mit den meisten Partien). Jede Box wird per JS
+   exakt auf die Mitte zwischen ihren beiden Vorrunden-Boxen positioniert
+   (echte Turnierbaum-Optik statt automatischer Flex-Verteilung). */
+.sm-br .smb-body{position:relative;flex:1;min-height:0}
+.sm-br .smb-wrap{position:absolute;left:0;right:0;height:var(--br-match-h,60px);box-sizing:border-box;padding:3px 0}
+.sm-br .smb-wrap::after{content:'';position:absolute;right:-2.2%;top:50%;width:2.2%;height:2px;background:var(--ac,#c9db4d);opacity:.4}
+.sm-br .br-round-last .smb-wrap::after{display:none}
+.sm-br .smb-connect{position:absolute;right:-2.2%;width:2px;background:var(--ac,#c9db4d);opacity:.4}
 /* Verbindungslinien zwischen den Runden (nicht bei der letzten Runde/Finale) */
 .br-match-wrap::after{content:'';position:absolute;right:-2.2%;top:50%;width:2.2%;height:2px;background:var(--ac,#c9db4d);opacity:.4}
 .br-pair::before{content:'';position:absolute;right:-2.2%;top:25%;bottom:25%;width:2px;background:var(--ac,#c9db4d);opacity:.4}
@@ -728,7 +734,7 @@ function smMatchHtml(m){
   var meta=smMatchMeta(m);
   var metaCls=meta?(' '+meta.cls):'';
   var metaTxt=meta?es(meta.text):'';
-  return '<div class="br-match-wrap"><div class="br-match">'
+  return '<div class="smb-wrap"><div class="br-match">'
     +rowHtml(m.slots[0],m.winnerSlot===0)
     +rowHtml(m.slots[1],m.winnerSlot===1)
     +'<div class="br-meta'+metaCls+'">'+metaTxt+'</div>'
@@ -754,33 +760,55 @@ function renderSmBracket(el,catData,catKey,title){
   var firstCount=(rounds[0]||[]).length||1;
   var roundsHtml=rounds.map(function(matches,r){
     var isLast=r===total-1;
-    var pairsHtml='';
-    if(matches.length===1){
-      pairsHtml='<div class="br-pair">'+smMatchHtml(matches[0])+'</div>';
-    } else {
+    var matchesHtml=matches.map(function(m){return smMatchHtml(m);}).join('');
+    var connectHtml='';
+    if(matches.length>=2){
       for(var i=0;i<matches.length;i+=2){
-        pairsHtml+='<div class="br-pair">'+smMatchHtml(matches[i])+smMatchHtml(matches[i+1])+'</div>';
+        connectHtml+='<div class="smb-connect" data-pair="'+(i/2)+'"></div>';
       }
     }
     return '<div class="br-round'+(isLast?' br-round-last':'')+'">'
       +'<div class="br-round-hd">'+es(smRoundLabel(r,total))+'</div>'
-      +'<div class="br-round-body">'+pairsHtml+'</div>'
+      +'<div class="smb-body">'+matchesHtml+connectHtml+'</div>'
     +'</div>';
   }).join('');
   treeEl.innerHTML=roundsHtml;
-  // Boxhöhe fix über alle Runden hinweg: die Runde mit den meisten Partien
-  // (i. d. R. das Achtelfinale) bestimmt die Höhe für Viertelfinale, Halb-
-  // finale und Finale mit, statt dort immer größer zu werden.
-  function applyMatchHeight(){
-    var th2=treeEl.clientHeight;
-    if(th2>0){
-      var perH=Math.max(26,Math.floor(th2/firstCount));
-      treeEl.style.setProperty('--br-match-h',perH+'px');
-      return true;
-    }
-    return false;
+  // Positionierung: feste Boxhöhe (bestimmt durch die Runde mit den meisten
+  // Partien) + jede Box exakt mittig zwischen ihren beiden Vorrunden-Boxen.
+  function applyPositions(){
+    var roundEls=treeEl.querySelectorAll('.br-round');
+    if(!roundEls.length)return false;
+    var firstBody=roundEls[0].querySelector('.smb-body');
+    var bodyH=firstBody?firstBody.clientHeight:0;
+    if(bodyH<=0)return false;
+    var matchH=Math.max(26,Math.floor(bodyH/firstCount));
+    treeEl.style.setProperty('--br-match-h',matchH+'px');
+    var prevCenters=null;
+    roundEls.forEach(function(roundEl){
+      var body=roundEl.querySelector('.smb-body');
+      var wraps=body.querySelectorAll('.smb-wrap');
+      var n=wraps.length;
+      var h=body.clientHeight||bodyH;
+      var slot=h/n;
+      var centers=[];
+      wraps.forEach(function(w,i){
+        var c=prevCenters?((prevCenters[2*i]+prevCenters[2*i+1])/2):(slot*(i+0.5));
+        centers.push(c);
+        w.style.top=(c-matchH/2)+'px';
+      });
+      var connectors=body.querySelectorAll('.smb-connect');
+      connectors.forEach(function(cEl,j){
+        var c1=centers[2*j],c2=centers[2*j+1];
+        if(c1===undefined||c2===undefined){cEl.style.display='none';return;}
+        var top=Math.min(c1,c2),bot=Math.max(c1,c2);
+        cEl.style.top=top+'px';
+        cEl.style.height=(bot-top)+'px';
+      });
+      prevCenters=centers;
+    });
+    return true;
   }
-  if(!applyMatchHeight()){setTimeout(applyMatchHeight,80);}
+  if(!applyPositions()){setTimeout(applyPositions,80);}
   var now=new Date();
   if(standEl)standEl.textContent='Stand '+pad2(now.getDate())+'.'+pad2(now.getMonth()+1)+'. '+pad2(now.getHours())+':'+pad2(now.getMinutes());
 }
