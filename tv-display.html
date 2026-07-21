@@ -156,6 +156,9 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a3a2a;font-family:
 .br-name{overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
 .br-bye{opacity:.7}
 .br-seed{opacity:.55;font-size:.85em;flex-shrink:0}
+.br-meta{flex:0 0 auto;min-height:1.5em;line-height:1.5;font-size:clamp(.5rem,.85vw,.72rem);letter-spacing:.02em;opacity:.6;padding:0 8% 3% 8%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-sizing:border-box}
+.br-meta.done{color:var(--ac,#c9db4d);opacity:.9;font-weight:700}
+.br-meta.sched{opacity:.65;font-style:italic}
 /* Verbindungslinien zwischen den Runden (nicht bei der letzten Runde/Finale) */
 .br-match-wrap::after{content:'';position:absolute;right:-2.2%;top:50%;width:2.2%;height:2px;background:var(--ac,#c9db4d);opacity:.4}
 .br-pair::before{content:'';position:absolute;right:-2.2%;top:25%;bottom:25%;width:2px;background:var(--ac,#c9db4d);opacity:.4}
@@ -694,15 +697,35 @@ function smRoundLabel(idx,total){
 }
 
 // ── STADTMEISTERSCHAFTEN: TURNIERBAUM
+function smMatchMeta(m){
+  if(m.result){
+    return {cls:'done', text:'Erg.: '+m.result};
+  }
+  if(m.winnerSlot!==null&&m.winnerSlot!==undefined){
+    return {cls:'done', text:'Beendet'};
+  }
+  if(m.date){
+    var t=m.time?', '+m.time+' Uhr':'';
+    var c=m.court?' \u00b7 '+m.court:'';
+    return {cls:'sched', text:smFmtDate(m.date)+t+c};
+  }
+  return null;
+}
 function smMatchHtml(m){
   function rowHtml(slot,isWin){
     var name=smDisplayName(slot);
     var nameHtml=slot&&slot.kind==='bye'?'<span class="br-bye">[Freilos]</span>':(name?es(name):'<span class="br-bye">&ndash;</span>');
     return '<div class="br-row'+(isWin?' win':'')+(name?'':' empty')+'">'+'<span class="br-name">'+nameHtml+'</span></div>';
   }
+  // Immer eine Meta-Zeile rendern (ggf. leer) — so bleiben alle Boxen exakt
+  // gleich groß, egal ob Termin/Ergebnis vorhanden ist oder nicht.
+  var meta=smMatchMeta(m);
+  var metaCls=meta?(' '+meta.cls):'';
+  var metaTxt=meta?es(meta.text):'';
   return '<div class="br-match-wrap"><div class="br-match">'
     +rowHtml(m.slots[0],m.winnerSlot===0)
     +rowHtml(m.slots[1],m.winnerSlot===1)
+    +'<div class="br-meta'+metaCls+'">'+metaTxt+'</div>'
   +'</div></div>';
 }
 function buildSmBracket(s,div){
