@@ -400,6 +400,16 @@ function dbg(msg,col){
 }
 var WORKER_URL = 'https://vereinstv.marc-d55.workers.dev';
 window.WORKER_URL = 'https://vereinstv.marc-d55.workers.dev';
+// ─── Stadtmeisterschaften (Supabase) ───────────────────────────────────────
+var SM_SUPABASE_URL = 'https://avaggvngfyvbvowncudw.supabase.co';
+var SM_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF2YWdndm5nZnl2YnZvd25jdWR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3OTA1NTYsImV4cCI6MjA5OTM2NjU1Nn0.XTSJFi0fGFqe5PY_r2sJ29UWJa_1z0OJ452QELnOmaY';
+var SM_TABLE = 'tournament_state';
+var SM_ROW_ID = 'main';
+var SM_CATS = {
+  damen:{name:'Damen'}, herren:{name:'Herren'}, herren40:{name:'Herren 40+'},
+  damendoppel:{name:'Damen Doppel'}, herrendoppel:{name:'Herren Doppel'},
+  herrendoppel40:{name:'Herren Doppel 40+'}, mixed:{name:'Mixed'}
+};
 var POLL_MS = 10000;
 var knownVer = null;
 var slides = [], cur = 0, paused = false;
@@ -636,6 +646,173 @@ function fetchTeamsShared(cb){
       ws.forEach(function(w){w(_teamsCache);});
     }
   );
+}
+
+// ── GEMEINSAMER, GECACHTER ABRUF DER STADTMEISTERSCHAFTEN-DATEN (Supabase) ──
+// Ein einzelner JSON-Datensatz enthält alle Kategorien/Turnierbäume/Termine.
+// Wird von sm-bracket- und sm-ticker-Folien gemeinsam genutzt und alle 60s
+// frisch geladen, damit neu eingetragene Ergebnisse zeitnah erscheinen.
+var _smCache=null,_smCacheAt=0,_smFetching=false,_smWaiters=[];
+function fetchSmShared(cb){
+  var now=Date.now();
+  if(_smCache&&(now-_smCacheAt)<60000){cb(_smCache);return;}
+  _smWaiters.push(cb);
+  if(_smFetching)return;
+  _smFetching=true;
+  var url=SM_SUPABASE_URL+'/rest/v1/'+SM_TABLE+'?id=eq.'+SM_ROW_ID+'&select=data&apikey='+encodeURIComponent(SM_SUPABASE_ANON_KEY);
+  wtXHR(url,
+    function(rows){
+      _smFetching=false;
+      if(Array.isArray(rows)&&rows[0]&&rows[0].data){_smCache=rows[0].data;_smCacheAt=Date.now();}
+      var ws=_smWaiters;_smWaiters=[];ws.forEach(function(w){w(_smCache);});
+    },
+    function(){
+      _smFetching=false;
+      var ws=_smWaiters;_smWaiters=[];ws.forEach(function(w){w(_smCache);});
+    }
+  );
+}
+function smDisplayName(slot){
+  if(!slot)return'';
+  if(slot.kind==='bye')return'Freilos';
+  if(slot.kind==='player')return(slot.names||[]).join(' / ');
+  return'';
+}
+function smFmtDate(iso){
+  if(!iso)return'';
+  var d=new Date(iso+'T00:00:00');
+  var days=['So','Mo','Di','Mi','Do','Fr','Sa'];
+  return days[d.getDay()]+' '+pad2(d.getDate())+'.'+pad2(d.getMonth()+1)+'.';
+}
+function smRoundLabel(idx,total){
+  var remaining=total-idx;
+  if(remaining===1)return'Finale';
+  if(remaining===2)return'Halbfinale';
+  if(remaining===3)return'Viertelfinale';
+  if(remaining===4)return'Achtelfinale';
+  return remaining+'. Runde';
+}
+
+// ── STADTMEISTERSCHAFTEN: TURNIERBAUM
+function smMatchHtml(m){
+  function rowHtml(slot,isWin){
+    var name=smDisplayName(slot);
+    var nameHtml=slot&&slot.kind==='bye'?'<span class="br-bye">[Freilos]</span>':(name?es(name):'<span class="br-bye">&ndash;</span>');
+    return '<div class="br-row'+(isWin?' win':'')+(name?'':' empty')+'">'+'<span class="br-name">'+nameHtml+'</span></div>';
+  }
+  return '<div class="br-match-wrap"><div class="br-match">'
+    +rowHtml(m.slots[0],m.winnerSlot===0)
+    +rowHtml(m.slots[1],m.winnerSlot===1)
+  +'</div></div>';
+}
+function buildSmBracket(s,div){
+  var d=s.data||{};
+  div.dataset.smCat=d.catKey||'';
+  div.dataset.smId=String(s.id);
+  var ac=d.accent||'#c9db4d',bg=d.bg||'#0d2b1a';
+  div.style.setProperty('--ac',ac);
+  div.style.background='linear-gradient(155deg,'+bg+' 0%,#071510 100%)';
+  div.innerHTML='<div class="br-hd"><div class="br-title">'+es(d.title||(SM_CATS[d.catKey]&&SM_CATS[d.catKey].name)||'Turnier')+'</div>'
+    +'<div class="br-stand">Lade Turnierbaum &hellip;</div></div>'
+    +'<div class="br-dv"></div><div class="br-tree"></div>';
+}
+function renderSmBracket(el,catData,catKey,title){
+  var treeEl=el.querySelector('.br-tree'),standEl=el.querySelector('.br-stand');
+  if(!treeEl)return;
+  if(!catData){treeEl.innerHTML='<div style="padding:40px;text-align:center;opacity:.6">Keine Daten gefunden.</div>';if(standEl)standEl.textContent='';return;}
+  var rounds=catData.rounds||[];
+  var total=rounds.length;
+  var roundsHtml=rounds.map(function(matches,r){
+    var isLast=r===total-1;
+    var pairsHtml='';
+    if(matches.length===1){
+      pairsHtml='<div class="br-pair">'+smMatchHtml(matches[0])+'</div>';
+    } else {
+      for(var i=0;i<matches.length;i+=2){
+        pairsHtml+='<div class="br-pair">'+smMatchHtml(matches[i])+smMatchHtml(matches[i+1])+'</div>';
+      }
+    }
+    return '<div class="br-round'+(isLast?' br-round-last':'')+'">'
+      +'<div class="br-round-hd">'+es(smRoundLabel(r,total))+'</div>'
+      +'<div class="br-round-body">'+pairsHtml+'</div>'
+    +'</div>';
+  }).join('');
+  treeEl.innerHTML=roundsHtml;
+  var now=new Date();
+  if(standEl)standEl.textContent='Stand '+pad2(now.getDate())+'.'+pad2(now.getMonth()+1)+'. '+pad2(now.getHours())+':'+pad2(now.getMinutes());
+}
+function initSmBracket(el){
+  var catKey=el.dataset.smCat;
+  var id=el.dataset.smId;
+  var s=slides.find(function(x){return String(x.id)===id;});
+  fetchSmShared(function(data){
+    var cat=data&&data.categories&&data.categories[catKey];
+    renderSmBracket(el,cat,catKey,s&&s.data&&s.data.title);
+  });
+}
+
+// ── STADTMEISTERSCHAFTEN: LAUFSCHRIFT (Ergebnisse & anstehende Partien)
+function buildSmTicker(s,div){
+  var d=s.data||{};
+  div.dataset.smId=String(s.id);
+  div.style.background=d.slideBg||'#0f2a1c';
+  var ac=d.fg||'#f5c842',bg=d.bg||'#1a3a2a';
+  var logoHtml=d.logo?'<img class="news-logo" src="'+es(d.logo)+'" alt="Logo">':'';
+  var label=d.label||'STADTMEISTERSCHAFTEN';
+  div.innerHTML='<div class="news-bg" style="background:'+es(d.slideBg||'#0f2a1c')+'"></div>'
+    +'<div class="news-ticker-bar" style="background:'+es(bg)+'">'
+    +logoHtml
+    +'<span class="news-label" style="color:'+es(ac)+'">'+es(label)+'</span>'
+    +'<div class="news-scroll-wrap"><div class="news-scroll-inner" style="color:'+es(ac)+'">Daten werden geladen &hellip;</div></div>'
+    +'</div>';
+}
+function renderSmTicker(el,data,d){
+  var scrollWrap=el.querySelector('.news-scroll-wrap');
+  if(!scrollWrap)return;
+  var ac=d.fg||'#f5c842';
+  var spd=parseInt(d.speed)||110;
+  var showResults=d.showResults!==false, showUpcoming=d.showUpcoming!==false;
+  var maxItems=parseInt(d.maxItems)||8;
+  if(!data){scrollWrap.innerHTML='<div class="news-scroll-inner" style="color:'+es(ac)+'">Keine Daten verf\u00fcgbar.</div>';return;}
+  var parts=[];
+  if(showUpcoming){
+    var upcoming=[];
+    Object.entries(data.categories||{}).forEach(function(kv){
+      var cat=kv[1];
+      (cat.rounds||[]).forEach(function(rnd){rnd.forEach(function(m){
+        if(m.date&&!m.result){
+          upcoming.push({cat:cat.name,label:smDisplayName(m.slots[0])+' \u2013 '+smDisplayName(m.slots[1]),date:m.date,time:m.time,court:m.court});
+        }
+      });});
+    });
+    upcoming.sort(function(a,b){return (a.date+(a.time||'')).localeCompare(b.date+(b.time||''));});
+    upcoming.slice(0,maxItems).forEach(function(it){
+      parts.push('\uD83D\uDCC5 '+it.cat+': '+it.label+' \u00b7 '+smFmtDate(it.date)+(it.time?', '+it.time+' Uhr':'')+(it.court?' \u00b7 '+it.court:''));
+    });
+  }
+  if(showResults){
+    var results=[];
+    ((data.activityLog)||[]).forEach(function(l){
+      if(l.text&&l.text.indexOf('Ergebnis eingetragen')===0){
+        var t=l.text.replace(/^Ergebnis eingetragen\s*/,'').replace(/\s*\([^()]*\)$/,'');
+        results.push(t);
+      }
+    });
+    results.slice(0,maxItems).forEach(function(t){
+      parts.push('\uD83C\uDFC6 '+t);
+    });
+  }
+  if(!parts.length){scrollWrap.innerHTML='<div class="news-scroll-inner" style="color:'+es(ac)+'">Noch keine Ergebnisse oder Termine.</div>';return;}
+  var txt=parts.join('\u00a0\u00a0\u00a0\u25cf\u00a0\u00a0\u00a0');
+  var doubled=txt+'\u00a0\u00a0\u00a0\u00a0\u00a0\u25c6\u00a0\u00a0\u00a0\u00a0\u00a0'+txt+'\u00a0\u00a0\u00a0\u00a0\u00a0\u25c6\u00a0\u00a0\u00a0\u00a0\u00a0';
+  var animDur=Math.max(14,Math.round(txt.length*14/spd))+'s';
+  scrollWrap.innerHTML='<div class="news-scroll-inner" style="color:'+es(ac)+';animation-duration:'+animDur+'">'+es(doubled)+'</div>';
+}
+function initSmTicker(el){
+  var id=el.dataset.smId;
+  var s=slides.find(function(x){return String(x.id)===id;});
+  var d=(s&&s.data)||{};
+  fetchSmShared(function(data){renderSmTicker(el,data,d);});
 }
 
 // ── SPIELPLAN
@@ -1155,6 +1332,12 @@ function bs(s){
   } else if(s.type==='bracket'){
     div.className='sl br';
     buildBracket(s,div);
+  } else if(s.type==='sm-bracket'){
+    div.className='sl br';
+    buildSmBracket(s,div);
+  } else if(s.type==='sm-ticker'){
+    div.className='sl news-sl';
+    buildSmTicker(s,div);
   } else if(s.type==='spielplan'){
     div.className='sl sp';
     buildSpielplan(s,div);
@@ -1796,6 +1979,8 @@ function triggerSlideInit(){
   if(slides[cur].type==='rss') initRss(activeEl,String(slides[cur].id));
   if(slides[cur].type==='spielplan') initSpielplan(activeEl);
   if(slides[cur].type==='kader') initKader(activeEl);
+  if(slides[cur].type==='sm-bracket') initSmBracket(activeEl);
+  if(slides[cur].type==='sm-ticker') initSmTicker(activeEl);
   if(slides[cur].type==='score'){
     // Zyklus exakt an den Moment koppeln, in dem die Folie sichtbar wird —
     // sonst könnte der interne Bild-Wechsel längst vorher (unsichtbar) gelaufen
