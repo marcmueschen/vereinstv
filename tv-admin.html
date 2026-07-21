@@ -432,21 +432,29 @@ main{max-width:1180px;margin:0 auto;padding:24px 16px 80px}
           </div>
         </div>
         <div class="card" style="margin-top:16px">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:.1em;color:var(--gd);margin-bottom:6px">&#128240; Stadtmeisterschaften &ndash; Laufschrift (live)</div>
-          <div style="font-size:.78rem;color:var(--di);margin-bottom:14px">Zeigt anstehende Partien (mit Termin) und zuletzt eingetragene Ergebnisse aller Konkurrenzen als Laufschrift &ndash; automatisch aktuell.</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:.1em;color:var(--gd);margin-bottom:6px">&#128240; Stadtmeisterschaften &ndash; Laufschrift</div>
+          <div style="font-size:.78rem;color:var(--di);margin-bottom:14px">Läuft unabhängig von den Folien als eigener Balken unten am Bildschirm (dort, wo sonst der Fortschrittsbalken ist) und zeigt anstehende Partien &amp; zuletzt eingetragene Ergebnisse. Wird durch ein Ereignis ausgelöst &ndash; oder dauerhaft eingeblendet.</div>
           <div class="g2">
-            <div class="fl s2"><label>Ticker-Beschriftung</label><input type="text" id="smt-label" placeholder="STADTMEISTERSCHAFTEN"></div>
-            <div class="fl"><label>Anstehende Partien anzeigen</label><select id="smt-upcoming"><option value="1" selected>Ja</option><option value="0">Nein</option></select></div>
-            <div class="fl"><label>Ergebnisse anzeigen</label><select id="smt-results"><option value="1" selected>Ja</option><option value="0">Nein</option></select></div>
-            <div class="fl"><label>Max. Einträge je Block</label><input type="number" id="smt-max" min="1" max="30" value="8"></div>
-            <div class="fl"><label>Ticker-Hintergrundfarbe</label><div class="cr"><input type="color" id="smt-bg" value="#1a3a2a" oninput="cct('smt-bg','smt-bgt')"><input type="text" id="smt-bgt" value="#1a3a2a" oninput="ctc('smt-bg','smt-bgt')"></div></div>
-            <div class="fl"><label>Textfarbe</label><div class="cr"><input type="color" id="smt-fg" value="#f5c842" oninput="cct('smt-fg','smt-fgt')"><input type="text" id="smt-fgt" value="#f5c842" oninput="ctc('smt-fg','smt-fgt')"></div></div>
-            <div class="fl"><label>Folienhintergrund</label><div class="cr"><input type="color" id="smt-slide-bg" value="#0f2a1c" oninput="cct('smt-slide-bg','smt-sbgt')"><input type="text" id="smt-sbgt" value="#0f2a1c" oninput="ctc('smt-slide-bg','smt-sbgt')"></div></div>
-            <div class="fl"><label>Geschwindigkeit</label><select id="smt-speed"><option value="80">Langsam</option><option value="110" selected>Normal</option><option value="160">Schnell</option></select></div>
-            <div class="fl"><label>Dauer Sek.</label><input type="number" id="smt-dur" min="10" placeholder="30"></div>
+            <div class="fl"><label>Laufschrift aktiv</label><select id="smtg-enabled"><option value="1">Ja</option><option value="0" selected>Nein</option></select></div>
+            <div class="fl"><label>Dauerhaft einblenden</label><select id="smtg-permanent"><option value="1">Ja, immer sichtbar</option><option value="0" selected>Nein, nur bei Ereignis</option></select></div>
+            <div class="fl"><label>Anzeigedauer bei Ereignis (Sek.)</label><input type="number" id="smtg-dur" min="5" max="300" value="20"></div>
+            <div class="fl s2">
+              <label>Ereignis, das die Laufschrift auslöst</label>
+              <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:4px">
+                <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;font-weight:400"><input type="checkbox" id="smtg-trig-bracket" style="width:auto" checked> Änderungen im Turnierbaum (neue Termine/Ergebnisse)</label>
+                <label style="display:flex;align-items:center;gap:6px;font-size:.85rem;font-weight:400"><input type="checkbox" id="smtg-trig-live" style="width:auto" checked> Änderungen bei Live-Begegnungen (Spielstand-Folien)</label>
+              </div>
+            </div>
+            <div class="fl s2"><label>Ticker-Beschriftung</label><input type="text" id="smtg-label" placeholder="STADTMEISTERSCHAFTEN"></div>
+            <div class="fl"><label>Anstehende Partien anzeigen</label><select id="smtg-upcoming"><option value="1" selected>Ja</option><option value="0">Nein</option></select></div>
+            <div class="fl"><label>Ergebnisse anzeigen</label><select id="smtg-results"><option value="1" selected>Ja</option><option value="0">Nein</option></select></div>
+            <div class="fl"><label>Max. Einträge je Block</label><input type="number" id="smtg-max" min="1" max="30" value="8"></div>
+            <div class="fl"><label>Balken-Hintergrundfarbe</label><div class="cr"><input type="color" id="smtg-bg" value="#0a120c" oninput="cct('smtg-bg','smtg-bgt')"><input type="text" id="smtg-bgt" value="#0a120c" oninput="ctc('smtg-bg','smtg-bgt')"></div></div>
+            <div class="fl"><label>Textfarbe</label><div class="cr"><input type="color" id="smtg-fg" value="#f5c842" oninput="cct('smtg-fg','smtg-fgt')"><input type="text" id="smtg-fgt" value="#f5c842" oninput="ctc('smtg-fg','smtg-fgt')"></div></div>
+            <div class="fl"><label>Geschwindigkeit</label><select id="smtg-speed"><option value="80">Langsam</option><option value="110" selected>Normal</option><option value="160">Schnell</option></select></div>
           </div>
           <div style="display:flex;justify-content:flex-end;margin-top:12px">
-            <button class="btn bp" onclick="curTab='sm-ticker';addSlide()">+ Stadtmeisterschaften-Ticker hinzufügen</button>
+            <button class="btn bp" onclick="doSave()">&#9729; Laufschrift-Einstellungen speichern</button>
           </div>
         </div>
       </section>
@@ -770,15 +778,15 @@ var PRESETS10 = ['10:0','10:1','10:2','10:3','10:4','10:5','10:6','10:7','10:8',
 var ICONS2 = {booking:'&#127931;',weather:'&#127780;',radar:'&#127782;',upload:'&#128444;',
   announce:'&#128226;',table:'&#128202;',score:'&#127934;',image:'&#128247;',
   youtube:'&#9654;',webpage:'&#127760;',news:'&#128241;',menu:'&#127869;',html:'&#128187;',rss:'&#128225;',bracket:'&#127942;',
-  spielplan:'&#128197;',kader:'&#128101;','sm-bracket':'&#127942;','sm-ticker':'&#128240;'};
+  spielplan:'&#128197;',kader:'&#128101;','sm-bracket':'&#127942;'};
 var LABELS = {booking:'Platzbelegung',weather:'Wettervorhersage',radar:'Regenradar',upload:'Bild-Upload',
   announce:'Ankündigung',table:'Tabelle',score:'Spielstand',image:'Bild',
   youtube:'YouTube',webpage:'Webseite',news:'News-Ticker',menu:'Speisekarte',html:'HTML',rss:'RSS-Feed',bracket:'Turnierbaum',
-  spielplan:'Spielplan',kader:'Kader','sm-bracket':'Stadtm.-Turnierbaum','sm-ticker':'Stadtm.-Ticker'};
+  spielplan:'Spielplan',kader:'Kader','sm-bracket':'Stadtm.-Turnierbaum'};
 
 // Which types each role can create
 var ROLE_TABS = {
-  admin: ['announce','table','score','image','upload','youtube','webpage','news','rss','menu','booking','weather','radar','html','bracket','sm-bracket','sm-ticker','spielplan','kader'],
+  admin: ['announce','table','score','image','upload','youtube','webpage','news','rss','menu','booking','weather','radar','html','bracket','sm-bracket','spielplan','kader'],
   wirtin: ['menu'],
   teamleader: ['score']
 };
@@ -1003,6 +1011,7 @@ async function loadFromWorker(){
         if(c.fontSize){var fss=document.getElementById('cfg-fontsize');for(var i=0;i<fss.options.length;i++){if(parseFloat(fss.options[i].value)===parseFloat(c.fontSize)){fss.selectedIndex=i;break;}}}
         if(c.slideTitleColor){sv('cfg-stc-hex',c.slideTitleColor);var stcEl=document.getElementById('cfg-stc');if(stcEl)stcEl.value=c.slideTitleColor;}
         if(c.slideTitleFont!==undefined){var stfEl=document.getElementById('cfg-stf');if(stfEl)for(var j=0;j<stfEl.options.length;j++){if(stfEl.options[j].value===c.slideTitleFont){stfEl.selectedIndex=j;break;}}}
+        applySmTickerCfg(c.smTicker);
       }
       renderList();setSt('ok','Geladen');
       // Teams für Score-Formular laden
@@ -1024,6 +1033,38 @@ function filterSlidesForRole(allSlides){
   });
 }
 
+function gatherSmTickerCfg(){
+  return {
+    enabled: gv('smtg-enabled')==='1',
+    permanent: gv('smtg-permanent')==='1',
+    duration: parseInt(gv('smtg-dur'))||20,
+    triggerBracket: !!(document.getElementById('smtg-trig-bracket')&&document.getElementById('smtg-trig-bracket').checked),
+    triggerLive: !!(document.getElementById('smtg-trig-live')&&document.getElementById('smtg-trig-live').checked),
+    label: gv('smtg-label')||'STADTMEISTERSCHAFTEN',
+    showUpcoming: gv('smtg-upcoming')!=='0',
+    showResults: gv('smtg-results')!=='0',
+    maxItems: parseInt(gv('smtg-max'))||8,
+    bg: gv('smtg-bg')||'#0a120c',
+    fg: gv('smtg-fg')||'#f5c842',
+    speed: gv('smtg-speed')||'110'
+  };
+}
+function applySmTickerCfg(t){
+  t=t||{};
+  sv('smtg-enabled', t.enabled?'1':'0');
+  sv('smtg-permanent', t.permanent?'1':'0');
+  sv('smtg-dur', t.duration||20);
+  var tb=document.getElementById('smtg-trig-bracket');if(tb)tb.checked=t.triggerBracket!==false;
+  var tl=document.getElementById('smtg-trig-live');if(tl)tl.checked=t.triggerLive!==false;
+  sv('smtg-label', t.label||'STADTMEISTERSCHAFTEN');
+  sv('smtg-upcoming', t.showUpcoming===false?'0':'1');
+  sv('smtg-results', t.showResults===false?'0':'1');
+  sv('smtg-max', t.maxItems||8);
+  sv('smtg-bg', t.bg||'#0a120c');var smtgBgt=document.getElementById('smtg-bgt');if(smtgBgt)smtgBgt.value=t.bg||'#0a120c';
+  sv('smtg-fg', t.fg||'#f5c842');var smtgFgt=document.getElementById('smtg-fgt');if(smtgFgt)smtgFgt.value=t.fg||'#f5c842';
+  sv('smtg-speed', t.speed||'110');
+}
+
 async function doSave(){
   var wurl=getWurl();
   if(!wurl){toast('Bitte Worker-URL eintragen.','err');return;}
@@ -1034,7 +1075,8 @@ async function doSave(){
   if(role==='admin'){
     var payload={clubName:gv('cfg-club')||'TC Vereins-TV',defaultDuration:parseInt(gv('cfg-dur'))||10,
       fontFamily:gv('cfg-font')||'Inter',fontSize:parseFloat(gv('cfg-fontsize'))||1,
-      slideTitleColor:gv('cfg-stc-hex')||'#f5c842',slideTitleFont:gv('cfg-stf')||'',slides:slides};
+      slideTitleColor:gv('cfg-stc-hex')||'#f5c842',slideTitleFont:gv('cfg-stf')||'',slides:slides,
+      smTicker:gatherSmTickerCfg()};
     var adminPw=localStorage.getItem('vtv_admin_pw')||'';
     if(!adminPw){
       adminPw=prompt('Admin-Passwort:','');
@@ -1302,7 +1344,7 @@ function fillMenuCats(contId,cats){
 // ══════════════════════════════════════════════════════════════
 function addSlide(){
   var t=curTab;
-  var dm={announce:'a-dur',table:'t-dur',score:'s-dur',image:'i-dur',upload:'up-dur',youtube:'y-dur',webpage:'wp-dur',news:'nw-dur',rss:'rss-dur',menu:'mn-dur',booking:'bk-dur',weather:'wt-dur',radar:'rd-dur',html:'h-dur',bracket:'br-dur','sm-bracket':'smb-dur','sm-ticker':'smt-dur',spielplan:'sp-dur',kader:'kd-dur'};
+  var dm={announce:'a-dur',table:'t-dur',score:'s-dur',image:'i-dur',upload:'up-dur',youtube:'y-dur',webpage:'wp-dur',news:'nw-dur',rss:'rss-dur',menu:'mn-dur',booking:'bk-dur',weather:'wt-dur',radar:'rd-dur',html:'h-dur',bracket:'br-dur','sm-bracket':'smb-dur',spielplan:'sp-dur',kader:'kd-dur'};
   var dur=gv(dm[t]);var s=null;
   if(t==='announce'){var ti=gv('a-title');if(!ti){toast('Bitte Titel.','err');return;}s={id:Date.now(),type:t,name:ti,enabled:true,duration:dur?parseInt(dur):null,data:{title:ti,body:gv('a-body'),bg:gv('a-bg'),fg:gv('a-fg'),accent:gv('a-ac'),img:gv('a-img')}};}
   else if(t==='table'){var csv=gv('t-csv');if(!csv){toast('Bitte CSV.','err');return;}s={id:Date.now(),type:t,name:gv('t-title')||'Tabelle',enabled:true,duration:dur?parseInt(dur):null,data:{title:gv('t-title'),csv:csv,bg:gv('t-bg'),accent:gv('t-ac')}};}
@@ -1333,7 +1375,6 @@ function addSlide(){
   else if(t==='html'){var code=gv('h-code');if(!code){toast('Bitte HTML-Code.','err');return;}s={id:Date.now(),type:t,name:gv('h-title')||'HTML',enabled:true,duration:dur?parseInt(dur):null,data:{title:gv('h-title'),code:code}};}
   else if(t==='bracket'){var brd=readBracketData();if(!brd){toast('Bitte Teilnehmer eintragen.','err');return;}s={id:Date.now(),type:t,name:'Turnierbaum: '+(gv('br-title')||'Turnier'),enabled:true,duration:dur?parseInt(dur)||30:30,data:Object.assign({title:gv('br-title')||'Turnier',bg:gv('br-bg'),accent:gv('br-ac')},brd)};}
   else if(t==='sm-bracket'){var smbCat=gv('smb-cat-sel');if(!smbCat){toast('Bitte Kategorie wählen.','err');return;}var smbName=(SM_CATS.find(function(x){return x.key===smbCat;})||{}).name||smbCat;s={id:Date.now(),type:t,name:'Stadtm.-Turnierbaum: '+smbName,enabled:true,duration:dur?parseInt(dur)||30:30,data:{catKey:smbCat,title:gv('smb-title')||smbName,bg:gv('smb-bg'),accent:gv('smb-ac')}};}
-  else if(t==='sm-ticker'){s={id:Date.now(),type:t,name:'Stadtm.-Ticker',enabled:true,duration:dur?parseInt(dur)||30:30,data:{label:gv('smt-label')||'STADTMEISTERSCHAFTEN',showUpcoming:gv('smt-upcoming')!=='0',showResults:gv('smt-results')!=='0',maxItems:parseInt(gv('smt-max'))||8,bg:gv('smt-bg'),fg:gv('smt-fg'),slideBg:gv('smt-slide-bg'),speed:gv('smt-speed')||'110'}};}
   else if(t==='spielplan'){var spTeam=gv('sp-team-sel');if(!spTeam){toast('Bitte Mannschaft wählen.','err');return;}var spT=allTeams.find(function(x){return x.id===spTeam;});s={id:Date.now(),type:t,name:'Spielplan: '+(spT?spT.name:''),enabled:true,duration:dur?parseInt(dur)||30:30,data:{teamId:spTeam,title:gv('sp-title')||(spT?spT.name:'Spielplan'),bg:gv('sp-bg'),accent:gv('sp-ac')}};}
   else if(t==='kader'){var kdTeam=gv('kd-team-sel');if(!kdTeam){toast('Bitte Mannschaft wählen.','err');return;}var kdT=allTeams.find(function(x){return x.id===kdTeam;});s={id:Date.now(),type:t,name:'Kader: '+(kdT?kdT.name:''),enabled:true,duration:dur?parseInt(dur)||20:20,data:{teamId:kdTeam,title:gv('kd-title')||(kdT?kdT.name:'Kader'),bg:gv('kd-bg'),accent:gv('kd-ac')}};}
   if(!s)return;
@@ -1566,7 +1607,6 @@ function mkEF(s){
   if(s.type==='spielplan')return '<div class="g2"><div class="fl s2"><label>Mannschaft</label><select id="esp-team-sel" style="width:100%"></select></div><div class="fl s2"><label>Titel (optional)</label><input type="text" id="esp-title" value="'+esc(d.title||'')+'"></div><div class="fl"><label>Dauer Sek.</label><input type="number" id="esp-dur" value="'+dv+'"></div>'+crH('esp-bg','Hintergrundfarbe',d.bg||'#0f2a1c')+crH('esp-ac','Akzentfarbe',d.accent||'#f5c842')+'</div>';
   if(s.type==='kader')return '<div class="g2"><div class="fl s2"><label>Mannschaft</label><select id="ekd-team-sel" style="width:100%"></select></div><div class="fl s2"><label>Titel (optional)</label><input type="text" id="ekd-title" value="'+esc(d.title||'')+'"></div><div class="fl"><label>Dauer Sek.</label><input type="number" id="ekd-dur" value="'+dv+'"></div>'+crH('ekd-bg','Hintergrundfarbe',d.bg||'#0f2a1c')+crH('ekd-ac','Akzentfarbe',d.accent||'#f5c842')+'</div>';
   if(s.type==='sm-bracket')return '<div class="g2"><div class="fl s2"><label>Konkurrenz</label><select id="esmb-cat-sel" style="width:100%"></select></div><div class="fl s2"><label>Titel (optional)</label><input type="text" id="esmb-title" value="'+esc(d.title||'')+'"></div><div class="fl"><label>Dauer Sek.</label><input type="number" id="esmb-dur" value="'+dv+'"></div>'+crH('esmb-bg','Hintergrundfarbe',d.bg||'#0d2b1a')+crH('esmb-ac','Akzentfarbe',d.accent||'#c9db4d')+'</div>';
-  if(s.type==='sm-ticker')return '<div class="g2"><div class="fl s2"><label>Ticker-Beschriftung</label><input type="text" id="esmt-label" value="'+esc(d.label||'STADTMEISTERSCHAFTEN')+'"></div><div class="fl"><label>Anstehende Partien</label><select id="esmt-upcoming"><option value="1"'+(d.showUpcoming!==false?' selected':'')+'>Ja</option><option value="0"'+(d.showUpcoming===false?' selected':'')+'>Nein</option></select></div><div class="fl"><label>Ergebnisse</label><select id="esmt-results"><option value="1"'+(d.showResults!==false?' selected':'')+'>Ja</option><option value="0"'+(d.showResults===false?' selected':'')+'>Nein</option></select></div><div class="fl"><label>Max. Einträge je Block</label><input type="number" id="esmt-max" min="1" max="30" value="'+esc(String(d.maxItems||8))+'"></div>'+crH('esmt-bg','Ticker-Hintergrundfarbe',d.bg||'#1a3a2a')+crH('esmt-fg','Textfarbe',d.fg||'#f5c842')+crH('esmt-slide-bg','Folienhintergrund',d.slideBg||'#0f2a1c')+'<div class="fl"><label>Geschwindigkeit</label><select id="esmt-speed"><option value="80"'+(d.speed==='80'?' selected':'')+'>Langsam</option><option value="110"'+(!d.speed||d.speed==='110'?' selected':'')+'>Normal</option><option value="160"'+(d.speed==='160'?' selected':'')+'>Schnell</option></select></div><div class="fl"><label>Dauer Sek.</label><input type="number" id="esmt-dur" value="'+dv+'"></div></div>';
   return '<p>Unbekannter Typ</p>';
 }
 
@@ -1623,7 +1663,6 @@ function saveEdit(){
   else if(s.type==='spielplan'){var espTeam=g('esp-team-sel');var espT=allTeams.find(function(x){return x.id===espTeam;});s.name='Spielplan: '+(espT?espT.name:'');s.data={teamId:espTeam,title:g('esp-title')||(espT?espT.name:'Spielplan'),bg:g('esp-bg'),accent:g('esp-ac')};s.duration=g('esp-dur')?parseInt(g('esp-dur')):30;}
   else if(s.type==='kader'){var ekdTeam=g('ekd-team-sel');var ekdT=allTeams.find(function(x){return x.id===ekdTeam;});s.name='Kader: '+(ekdT?ekdT.name:'');s.data={teamId:ekdTeam,title:g('ekd-title')||(ekdT?ekdT.name:'Kader'),bg:g('ekd-bg'),accent:g('ekd-ac')};s.duration=g('ekd-dur')?parseInt(g('ekd-dur')):20;}
   else if(s.type==='sm-bracket'){var esmbCat=g('esmb-cat-sel');var esmbC=SM_CATS.find(function(x){return x.key===esmbCat;});s.name='Stadtm.-Turnierbaum: '+(esmbC?esmbC.name:esmbCat);s.data={catKey:esmbCat,title:g('esmb-title')||(esmbC?esmbC.name:''),bg:g('esmb-bg'),accent:g('esmb-ac')};s.duration=g('esmb-dur')?parseInt(g('esmb-dur')):30;}
-  else if(s.type==='sm-ticker'){s.name='Stadtm.-Ticker';s.data={label:g('esmt-label')||'STADTMEISTERSCHAFTEN',showUpcoming:g('esmt-upcoming')!=='0',showResults:g('esmt-results')!=='0',maxItems:parseInt(g('esmt-max'))||8,bg:g('esmt-bg'),fg:g('esmt-fg'),slideBg:g('esmt-slide-bg'),speed:g('esmt-speed')||'110'};s.duration=g('esmt-dur')?parseInt(g('esmt-dur')):30;}
   closeModal();renderList();
   // Score-Folie sofort live übertragen
   if(s&&s.type==='score'){
