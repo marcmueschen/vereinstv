@@ -159,6 +159,12 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a3a2a;font-family:
 .br-meta{flex:0 0 auto;min-height:1.5em;line-height:1.5;font-size:clamp(.5rem,.85vw,.72rem);letter-spacing:.02em;opacity:.6;padding:0 8% 3% 8%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-sizing:border-box}
 .br-meta.done{color:var(--ac,#c9db4d);opacity:.9;font-weight:700}
 .br-meta.sched{opacity:.65;font-style:italic}
+/* Stadtmeisterschaften-Turnierbaum: Boxhöhe ist über alle Runden hinweg fix
+   (bestimmt durch die Runde mit den meisten Partien), statt pro Runde zu
+   wachsen. Wird per JS als --br-match-h gesetzt. */
+.sm-br .br-match-wrap{flex:0 0 auto;height:var(--br-match-h,60px);align-items:stretch;padding:3px 0;box-sizing:border-box}
+.sm-br .br-round-body{justify-content:space-around}
+.sm-br .br-pair{justify-content:space-around;flex:0 0 auto}
 /* Verbindungslinien zwischen den Runden (nicht bei der letzten Runde/Finale) */
 .br-match-wrap::after{content:'';position:absolute;right:-2.2%;top:50%;width:2.2%;height:2px;background:var(--ac,#c9db4d);opacity:.4}
 .br-pair::before{content:'';position:absolute;right:-2.2%;top:25%;bottom:25%;width:2px;background:var(--ac,#c9db4d);opacity:.4}
@@ -745,6 +751,7 @@ function renderSmBracket(el,catData,catKey,title){
   if(!catData){treeEl.innerHTML='<div style="padding:40px;text-align:center;opacity:.6">Keine Daten gefunden.</div>';if(standEl)standEl.textContent='';return;}
   var rounds=catData.rounds||[];
   var total=rounds.length;
+  var firstCount=(rounds[0]||[]).length||1;
   var roundsHtml=rounds.map(function(matches,r){
     var isLast=r===total-1;
     var pairsHtml='';
@@ -761,6 +768,19 @@ function renderSmBracket(el,catData,catKey,title){
     +'</div>';
   }).join('');
   treeEl.innerHTML=roundsHtml;
+  // Boxhöhe fix über alle Runden hinweg: die Runde mit den meisten Partien
+  // (i. d. R. das Achtelfinale) bestimmt die Höhe für Viertelfinale, Halb-
+  // finale und Finale mit, statt dort immer größer zu werden.
+  function applyMatchHeight(){
+    var th2=treeEl.clientHeight;
+    if(th2>0){
+      var perH=Math.max(26,Math.floor(th2/firstCount));
+      treeEl.style.setProperty('--br-match-h',perH+'px');
+      return true;
+    }
+    return false;
+  }
+  if(!applyMatchHeight()){setTimeout(applyMatchHeight,80);}
   var now=new Date();
   if(standEl)standEl.textContent='Stand '+pad2(now.getDate())+'.'+pad2(now.getMonth()+1)+'. '+pad2(now.getHours())+':'+pad2(now.getMinutes());
 }
@@ -1356,7 +1376,7 @@ function bs(s){
     div.className='sl br';
     buildBracket(s,div);
   } else if(s.type==='sm-bracket'){
-    div.className='sl br';
+    div.className='sl br sm-br';
     buildSmBracket(s,div);
   } else if(s.type==='sm-ticker'){
     div.className='sl news-sl';
