@@ -146,9 +146,9 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a3a2a;font-family:
 .br-round-hd{text-align:center;font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:clamp(.85rem,1.5vw,1.25rem);letter-spacing:.12em;text-transform:uppercase;color:var(--ac,#c9db4d);opacity:.85;margin-bottom:3%;flex-shrink:0}
 .br-round-body{flex:1;display:flex;flex-direction:column;justify-content:space-around;min-height:0}
 .br-pair{position:relative;flex:1;display:flex;flex-direction:column;justify-content:space-around;min-height:0}
-.br-match-wrap{position:relative;flex:1;display:flex;align-items:center;min-height:0;padding:2% 0}
-.br-match{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;overflow:hidden}
-.br-row{display:flex;align-items:center;gap:6px;padding:6% 8%;font-size:clamp(.72rem,1.35vw,1.05rem);white-space:nowrap;overflow:hidden}
+.br-match-wrap{position:relative;flex:1;display:flex;align-items:stretch;min-height:0;padding:1.5% 0}
+.br-match{width:100%;height:100%;display:flex;flex-direction:column;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;overflow:hidden}
+.br-row{flex:1;display:flex;align-items:center;gap:6px;padding:0 8%;font-size:clamp(.62rem,1.25vw,1.05rem);white-space:nowrap;overflow:hidden;min-height:0}
 .br-row:first-child{border-bottom:1px solid rgba(255,255,255,.1)}
 .br-row.win{background:rgba(201,219,77,.22)}
 .br-row.win .br-name{font-weight:800;color:var(--ac,#c9db4d)}
