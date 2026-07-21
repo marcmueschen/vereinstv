@@ -261,6 +261,14 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a3a2a;font-family:
 #ct{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:.92rem;color:rgba(255,255,255,.4);letter-spacing:.1em}
 #pb2{font-size:.9rem;cursor:pointer;opacity:0;transition:opacity .3s;background:none;border:none;color:#fff;padding:0}
 #pb2.v{opacity:1}
+/* Stadtmeisterschaften-Laufschrift: eigenständiger Overlay-Balken exakt an
+   der Stelle des Fortschrittsbalkens (#bb), unabhängig von den Folien. */
+#smb-ticker{position:absolute;left:0;right:0;bottom:0;height:46px;display:none;align-items:center;gap:14px;padding:0 32px;background:rgba(10,18,12,.92);border-top:1px solid rgba(245,200,66,.3);z-index:12;box-sizing:border-box}
+#smb-ticker.v{display:flex}
+#smb-ticker-label{flex-shrink:0;font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:.85rem;letter-spacing:.12em;text-transform:uppercase;color:#f5c842;white-space:nowrap}
+#smb-ticker-scroll-wrap{flex:1;min-width:0;overflow:hidden}
+#smb-ticker-scroll-inner{display:inline-block;white-space:nowrap;color:#f5c842;font-size:.92rem;font-weight:600;animation:smb-scroll-x linear infinite;animation-duration:26s;padding-left:100%}
+@keyframes smb-scroll-x{from{transform:translateX(0)}to{transform:translateX(-100%)}}
 /* SETUP */
 #setup{display:flex;position:absolute;inset:0;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:40px;z-index:30;background:#1a3a2a}
 #setup h2{font-family:var(--font-display,'Bebas Neue'),sans-serif;font-size:2.2rem;letter-spacing:.1em;color:#f5c842}
@@ -395,6 +403,10 @@ html,body{width:100%;height:100%;overflow:hidden;background:#1a3a2a;font-family:
     </div>
   </div>
   <div id="bb"><div id="dt"></div><div id="pw"><div id="pb"></div></div><span id="ct"></span><button id="pb2">&#9208;</button></div>
+  <div id="smb-ticker">
+    <span id="smb-ticker-label">STADTMEISTERSCHAFTEN</span>
+    <div id="smb-ticker-scroll-wrap"><div id="smb-ticker-scroll-inner">Daten werden geladen &hellip;</div></div>
+  </div>
 </div>
 <script>
 function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
@@ -481,6 +493,7 @@ function flashSync(){var dot=document.getElementById('sync-dot');dot.classList.a
 
 function applyCfg(cfg){
   DD=cfg.defaultDuration||10;
+  initSmTickerSystem(cfg.smTicker);
   document.getElementById('cn').textContent=cfg.clubName||'Vereins-TV';
   var fonts=cfg.fontFamily||'Inter';
   var fsize=parseFloat(cfg.fontSize)||1;
@@ -525,6 +538,10 @@ function applyCfg(cfg){
       var el=stage.querySelector('.sl[data-i="'+i+'"]');
       if(!el)return;
       if(s.type==='score'){
+        // Nur bei tatsächlicher Änderung: Live-Trigger für die Laufschrift auslösen
+        if(prevSlides[i]&&JSON.stringify(prevSlides[i].data)!==JSON.stringify(s.data)){
+          smTickerNotifyLive(s);
+        }
         // Clear existing flash timers for this slide before updating
         // (new change = restart counter)
         Object.keys(_flashTimers).forEach(function(k){
@@ -668,9 +685,9 @@ function fetchTeamsShared(cb){
 // Wird von sm-bracket- und sm-ticker-Folien gemeinsam genutzt und alle 60s
 // frisch geladen, damit neu eingetragene Ergebnisse zeitnah erscheinen.
 var _smCache=null,_smCacheAt=0,_smFetching=false,_smWaiters=[];
-function fetchSmShared(cb){
+function fetchSmShared(cb,force){
   var now=Date.now();
-  if(_smCache&&(now-_smCacheAt)<60000){cb(_smCache);return;}
+  if(!force&&_smCache&&(now-_smCacheAt)<60000){cb(_smCache);return;}
   _smWaiters.push(cb);
   if(_smFetching)return;
   _smFetching=true;
@@ -822,34 +839,33 @@ function initSmBracket(el){
   });
 }
 
-// ── STADTMEISTERSCHAFTEN: LAUFSCHRIFT (Ergebnisse & anstehende Partien)
-function buildSmTicker(s,div){
-  var d=s.data||{};
-  div.dataset.smId=String(s.id);
-  div.style.background=d.slideBg||'#0f2a1c';
-  var ac=d.fg||'#f5c842',bg=d.bg||'#1a3a2a';
-  var logoHtml=d.logo?'<img class="news-logo" src="'+es(d.logo)+'" alt="Logo">':'';
-  var label=d.label||'STADTMEISTERSCHAFTEN';
-  div.innerHTML='<div class="news-bg" style="background:'+es(d.slideBg||'#0f2a1c')+'"></div>'
-    +'<div class="news-ticker-bar" style="background:'+es(bg)+'">'
-    +logoHtml
-    +'<span class="news-label" style="color:'+es(ac)+'">'+es(label)+'</span>'
-    +'<div class="news-scroll-wrap"><div class="news-scroll-inner" style="color:'+es(ac)+'">Daten werden geladen &hellip;</div></div>'
-    +'</div>';
+// ── STADTMEISTERSCHAFTEN: LAUFSCHRIFT-OVERLAY (unabhängig von den Folien) ──
+// Läuft im Bereich der Fortschrittsanzeige (#bb) und wird über Ereignisse
+// (Turnierbaum-Änderung, Live-Begegnung) oder dauerhaft eingeblendet.
+var SM_TICKER_CFG=null;
+var _smTickerSig=null;
+var _smTickerHideTimer=null;
+var _smTickerPollTimer=null;
+
+function smTickerSignature(data){
+  if(!data)return '';
+  var parts=[];
+  Object.keys(data.categories||{}).sort().forEach(function(k){
+    (data.categories[k].rounds||[]).forEach(function(rnd){rnd.forEach(function(m){
+      parts.push(m.id+':'+(m.result||'')+':'+(m.date||'')+(m.time||''));
+    });});
+  });
+  var log=(data.activityLog||[])[0];
+  return (log?log.id:'')+'::'+parts.join('|');
 }
-function renderSmTicker(el,data,d){
-  var scrollWrap=el.querySelector('.news-scroll-wrap');
-  if(!scrollWrap)return;
-  var ac=d.fg||'#f5c842';
-  var spd=parseInt(d.speed)||110;
-  var showResults=d.showResults!==false, showUpcoming=d.showUpcoming!==false;
-  var maxItems=parseInt(d.maxItems)||8;
-  if(!data){scrollWrap.innerHTML='<div class="news-scroll-inner" style="color:'+es(ac)+'">Keine Daten verf\u00fcgbar.</div>';return;}
+function smTickerBuildText(data,cfg){
+  if(!data)return null;
+  var showUpcoming=cfg.showUpcoming!==false, showResults=cfg.showResults!==false;
+  var maxItems=parseInt(cfg.maxItems)||8;
   var parts=[];
   if(showUpcoming){
     var upcoming=[];
-    Object.entries(data.categories||{}).forEach(function(kv){
-      var cat=kv[1];
+    Object.values(data.categories||{}).forEach(function(cat){
       (cat.rounds||[]).forEach(function(rnd){rnd.forEach(function(m){
         if(m.date&&!m.result){
           upcoming.push({cat:cat.name,label:smDisplayName(m.slots[0])+' \u2013 '+smDisplayName(m.slots[1]),date:m.date,time:m.time,court:m.court});
@@ -863,27 +879,75 @@ function renderSmTicker(el,data,d){
   }
   if(showResults){
     var results=[];
-    ((data.activityLog)||[]).forEach(function(l){
+    (data.activityLog||[]).forEach(function(l){
       if(l.text&&l.text.indexOf('Ergebnis eingetragen')===0){
-        var t=l.text.replace(/^Ergebnis eingetragen\s*/,'').replace(/\s*\([^()]*\)$/,'');
-        results.push(t);
+        results.push(l.text.replace(/^Ergebnis eingetragen\s*/,'').replace(/\s*\([^()]*\)$/,''));
       }
     });
-    results.slice(0,maxItems).forEach(function(t){
-      parts.push('\uD83C\uDFC6 '+t);
-    });
+    results.slice(0,maxItems).forEach(function(t){parts.push('\uD83C\uDFC6 '+t);});
   }
-  if(!parts.length){scrollWrap.innerHTML='<div class="news-scroll-inner" style="color:'+es(ac)+'">Noch keine Ergebnisse oder Termine.</div>';return;}
+  if(!parts.length)return null;
   var txt=parts.join('\u00a0\u00a0\u00a0\u25cf\u00a0\u00a0\u00a0');
-  var doubled=txt+'\u00a0\u00a0\u00a0\u00a0\u00a0\u25c6\u00a0\u00a0\u00a0\u00a0\u00a0'+txt+'\u00a0\u00a0\u00a0\u00a0\u00a0\u25c6\u00a0\u00a0\u00a0\u00a0\u00a0';
-  var animDur=Math.max(14,Math.round(txt.length*14/spd))+'s';
-  scrollWrap.innerHTML='<div class="news-scroll-inner" style="color:'+es(ac)+';animation-duration:'+animDur+'">'+es(doubled)+'</div>';
+  return txt+'\u00a0\u00a0\u00a0\u00a0\u00a0\u25c6\u00a0\u00a0\u00a0\u00a0\u00a0'+txt;
 }
-function initSmTicker(el){
-  var id=el.dataset.smId;
-  var s=slides.find(function(x){return String(x.id)===id;});
-  var d=(s&&s.data)||{};
-  fetchSmShared(function(data){renderSmTicker(el,data,d);});
+function smTickerShow(text,durationSec,permanent){
+  var bar=document.getElementById('smb-ticker'),inner=document.getElementById('smb-ticker-scroll-inner'),label=document.getElementById('smb-ticker-label');
+  if(!bar||!inner)return;
+  var cfg=SM_TICKER_CFG||{};
+  label.textContent=cfg.label||'STADTMEISTERSCHAFTEN';
+  bar.style.background=cfg.bg||'rgba(10,18,12,.92)';
+  inner.style.color=cfg.fg||'#f5c842';
+  label.style.color=cfg.fg||'#f5c842';
+  var spd=parseInt(cfg.speed)||110;
+  inner.style.animationDuration=Math.max(14,Math.round(text.length*14/spd))+'s';
+  inner.textContent=text;
+  bar.classList.add('v');
+  if(_smTickerHideTimer){clearTimeout(_smTickerHideTimer);_smTickerHideTimer=null;}
+  if(!permanent&&durationSec>0){
+    _smTickerHideTimer=setTimeout(function(){bar.classList.remove('v');},durationSec*1000);
+  }
+}
+function smTickerHide(){
+  var bar=document.getElementById('smb-ticker');
+  if(bar)bar.classList.remove('v');
+  if(_smTickerHideTimer){clearTimeout(_smTickerHideTimer);_smTickerHideTimer=null;}
+}
+// Wird bei jedem Poll (Turnierbaum-Änderung) aufgerufen.
+function smTickerCheckBracket(force){
+  var cfg=SM_TICKER_CFG;
+  if(!cfg||!cfg.enabled)return;
+  fetchSmShared(function(data){
+    if(!data)return;
+    var sig=smTickerSignature(data);
+    var isFirst=_smTickerSig===null;
+    var changed=!isFirst&&sig!==_smTickerSig;
+    _smTickerSig=sig;
+    if(cfg.permanent){
+      var txt=smTickerBuildText(data,cfg);
+      if(txt)smTickerShow(txt,0,true);
+      return;
+    }
+    if(changed&&cfg.triggerBracket){
+      var txt2=smTickerBuildText(data,cfg);
+      if(txt2)smTickerShow(txt2,parseInt(cfg.duration)||20,false);
+    }
+  },force);
+}
+// Wird aus applyCfg heraus aufgerufen, sobald sich eine Live-Begegnung
+// (Spielstand-Folie) geändert hat.
+function smTickerNotifyLive(scoreSlide){
+  var cfg=SM_TICKER_CFG;
+  if(!cfg||!cfg.enabled||cfg.permanent||!cfg.triggerLive)return;
+  var d=scoreSlide.data||{};
+  var txt='\u26BE '+(d.heimTeam||'')+' \u2013 '+(d.gastTeam||'')+' \u00b7 '+(d.gesamtHeim||0)+':'+(d.gesamtGast||0);
+  smTickerShow(txt,parseInt(cfg.duration)||20,false);
+}
+function initSmTickerSystem(cfg){
+  SM_TICKER_CFG=cfg||{enabled:false};
+  if(_smTickerPollTimer){clearInterval(_smTickerPollTimer);_smTickerPollTimer=null;}
+  if(!SM_TICKER_CFG.enabled){smTickerHide();return;}
+  smTickerCheckBracket(true);
+  _smTickerPollTimer=setInterval(function(){smTickerCheckBracket();},30000);
 }
 
 // ── SPIELPLAN
@@ -1406,9 +1470,6 @@ function bs(s){
   } else if(s.type==='sm-bracket'){
     div.className='sl br sm-br';
     buildSmBracket(s,div);
-  } else if(s.type==='sm-ticker'){
-    div.className='sl news-sl';
-    buildSmTicker(s,div);
   } else if(s.type==='spielplan'){
     div.className='sl sp';
     buildSpielplan(s,div);
@@ -2051,7 +2112,6 @@ function triggerSlideInit(){
   if(slides[cur].type==='spielplan') initSpielplan(activeEl);
   if(slides[cur].type==='kader') initKader(activeEl);
   if(slides[cur].type==='sm-bracket') initSmBracket(activeEl);
-  if(slides[cur].type==='sm-ticker') initSmTicker(activeEl);
   if(slides[cur].type==='score'){
     // Zyklus exakt an den Moment koppeln, in dem die Folie sichtbar wird —
     // sonst könnte der interne Bild-Wechsel längst vorher (unsichtbar) gelaufen
